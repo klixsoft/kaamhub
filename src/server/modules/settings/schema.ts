@@ -1,6 +1,7 @@
 import { z } from "zod"
 import { GITHUB_PERMISSIONS, type GithubPermission } from "@/config/domain"
-import { DEFAULT_CURRENCY, NUMBERING_SYSTEMS, TAX_REGISTRATIONS } from "@/config/finance"
+import { DEFAULT_BILLING_PRESET } from "@/config/billing-presets"
+import { CALENDARS, NUMBERING_SYSTEMS } from "@/config/finance"
 import type { ProjectRole } from "@/config/roles"
 
 export const generalSettingsSchema = z.object({
@@ -35,16 +36,23 @@ const optionalText = (max: number) => z.string().trim().max(max).default("")
 
 export const billingSettingsSchema = z.object({
   legalName: z.string().trim().min(2, "Enter the registered company name").max(160),
-  taxRegistration: z.enum(TAX_REGISTRATIONS),
-  taxNumber: z
-    .string()
-    .trim()
-    .regex(/^\d{9}$/, "PAN/VAT numbers in Nepal have 9 digits")
-    .or(z.literal("")),
+  chargesTax: z.boolean(),
+  taxName: z.string().trim().min(2, "Enter the tax name, e.g. VAT or GST").max(30),
+  taxRate: z.coerce.number("Enter the tax rate").min(0).max(100),
+  taxIdLabel: z.string().trim().min(2, "Enter the label for your tax number").max(30),
+  taxNumber: optionalText(40),
+  taxInvoiceTitle: z.string().trim().min(2, "Enter the document title").max(40),
   address: optionalText(300),
   phone: optionalText(60),
   email: z.email("Enter a valid email address").or(z.literal("")),
   website: optionalText(200),
+  invoicePrefix: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z0-9/-]{0,10}$/, "Use up to 10 letters, numbers, dashes or slashes"),
+  calendar: z.enum(CALENDARS),
+  fiscalYearStartMonth: z.coerce.number().int().min(1).max(12),
+  showAmountInWords: z.boolean(),
   paymentTermsDays: z.coerce.number().int().min(0).max(180),
   bankDetails: optionalText(1000),
   invoiceFooter: optionalText(500),
@@ -53,34 +61,35 @@ export const billingSettingsSchema = z.object({
     .string()
     .trim()
     .toUpperCase()
-    .regex(/^[A-Z]{3}$/, "Use the 3-letter currency code, e.g. NPR"),
+    .regex(/^[A-Z]{3}$/, "Use the 3-letter currency code, e.g. USD"),
   currencySymbol: z.string().trim().min(1, "Enter a symbol").max(6),
-  currencyMajorName: z.string().trim().min(2, "Enter the currency name, e.g. Rupees").max(30),
+  currencyMajorName: z.string().trim().min(2, "Enter the currency name, e.g. Dollars").max(30),
   currencyMinorName: z.string().trim().max(30).default(""),
   currencyNumbering: z.enum(NUMBERING_SYSTEMS),
 })
 
 export type BillingSettings = z.infer<typeof billingSettingsSchema>
 
+export const billingSettingsFormSchema = billingSettingsSchema.extend({
+  chargesTax: z.stringbool(),
+  showAmountInWords: z.stringbool(),
+})
+
 export const SETTINGS_DEFAULTS = {
   general: { companyName: "KaamHub", projectCodePrefix: "" } satisfies GeneralSettings,
   billing: {
     legalName: "",
-    taxRegistration: "vat",
     taxNumber: "",
     address: "",
     phone: "",
     email: "",
     website: "",
+    invoicePrefix: "INV-",
     paymentTermsDays: 15,
     bankDetails: "",
     invoiceFooter: "",
     recurringLeadDays: 7,
-    currencyCode: DEFAULT_CURRENCY.code,
-    currencySymbol: DEFAULT_CURRENCY.symbol,
-    currencyMajorName: DEFAULT_CURRENCY.majorName,
-    currencyMinorName: DEFAULT_CURRENCY.minorName,
-    currencyNumbering: DEFAULT_CURRENCY.numbering,
+    ...DEFAULT_BILLING_PRESET.values,
   } satisfies BillingSettings,
   github: {
     projectRolePermissions: { manager: "maintain", developer: "push", designer: "pull", qa: "triage", viewer: "pull" },

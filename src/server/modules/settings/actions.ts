@@ -11,7 +11,7 @@ import { AppError } from "@/server/lib/errors"
 import { reconcileGithubAccess } from "@/server/modules/github/access-sync"
 import { syncRepositories } from "@/server/modules/github/repositories"
 import { recordAudit } from "@/server/services/audit"
-import { billingSettingsSchema, generalSettingsSchema, projectRolePermissionsSchema } from "./schema"
+import { billingSettingsFormSchema, generalSettingsSchema, projectRolePermissionsSchema } from "./schema"
 import { saveSettings } from "./service"
 
 export const saveGeneralSettings = formAction({
@@ -26,7 +26,7 @@ export const saveGeneralSettings = formAction({
 })
 
 export const saveBillingSettings = formAction({
-  schema: billingSettingsSchema,
+  schema: billingSettingsFormSchema,
   permission: "settings:manage",
   handler: async (input, { user }) => {
     await saveSettings("billing", input)

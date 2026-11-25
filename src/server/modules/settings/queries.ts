@@ -4,7 +4,8 @@ import { cacheLife, cacheTag } from "next/cache"
 import { db } from "@/server/db"
 import { appSettings, departments, designations } from "@/server/db/schema"
 import { logger } from "@/server/lib/logger"
-import type { CurrencyFormat } from "@/config/finance"
+import type { CurrencyFormat, InvoiceFormat, TaxConfig } from "@/config/finance"
+import type { BillingSettings } from "./schema"
 import { SETTINGS_DEFAULTS, SETTINGS_SCHEMAS, type SettingsKey, type SettingsValue } from "./schema"
 
 export const settingsTag = (key: SettingsKey) => `settings:${key}`
@@ -37,8 +38,7 @@ export async function listLookups() {
   return { departments: departmentRows, designations: designationRows }
 }
 
-export async function getCurrencyFormat(): Promise<CurrencyFormat> {
-  const billing = await getSettings("billing")
+export function currencyFormatOf(billing: BillingSettings): CurrencyFormat {
   return {
     code: billing.currencyCode,
     symbol: billing.currencySymbol,
@@ -46,4 +46,19 @@ export async function getCurrencyFormat(): Promise<CurrencyFormat> {
     minorName: billing.currencyMinorName,
     numbering: billing.currencyNumbering,
   }
+}
+
+export function invoiceFormatOf(billing: BillingSettings): InvoiceFormat {
+  return {
+    taxName: billing.taxName,
+    taxIdLabel: billing.taxIdLabel,
+    title: billing.chargesTax ? billing.taxInvoiceTitle : "Invoice",
+    calendar: billing.calendar,
+    showAmountInWords: billing.showAmountInWords,
+  }
+}
+
+
+export function taxConfigOf(billing: BillingSettings): TaxConfig {
+  return { enabled: billing.chargesTax, name: billing.taxName, rate: billing.taxRate }
 }
