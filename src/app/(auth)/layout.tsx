@@ -1,4 +1,4 @@
-import { GitBranchIcon, KanbanSquareIcon, LayersIcon, UsersIcon } from "lucide-react"
+import { KanbanSquareIcon, LayersIcon, ReceiptTextIcon, UsersIcon } from "lucide-react"
 import { connection } from "next/server"
 import { Suspense } from "react"
 import { getCompanyName } from "@/server/modules/settings/queries"
@@ -6,7 +6,7 @@ import { getCompanyName } from "@/server/modules/settings/queries"
 const HIGHLIGHTS = [
   { icon: KanbanSquareIcon, title: "Projects and boards", text: "Plan work on Kanban boards and share progress with clients." },
   { icon: UsersIcon, title: "Team and freelancers", text: "Invite people with the right role and access end date." },
-  { icon: GitBranchIcon, title: "GitHub access", text: "Repository access follows project roles automatically." },
+  { icon: ReceiptTextIcon, title: "Clients and invoices", text: "Share progress with clients and bill them from the same place." },
 ]
 
 async function CompanyName() {
@@ -35,7 +35,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
         <div className="flex max-w-md flex-col gap-8">
           <div className="space-y-2">
             <h2 className="text-3xl font-semibold tracking-tight">Everything your team delivers, in one place.</h2>
-            <p className="text-muted-foreground">Projects, people, clients and code access, managed together.</p>
+            <p className="text-muted-foreground">Projects, people, clients and billing, managed together.</p>
           </div>
           <ul className="flex flex-col gap-5">
             {HIGHLIGHTS.map(({ icon: Icon, title, text }) => (
