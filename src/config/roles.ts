@@ -41,6 +41,8 @@ export const PERMISSIONS = [
   "projects:read_all",
   "projects:create",
   "projects:manage_all",
+  "finance:read",
+  "finance:write",
   "settings:manage",
   "github:manage",
   "system:update",
