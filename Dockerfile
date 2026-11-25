@@ -31,7 +31,8 @@ ENV NODE_ENV=production \
     APP_VERSION=${APP_VERSION} \
     PORT=3000 \
     HOSTNAME=0.0.0.0 \
-    MIGRATIONS_DIR=/app/drizzle
+    MIGRATIONS_DIR=/app/drizzle \
+    STORAGE_DIR=/app/storage
 
 RUN addgroup -S -g 1001 nodejs && adduser -S -u 1001 -G nodejs nextjs
 
@@ -42,6 +43,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/drizzle ./drizzle
 COPY --from=migrator-deps --chown=nextjs:nodejs /app/migrator/node_modules ./migrator/node_modules
 COPY --chown=nextjs:nodejs scripts/migrate.mjs ./migrator/migrate.mjs
 COPY --chown=nextjs:nodejs docker/entrypoint.sh ./entrypoint.sh
+
+RUN mkdir -p /app/storage && chown nextjs:nodejs /app/storage
 
 USER nextjs
 EXPOSE 3000

@@ -27,6 +27,8 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-kaamhub}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-kaamhub}
       UPDATER_URL: http://updater:9000
+    volumes:
+      - app-storage:/app/storage
     ports:
       - "${APP_BIND:-127.0.0.1}:${APP_PORT:-3000}:3000"
     networks: [internal]
@@ -66,6 +68,7 @@ services:
 
 volumes:
   db-data:
+  app-storage:
   caddy-data:
   caddy-config:
 
