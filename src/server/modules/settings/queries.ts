@@ -4,7 +4,7 @@ import { cacheLife, cacheTag } from "next/cache"
 import { db } from "@/server/db"
 import { appSettings, departments, designations } from "@/server/db/schema"
 import { logger } from "@/server/lib/logger"
-import type { CurrencyFormat, InvoiceFormat, TaxConfig } from "@/config/finance"
+import type { CurrencyFormat, InvoiceFormat } from "@/config/finance"
 import type { BillingSettings } from "./schema"
 import { SETTINGS_DEFAULTS, SETTINGS_SCHEMAS, type SettingsKey, type SettingsValue } from "./schema"
 
@@ -50,15 +50,10 @@ export function currencyFormatOf(billing: BillingSettings): CurrencyFormat {
 
 export function invoiceFormatOf(billing: BillingSettings): InvoiceFormat {
   return {
-    taxName: billing.taxName,
     taxIdLabel: billing.taxIdLabel,
-    title: billing.chargesTax ? billing.taxInvoiceTitle : "Invoice",
+    title: billing.invoiceTitle,
     calendar: billing.calendar,
     showAmountInWords: billing.showAmountInWords,
   }
 }
 
-
-export function taxConfigOf(billing: BillingSettings): TaxConfig {
-  return { enabled: billing.chargesTax, name: billing.taxName, rate: billing.taxRate }
-}

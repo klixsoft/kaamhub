@@ -1,6 +1,5 @@
 import { z } from "zod"
 import { GITHUB_PERMISSIONS, type GithubPermission } from "@/config/domain"
-import { DEFAULT_BILLING_PRESET } from "@/config/billing-presets"
 import { CALENDARS, NUMBERING_SYSTEMS } from "@/config/finance"
 import type { ProjectRole } from "@/config/roles"
 
@@ -36,12 +35,9 @@ const optionalText = (max: number) => z.string().trim().max(max).default("")
 
 export const billingSettingsSchema = z.object({
   legalName: z.string().trim().min(2, "Enter the registered company name").max(160),
-  chargesTax: z.boolean(),
-  taxName: z.string().trim().min(2, "Enter the tax name, e.g. VAT or GST").max(30),
-  taxRate: z.coerce.number("Enter the tax rate").min(0).max(100),
-  taxIdLabel: z.string().trim().min(2, "Enter the label for your tax number").max(30),
+  taxIdLabel: z.string().trim().min(2, "Enter the label for tax numbers, e.g. Tax ID").max(30),
   taxNumber: optionalText(40),
-  taxInvoiceTitle: z.string().trim().min(2, "Enter the document title").max(40),
+  invoiceTitle: z.string().trim().min(2, "Enter the document title").max(40),
   address: optionalText(300),
   phone: optionalText(60),
   email: z.email("Enter a valid email address").or(z.literal("")),
@@ -71,7 +67,6 @@ export const billingSettingsSchema = z.object({
 export type BillingSettings = z.infer<typeof billingSettingsSchema>
 
 export const billingSettingsFormSchema = billingSettingsSchema.extend({
-  chargesTax: z.stringbool(),
   showAmountInWords: z.stringbool(),
 })
 
@@ -89,7 +84,16 @@ export const SETTINGS_DEFAULTS = {
     bankDetails: "",
     invoiceFooter: "",
     recurringLeadDays: 7,
-    ...DEFAULT_BILLING_PRESET.values,
+    taxIdLabel: "Tax ID",
+    invoiceTitle: "Invoice",
+    calendar: "gregorian",
+    fiscalYearStartMonth: 1,
+    showAmountInWords: false,
+    currencyCode: "USD",
+    currencySymbol: "$",
+    currencyMajorName: "Dollars",
+    currencyMinorName: "Cents",
+    currencyNumbering: "international",
   } satisfies BillingSettings,
   github: {
     projectRolePermissions: { manager: "maintain", developer: "push", designer: "pull", qa: "triage", viewer: "pull" },
