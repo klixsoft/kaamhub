@@ -5,7 +5,7 @@ import {
   PAYMENT_METHODS,
   SERVICE_STATUSES,
   SERVICE_TYPES,
-  TAX_TREATMENTS,
+  TAX_KINDS,
 } from "@/config/finance"
 import { PROJECT_ROLES, SYSTEM_ROLES } from "@/config/roles"
 import {
@@ -36,7 +36,7 @@ export const repositoryLabelEnum = pgEnum("repository_label", REPOSITORY_LABELS)
 export const githubPermissionEnum = pgEnum("github_permission", GITHUB_PERMISSIONS)
 export const githubAccessStatusEnum = pgEnum("github_access_status", GITHUB_ACCESS_STATUSES)
 
-export const taxTreatmentEnum = pgEnum("tax_treatment", TAX_TREATMENTS)
+export const taxKindEnum = pgEnum("tax_kind", TAX_KINDS)
 export const invoiceStatusEnum = pgEnum("invoice_status", INVOICE_STATUSES)
 export const paymentMethodEnum = pgEnum("payment_method", PAYMENT_METHODS)
 export const serviceTypeEnum = pgEnum("service_type", SERVICE_TYPES)

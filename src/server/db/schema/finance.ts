@@ -8,7 +8,7 @@ import {
   paymentMethodEnum,
   serviceStatusEnum,
   serviceTypeEnum,
-  taxTreatmentEnum,
+  taxKindEnum,
 } from "./enums"
 import { id, timestamps } from "./helpers"
 import { projects } from "./projects"
@@ -30,7 +30,6 @@ export const managedServices = pgTable(
     expiresOn: date("expires_on"),
     billingCycle: billingCycleEnum("billing_cycle").notNull(),
     amount: money("amount").notNull(),
-    taxTreatment: taxTreatmentEnum("tax_treatment").notNull().default("standard"),
     nextBillingOn: date("next_billing_on").notNull(),
     notes: text("notes"),
     ...timestamps,
@@ -61,7 +60,6 @@ export const invoices = pgTable(
     serviceId: uuid("service_id").references(() => managedServices.id, { onDelete: "set null" }),
     servicePeriodStart: date("service_period_start"),
     currency: jsonb("currency").$type<CurrencyFormat>().notNull(),
-    taxTreatment: taxTreatmentEnum("tax_treatment").notNull().default("standard"),
     format: jsonb("format").$type<InvoiceFormat>(),
     issueDate: date("issue_date").notNull(),
     dueDate: date("due_date"),
@@ -75,7 +73,6 @@ export const invoices = pgTable(
     subtotal: money("subtotal").notNull().default(0),
     discount: money("discount").notNull().default(0),
     taxableAmount: money("taxable_amount").notNull().default(0),
-    taxRate: numeric("tax_rate", { precision: 5, scale: 2, mode: "number" }).notNull().default(0),
     taxAmount: money("tax_amount").notNull().default(0),
     total: money("total").notNull().default(0),
     amountPaid: money("amount_paid").notNull().default(0),
@@ -110,6 +107,22 @@ export const invoiceItems = pgTable(
     amount: money("amount").notNull(),
   },
   (table) => [index("invoice_item_invoice_idx").on(table.invoiceId, table.position)],
+)
+
+export const invoiceTaxes = pgTable(
+  "invoice_tax",
+  {
+    id: id(),
+    invoiceId: uuid("invoice_id")
+      .notNull()
+      .references(() => invoices.id, { onDelete: "cascade" }),
+    position: integer("position").notNull(),
+    name: text("name").notNull(),
+    kind: taxKindEnum("kind").notNull(),
+    rate: numeric("rate", { precision: 7, scale: 4, mode: "number" }),
+    amount: money("amount").notNull(),
+  },
+  (table) => [index("invoice_tax_invoice_idx").on(table.invoiceId, table.position)],
 )
 
 export const invoicePayments = pgTable(

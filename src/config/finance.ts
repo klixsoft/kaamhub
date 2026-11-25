@@ -14,24 +14,11 @@ export interface CurrencyFormat {
 }
 
 
-export const TAX_TREATMENTS = ["standard", "zero_rated", "exempt"] as const
-export type TaxTreatment = (typeof TAX_TREATMENTS)[number]
-
-export function taxTreatmentLabel(treatment: TaxTreatment, taxName: string, rate: number): string {
-  if (treatment === "standard") return `${taxName} ${rate}%`
-  if (treatment === "zero_rated") return `Zero-rated ${taxName} (0%)`
-  return `No ${taxName}`
-}
-
-export interface TaxConfig {
-  enabled: boolean
-  name: string
-  rate: number
-}
-
-export function taxTreatmentOptions(tax: TaxConfig): Array<{ value: TaxTreatment; label: string }> {
-  const available: readonly TaxTreatment[] = tax.enabled ? TAX_TREATMENTS : ["exempt"]
-  return available.map((value) => ({ value, label: taxTreatmentLabel(value, tax.name, tax.rate) }))
+export const TAX_KINDS = ["percentage", "fixed"] as const
+export type TaxKind = (typeof TAX_KINDS)[number]
+export const TAX_KIND_LABELS: Record<TaxKind, string> = {
+  percentage: "Percentage (%)",
+  fixed: "Fixed amount",
 }
 
 export const CALENDARS = ["gregorian", "bikram_sambat"] as const
@@ -44,7 +31,6 @@ export const CALENDAR_LABELS: Record<Calendar, string> = {
 export const MONTH_LABELS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"] as const
 
 export interface InvoiceFormat {
-  taxName: string
   taxIdLabel: string
   title: string
   calendar: Calendar
