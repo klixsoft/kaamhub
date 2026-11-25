@@ -1,5 +1,4 @@
 CREATE TYPE "public"."billing_cycle" AS ENUM('monthly', 'quarterly', 'half_yearly', 'yearly');--> statement-breakpoint
-CREATE TYPE "public"."currency" AS ENUM('NPR', 'USD');--> statement-breakpoint
 CREATE TYPE "public"."invoice_status" AS ENUM('draft', 'issued', 'partially_paid', 'paid', 'cancelled');--> statement-breakpoint
 CREATE TYPE "public"."payment_method" AS ENUM('bank_transfer', 'cash', 'cheque', 'esewa', 'khalti', 'fonepay', 'card', 'other');--> statement-breakpoint
 CREATE TYPE "public"."service_status" AS ENUM('active', 'paused', 'cancelled');--> statement-breakpoint
@@ -42,7 +41,7 @@ CREATE TABLE "invoice" (
 	"project_id" uuid,
 	"service_id" uuid,
 	"service_period_start" date,
-	"currency" "currency" DEFAULT 'NPR' NOT NULL,
+	"currency" jsonb NOT NULL,
 	"tax_treatment" "tax_treatment" DEFAULT 'vat' NOT NULL,
 	"issue_date" date NOT NULL,
 	"due_date" date,
@@ -79,7 +78,6 @@ CREATE TABLE "managed_service" (
 	"expires_on" date,
 	"billing_cycle" "billing_cycle" NOT NULL,
 	"amount" numeric(14, 2) NOT NULL,
-	"currency" "currency" DEFAULT 'NPR' NOT NULL,
 	"tax_treatment" "tax_treatment" DEFAULT 'vat' NOT NULL,
 	"next_billing_on" date NOT NULL,
 	"notes" text,

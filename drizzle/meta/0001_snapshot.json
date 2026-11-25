@@ -1,5 +1,5 @@
 {
-  "id": "2d931d91-42a4-43bb-8814-8e7bb098565d",
+  "id": "cb9d3e5a-f09f-4998-ade1-047d3efacd78",
   "prevId": "2b41f762-18c5-4f2a-be9c-6e920ae92666",
   "version": "7",
   "dialect": "postgresql",
@@ -2240,11 +2240,9 @@
         },
         "currency": {
           "name": "currency",
-          "type": "currency",
-          "typeSchema": "public",
+          "type": "jsonb",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'NPR'"
+          "notNull": true
         },
         "tax_treatment": {
           "name": "tax_treatment",
@@ -2614,14 +2612,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "currency": {
-          "name": "currency",
-          "type": "currency",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'NPR'"
-        },
         "tax_treatment": {
           "name": "tax_treatment",
           "type": "tax_treatment",
@@ -2902,14 +2892,6 @@
         "active",
         "on_hold",
         "past"
-      ]
-    },
-    "public.currency": {
-      "name": "currency",
-      "schema": "public",
-      "values": [
-        "NPR",
-        "USD"
       ]
     },
     "public.engagement_type": {

@@ -1,5 +1,25 @@
-export const CURRENCIES = ["NPR", "USD"] as const
-export type Currency = (typeof CURRENCIES)[number]
+export const NUMBERING_SYSTEMS = ["south_asian", "international"] as const
+export type NumberingSystem = (typeof NUMBERING_SYSTEMS)[number]
+export const NUMBERING_SYSTEM_LABELS: Record<NumberingSystem, string> = {
+  south_asian: "Lakh and crore (1,00,000)",
+  international: "Million and billion (100,000)",
+}
+
+export interface CurrencyFormat {
+  code: string
+  symbol: string
+  majorName: string
+  minorName: string
+  numbering: NumberingSystem
+}
+
+export const DEFAULT_CURRENCY: CurrencyFormat = {
+  code: "NPR",
+  symbol: "Rs.",
+  majorName: "Rupees",
+  minorName: "Paisa",
+  numbering: "south_asian",
+}
 
 export const VAT_RATE = 13
 

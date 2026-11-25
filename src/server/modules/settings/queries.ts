@@ -4,6 +4,7 @@ import { cacheLife, cacheTag } from "next/cache"
 import { db } from "@/server/db"
 import { appSettings, departments, designations } from "@/server/db/schema"
 import { logger } from "@/server/lib/logger"
+import type { CurrencyFormat } from "@/config/finance"
 import { SETTINGS_DEFAULTS, SETTINGS_SCHEMAS, type SettingsKey, type SettingsValue } from "./schema"
 
 export const settingsTag = (key: SettingsKey) => `settings:${key}`
@@ -34,4 +35,15 @@ export async function listLookups() {
     db.select({ id: designations.id, name: designations.name }).from(designations).orderBy(asc(designations.name)),
   ])
   return { departments: departmentRows, designations: designationRows }
+}
+
+export async function getCurrencyFormat(): Promise<CurrencyFormat> {
+  const billing = await getSettings("billing")
+  return {
+    code: billing.currencyCode,
+    symbol: billing.currencySymbol,
+    majorName: billing.currencyMajorName,
+    minorName: billing.currencyMinorName,
+    numbering: billing.currencyNumbering,
+  }
 }

@@ -1,8 +1,8 @@
-import type { Currency } from "@/config/finance"
+import type { CurrencyFormat, NumberingSystem } from "@/config/finance"
 
 const ONES = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"]
 const TENS = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"]
-const NEPALI_UNITS: ReadonlyArray<[number, string]> = [
+const SOUTH_ASIAN_UNITS: ReadonlyArray<[number, string]> = [
   [10_000_000, "Crore"],
   [100_000, "Lakh"],
   [1_000, "Thousand"],
@@ -15,9 +15,9 @@ const INTERNATIONAL_UNITS: ReadonlyArray<[number, string]> = [
   [100, "Hundred"],
 ]
 
-const CURRENCY_WORDS: Record<Currency, { major: string; minor: string; units: ReadonlyArray<[number, string]> }> = {
-  NPR: { major: "Rupees", minor: "Paisa", units: NEPALI_UNITS },
-  USD: { major: "US Dollars", minor: "Cents", units: INTERNATIONAL_UNITS },
+const UNITS: Record<NumberingSystem, ReadonlyArray<[number, string]>> = {
+  south_asian: SOUTH_ASIAN_UNITS,
+  international: INTERNATIONAL_UNITS,
 }
 
 function underHundred(value: number): string {
@@ -41,20 +41,18 @@ function integerToWords(value: number, units: ReadonlyArray<[number, string]>): 
   return parts.join(" ")
 }
 
-export function amountInWords(amount: number, currency: Currency): string {
-  const words = CURRENCY_WORDS[currency]
+export function amountInWords(amount: number, currency: CurrencyFormat): string {
   const cents = Math.round(amount * 100)
   const major = Math.floor(cents / 100)
   const minor = cents % 100
-  const minorPart = minor > 0 ? ` and ${underHundred(minor)} ${words.minor}` : ""
-  return `${words.major} ${integerToWords(major, words.units)}${minorPart} Only`
+  const minorPart = minor > 0 && currency.minorName ? ` and ${underHundred(minor)} ${currency.minorName}` : ""
+  return `${currency.majorName} ${integerToWords(major, UNITS[currency.numbering])}${minorPart} Only`
 }
 
-export function formatMoney(amount: number | string, currency: Currency): string {
-  const value = typeof amount === "string" ? Number(amount) : amount
-  const locale = currency === "NPR" ? "en-IN" : "en-US"
-  const formatted = new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)
-  return `${currency === "NPR" ? "Rs." : "$"} ${formatted}`
+export function formatMoney(amount: number, currency: CurrencyFormat): string {
+  const locale = currency.numbering === "south_asian" ? "en-IN" : "en-US"
+  const formatted = new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount)
+  return `${currency.symbol} ${formatted}`
 }
 
 export function roundMoney(value: number): number {

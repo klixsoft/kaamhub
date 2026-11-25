@@ -1,9 +1,9 @@
-import { date, index, integer, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core"
+import { date, index, integer, jsonb, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core"
+import type { CurrencyFormat } from "@/config/finance"
 import { users } from "./auth"
 import { clients } from "./clients"
 import {
   billingCycleEnum,
-  currencyEnum,
   invoiceStatusEnum,
   paymentMethodEnum,
   serviceStatusEnum,
@@ -30,7 +30,6 @@ export const managedServices = pgTable(
     expiresOn: date("expires_on"),
     billingCycle: billingCycleEnum("billing_cycle").notNull(),
     amount: money("amount").notNull(),
-    currency: currencyEnum("currency").notNull().default("NPR"),
     taxTreatment: taxTreatmentEnum("tax_treatment").notNull().default("vat"),
     nextBillingOn: date("next_billing_on").notNull(),
     notes: text("notes"),
@@ -61,7 +60,7 @@ export const invoices = pgTable(
     projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
     serviceId: uuid("service_id").references(() => managedServices.id, { onDelete: "set null" }),
     servicePeriodStart: date("service_period_start"),
-    currency: currencyEnum("currency").notNull().default("NPR"),
+    currency: jsonb("currency").$type<CurrencyFormat>().notNull(),
     taxTreatment: taxTreatmentEnum("tax_treatment").notNull().default("vat"),
     issueDate: date("issue_date").notNull(),
     dueDate: date("due_date"),

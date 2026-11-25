@@ -1,7 +1,6 @@
 import { pgEnum } from "drizzle-orm/pg-core"
 import {
   BILLING_CYCLES,
-  CURRENCIES,
   INVOICE_STATUSES,
   PAYMENT_METHODS,
   SERVICE_STATUSES,
@@ -37,7 +36,6 @@ export const repositoryLabelEnum = pgEnum("repository_label", REPOSITORY_LABELS)
 export const githubPermissionEnum = pgEnum("github_permission", GITHUB_PERMISSIONS)
 export const githubAccessStatusEnum = pgEnum("github_access_status", GITHUB_ACCESS_STATUSES)
 
-export const currencyEnum = pgEnum("currency", CURRENCIES)
 export const taxTreatmentEnum = pgEnum("tax_treatment", TAX_TREATMENTS)
 export const invoiceStatusEnum = pgEnum("invoice_status", INVOICE_STATUSES)
 export const paymentMethodEnum = pgEnum("payment_method", PAYMENT_METHODS)
