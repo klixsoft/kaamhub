@@ -11,7 +11,7 @@ import { AppError } from "@/server/lib/errors"
 import { reconcileGithubAccess } from "@/server/modules/github/access-sync"
 import { syncRepositories } from "@/server/modules/github/repositories"
 import { recordAudit } from "@/server/services/audit"
-import { generalSettingsSchema, projectRolePermissionsSchema } from "./schema"
+import { billingSettingsSchema, generalSettingsSchema, projectRolePermissionsSchema } from "./schema"
 import { saveSettings } from "./service"
 
 export const saveGeneralSettings = formAction({
@@ -21,6 +21,18 @@ export const saveGeneralSettings = formAction({
     await saveSettings("general", input)
     await recordAudit({ actorId: user.id, action: "settings.general_updated", entityType: "settings", entityId: "general" })
     revalidatePath("/", "layout")
+    return undefined
+  },
+})
+
+export const saveBillingSettings = formAction({
+  schema: billingSettingsSchema,
+  permission: "settings:manage",
+  handler: async (input, { user }) => {
+    await saveSettings("billing", input)
+    await recordAudit({ actorId: user.id, action: "settings.billing_updated", entityType: "settings", entityId: "billing" })
+    revalidatePath("/settings/billing")
+    revalidatePath("/invoices", "layout")
     return undefined
   },
 })
