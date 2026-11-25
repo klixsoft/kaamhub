@@ -233,3 +233,22 @@ export const environmentCredentialAccess = pgTable(
   },
   (table) => [primaryKey({ columns: [table.credentialId, table.userId] }), index("environment_credential_access_user_idx").on(table.userId)],
 )
+
+export const projectDocuments = pgTable(
+  "project_document",
+  {
+    id: id(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    fileName: text("file_name").notNull(),
+    mimeType: text("mime_type").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    storageKey: text("storage_key").notNull().unique(),
+    visibility: taskVisibilityEnum("visibility").notNull().default("internal"),
+    uploadedById: text("uploaded_by_id").references(() => users.id, { onDelete: "set null" }),
+    ...timestamps,
+  },
+  (table) => [index("project_document_project_idx").on(table.projectId, table.createdAt)],
+)
