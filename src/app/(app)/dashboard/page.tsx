@@ -8,7 +8,9 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { PROJECT_STATUS_LABELS, PROJECT_STATUSES } from "@/config/domain"
 import { formatDate, formatDateTime } from "@/lib/format"
 import { requirePermission } from "@/server/auth/session"
+import { SERVICE_TYPE_LABELS } from "@/config/finance"
 import { getExpiringAccess, getMyOpenTasks, getProjectStatusCounts, getUpcomingDeadlines } from "@/server/modules/dashboard/queries"
+import { upcomingRenewals } from "@/server/modules/services/queries"
 
 export const metadata: Metadata = { title: "Dashboard" }
 
@@ -18,11 +20,12 @@ function EmptyLine({ children }: { children: React.ReactNode }) {
 
 async function DashboardContent() {
   const user = await requirePermission("dashboard:view")
-  const [myTasks, statusCounts, deadlines, expiring] = await Promise.all([
+  const [myTasks, statusCounts, deadlines, expiring, renewals] = await Promise.all([
     getMyOpenTasks(user),
     getProjectStatusCounts(user),
     getUpcomingDeadlines(user),
     getExpiringAccess(user),
+    upcomingRenewals(user),
   ])
   const counts = new Map(statusCounts.map((row) => [row.status, row.count]))
   const today = new Date().toISOString().slice(0, 10)
@@ -96,6 +99,31 @@ async function DashboardContent() {
             )}
           </CardContent>
         </Card>
+
+        {renewals.length > 0 ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Renewals due</CardTitle>
+              <CardDescription>Managed domains, hosting and services expiring within 30 days.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="divide-y">
+                {renewals.map((service) => (
+                  <li key={service.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                    <Link href={`/projects/${service.projectId}/services`} className="min-w-0 truncate hover:underline">
+                      <span className="mr-2 font-mono text-xs text-muted-foreground">{service.projectCode}</span>
+                      {service.name}
+                      <span className="text-muted-foreground"> · {SERVICE_TYPE_LABELS[service.type]}</span>
+                    </Link>
+                    <span className={service.expiresOn && service.expiresOn < today ? "shrink-0 text-destructive" : "shrink-0 text-muted-foreground"}>
+                      {formatDate(service.expiresOn)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        ) : null}
 
         {expiring.length > 0 ? (
           <Card>
