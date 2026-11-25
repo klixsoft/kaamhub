@@ -4,6 +4,7 @@ import {
   doublePrecision,
   index,
   integer,
+  jsonb,
   numeric,
   pgTable,
   primaryKey,
@@ -154,4 +155,50 @@ export const projectEnvironments = pgTable(
     index("project_environment_domain_expiry_idx").on(table.domainExpiresOn),
     index("project_environment_hosting_expiry_idx").on(table.hostingExpiresOn),
   ],
+)
+
+export const taskComments = pgTable(
+  "task_comment",
+  {
+    id: id(),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    authorId: text("author_id").references(() => users.id, { onDelete: "set null" }),
+    body: text("body").notNull(),
+    visibility: taskVisibilityEnum("visibility").notNull().default("internal"),
+    editedAt: timestamp("edited_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("task_comment_task_idx").on(table.taskId, table.createdAt)],
+)
+
+export const taskActivities = pgTable(
+  "task_activity",
+  {
+    id: id(),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    actorId: text("actor_id").references(() => users.id, { onDelete: "set null" }),
+    action: text("action").notNull(),
+    details: jsonb("details").$type<Record<string, string | null>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("task_activity_task_idx").on(table.taskId, table.createdAt)],
+)
+
+export const taskChecklistItems = pgTable(
+  "task_checklist_item",
+  {
+    id: id(),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    text: text("text").notNull(),
+    done: boolean("done").notNull().default(false),
+    position: integer("position").notNull(),
+    ...timestamps,
+  },
+  (table) => [index("task_checklist_item_task_idx").on(table.taskId, table.position)],
 )
