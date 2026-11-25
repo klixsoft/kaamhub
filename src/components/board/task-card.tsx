@@ -91,8 +91,8 @@ export function SortableTaskCard({ task, projectCode, onOpen, disabled }: TaskCa
       ref={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform), transition }}
       className={cn("list-none", isDragging && "opacity-40", !disabled && "cursor-grab active:cursor-grabbing")}
-      {...attributes}
-      {...listeners}
+      {...(disabled ? {} : attributes)}
+      {...(disabled ? {} : listeners)}
       aria-roledescription={disabled ? undefined : "Draggable task"}
     >
       <TaskCardContent task={task} projectCode={projectCode} onOpen={onOpen} />
