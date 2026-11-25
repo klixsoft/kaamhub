@@ -78,6 +78,13 @@
       "when": 1795596796286,
       "tag": "0010_task_comments_activity_checklist",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1795597190034,
+      "tag": "0011_environment_credentials",
+      "breakpoints": true
     }
   ]
 }

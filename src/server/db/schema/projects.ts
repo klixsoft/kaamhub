@@ -202,3 +202,34 @@ export const taskChecklistItems = pgTable(
   },
   (table) => [index("task_checklist_item_task_idx").on(table.taskId, table.position)],
 )
+
+export const environmentCredentials = pgTable(
+  "environment_credential",
+  {
+    id: id(),
+    environmentId: uuid("environment_id")
+      .notNull()
+      .references(() => projectEnvironments.id, { onDelete: "cascade" }),
+    label: text("label").notNull(),
+    username: text("username"),
+    loginUrl: text("login_url"),
+    secretEncrypted: text("secret_encrypted").notNull(),
+    notesEncrypted: text("notes_encrypted"),
+    createdById: text("created_by_id").references(() => users.id, { onDelete: "set null" }),
+    ...timestamps,
+  },
+  (table) => [index("environment_credential_environment_idx").on(table.environmentId)],
+)
+
+export const environmentCredentialAccess = pgTable(
+  "environment_credential_access",
+  {
+    credentialId: uuid("credential_id")
+      .notNull()
+      .references(() => environmentCredentials.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+  },
+  (table) => [primaryKey({ columns: [table.credentialId, table.userId] }), index("environment_credential_access_user_idx").on(table.userId)],
+)
