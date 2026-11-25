@@ -8,9 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { PROJECT_STATUS_LABELS, PROJECT_STATUSES } from "@/config/domain"
 import { formatDate, formatDateTime } from "@/lib/format"
 import { requirePermission } from "@/server/auth/session"
-import { getExpiringAccess, getMyOpenTasks, getProjectStatusCounts, getUpcomingDeadlines } from "@/server/modules/dashboard/queries"
-import { upcomingRenewals } from "@/server/modules/services/queries"
-import { isModuleEnabled } from "@/server/modules/settings/queries"
+import { getExpiringAccess, getMyOpenTasks, getProjectStatusCounts, getRenewals, getUpcomingDeadlines } from "@/server/modules/dashboard/queries"
 
 export const metadata: Metadata = { title: "Dashboard" }
 
@@ -25,7 +23,7 @@ async function DashboardContent() {
     getProjectStatusCounts(user),
     getUpcomingDeadlines(user),
     getExpiringAccess(user),
-    isModuleEnabled("services").then((enabled) => (enabled ? upcomingRenewals(user) : [])),
+    getRenewals(user),
   ])
   const counts = new Map(statusCounts.map((row) => [row.status, row.count]))
   const today = new Date().toISOString().slice(0, 10)
@@ -54,7 +52,7 @@ async function DashboardContent() {
               <ul className="divide-y">
                 {myTasks.map((task) => (
                   <li key={task.id} className="flex items-center justify-between gap-3 py-2">
-                    <Link href={`/projects/${task.projectId}`} className="min-w-0 hover:underline">
+                    <Link href={`/projects/${task.projectId}/board`} className="min-w-0 hover:underline">
                       <span className="mr-2 font-mono text-xs text-muted-foreground">
                         {task.projectCode}-{task.number}
                       </span>
@@ -104,20 +102,18 @@ async function DashboardContent() {
           <Card>
             <CardHeader>
               <CardTitle>Renewals due</CardTitle>
-              <CardDescription>Recurring services expiring within 30 days.</CardDescription>
+              <CardDescription>Services, domains and hosting expiring within 30 days.</CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="divide-y">
-                {renewals.map((service) => (
-                  <li key={service.id} className="flex items-center justify-between gap-3 py-2 text-sm">
-                    <Link href={`/projects/${service.projectId}/services`} className="min-w-0 truncate hover:underline">
-                      <span className="mr-2 font-mono text-xs text-muted-foreground">{service.projectCode}</span>
-                      {service.name}
-                      {service.categoryName ? <span className="text-muted-foreground"> · {service.categoryName}</span> : null}
+                {renewals.map((item) => (
+                  <li key={item.key} className="flex items-center justify-between gap-3 py-2 text-sm">
+                    <Link href={item.href} className="min-w-0 truncate hover:underline">
+                      <span className="mr-2 font-mono text-xs text-muted-foreground">{item.projectCode}</span>
+                      {item.title}
+                      {item.detail ? <span className="text-muted-foreground"> · {item.detail}</span> : null}
                     </Link>
-                    <span className={service.expiresOn && service.expiresOn < today ? "shrink-0 text-destructive" : "shrink-0 text-muted-foreground"}>
-                      {formatDate(service.expiresOn)}
-                    </span>
+                    <span className={item.date < today ? "shrink-0 text-destructive" : "shrink-0 text-muted-foreground"}>{formatDate(item.date)}</span>
                   </li>
                 ))}
               </ul>

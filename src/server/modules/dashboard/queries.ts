@@ -3,7 +3,11 @@ import { and, asc, count, eq, gte, isNotNull, lte, ne, notInArray } from "drizzl
 import { type CurrentUser, can } from "@/server/auth/session"
 import { db } from "@/server/db"
 import { boardColumns, projects, taskAssignees, tasks, users } from "@/server/db/schema"
+import { shiftDate, todayIso } from "@/lib/dates"
+import { upcomingEnvironmentRenewals } from "@/server/modules/environments/queries"
 import { projectVisibilityCondition } from "@/server/modules/projects/access"
+import { upcomingRenewals } from "@/server/modules/services/queries"
+import { isModuleEnabled } from "@/server/modules/settings/queries"
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const isoDate = (date: Date) => date.toISOString().slice(0, 10)
@@ -70,4 +74,40 @@ export async function getExpiringAccess(user: CurrentUser) {
     )
     .orderBy(asc(users.accessExpiresAt))
     .limit(8)
+}
+
+export interface RenewalItem {
+  key: string
+  href: string
+  projectCode: string
+  title: string
+  detail: string | null
+  date: string
+}
+
+export async function getRenewals(user: CurrentUser): Promise<RenewalItem[]> {
+  const [services, environments] = await Promise.all([
+    isModuleEnabled("services").then((enabled) => (enabled && can(user, "finance:read") ? upcomingRenewals(user) : [])),
+    isModuleEnabled("environments").then((enabled) => (enabled ? upcomingEnvironmentRenewals(user) : [])),
+  ])
+  const items: RenewalItem[] = [
+    ...services.flatMap((service) =>
+      service.expiresOn
+        ? [{ key: `service-${service.id}`, href: `/services?project=${service.projectId}`, projectCode: service.projectCode, title: service.name, detail: service.categoryName, date: service.expiresOn }]
+        : [],
+    ),
+    ...environments.flatMap((environment) => {
+      const href = `/projects/${environment.projectId}/environments`
+      return [
+        environment.domainExpiresOn
+          ? { key: `domain-${environment.id}`, href, projectCode: environment.projectCode, title: `${environment.name} domain`, detail: environment.url, date: environment.domainExpiresOn }
+          : null,
+        environment.hostingExpiresOn
+          ? { key: `hosting-${environment.id}`, href, projectCode: environment.projectCode, title: `${environment.name} hosting`, detail: environment.url, date: environment.hostingExpiresOn }
+          : null,
+      ].filter((item): item is RenewalItem => item !== null)
+    }),
+  ]
+  const horizon = shiftDate(todayIso(), 30)
+  return items.filter((item) => item.date <= horizon).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 10)
 }
