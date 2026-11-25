@@ -4,7 +4,7 @@ export interface Option {
   description?: string
 }
 
-export const OPTION_RESOURCES = ["people", "clients", "departments", "designations", "repositories", "project-members", "client-projects", "project-categories", "service-categories"] as const
+export const OPTION_RESOURCES = ["people", "clients", "departments", "designations", "repositories", "project-members", "client-projects", "project-categories", "project-stages", "service-categories", "projects"] as const
 export type OptionResource = (typeof OPTION_RESOURCES)[number]
 
 export type OptionParams = Partial<Record<"projectId" | "clientId", string>>

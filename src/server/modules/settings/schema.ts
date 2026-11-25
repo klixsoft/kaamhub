@@ -4,7 +4,7 @@ import { CALENDARS, NUMBERING_SYSTEMS } from "@/config/finance"
 import { DEFAULT_MODULES, type ModuleState } from "@/config/modules"
 import type { ProjectRole } from "@/config/roles"
 
-export const LOOKUP_KINDS = ["departments", "designations", "projectCategories", "serviceCategories"] as const
+export const LOOKUP_KINDS = ["departments", "designations", "projectCategories", "projectStages", "serviceCategories"] as const
 export type LookupKind = (typeof LOOKUP_KINDS)[number]
 
 export const generalSettingsSchema = z.object({
@@ -76,6 +76,7 @@ export const moduleSettingsSchema = z.object({
   clients: z.boolean(),
   invoices: z.boolean(),
   services: z.boolean(),
+  environments: z.boolean().default(true),
   github: z.boolean(),
 }) satisfies z.ZodType<ModuleState>
 
@@ -83,6 +84,7 @@ export const moduleSettingsFormSchema = z.object({
   clients: z.stringbool(),
   invoices: z.stringbool(),
   services: z.stringbool(),
+  environments: z.stringbool(),
   github: z.stringbool(),
 })
 

@@ -15,6 +15,7 @@ export const metadata: Metadata = { title: "Settings" }
 
 const LOOKUP_SECTIONS: Array<{ kind: LookupKind; title: string; label: string; description: string; module?: ModuleKey }> = [
   { kind: "projectCategories", title: "Project categories", label: "Category", description: "Group projects, e.g. Client project, Internal, Retainer." },
+  { kind: "projectStages", title: "Project stages", label: "Stage", description: "Where a project is in its life, e.g. In development, Live, Support." },
   { kind: "serviceCategories", title: "Service types", label: "Service type", description: "Types of recurring services you bill for.", module: "services" },
   { kind: "departments", title: "Departments", label: "Department", description: "Used on people profiles and as a filter." },
   { kind: "designations", title: "Designations", label: "Designation", description: "Job titles used on people profiles." },

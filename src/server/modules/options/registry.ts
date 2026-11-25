@@ -4,7 +4,7 @@ import { SYSTEM_ROLE_LABELS } from "@/config/roles"
 import type { Option, OptionParams, OptionResource } from "@/lib/options"
 import { type CurrentUser, can } from "@/server/auth/session"
 import { db } from "@/server/db"
-import { clients, departments, designations, githubRepositories, projectCategories, projectMembers, projects, serviceCategories, users } from "@/server/db/schema"
+import { clients, departments, designations, githubRepositories, projectCategories, projectMembers, projectStages, projects, serviceCategories, users } from "@/server/db/schema"
 import { isUuid, searchAcross } from "@/server/lib/query"
 import { resolveProjectAccess } from "@/server/modules/projects/access"
 import { isModuleEnabled } from "@/server/modules/settings/queries"
@@ -60,6 +60,22 @@ const resolvers: Record<OptionResource, Resolver> = {
     if (user.role === "client") return null
     const rows = await db.select().from(projectCategories).where(searchAcross(query, [projectCategories.name])).orderBy(asc(projectCategories.name)).limit(LIMIT)
     return rows.map((row) => ({ value: row.id, label: row.name }))
+  },
+  "project-stages": async (query, _params, user) => {
+    if (user.role === "client") return null
+    const rows = await db.select().from(projectStages).where(searchAcross(query, [projectStages.name])).orderBy(asc(projectStages.name)).limit(LIMIT)
+    return rows.map((row) => ({ value: row.id, label: row.name }))
+  },
+  projects: async (query, _params, user) => {
+    if (!can(user, "finance:read")) return null
+    const rows = await db
+      .select({ id: projects.id, code: projects.code, name: projects.name, clientName: clients.name })
+      .from(projects)
+      .leftJoin(clients, eq(clients.id, projects.clientId))
+      .where(searchAcross(query, [projects.name, projects.code, clients.name]))
+      .orderBy(asc(projects.name))
+      .limit(LIMIT)
+    return rows.map((row) => ({ value: row.id, label: row.name, description: [row.code, row.clientName].filter(Boolean).join(" · ") }))
   },
   "service-categories": async (query, _params, user) => {
     if (!can(user, "finance:read")) return null

@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache"
 import { after } from "next/server"
 import { z } from "zod"
 import { db } from "@/server/db"
-import { departments, designations, projectCategories, projectMembers, serviceCategories } from "@/server/db/schema"
+import { departments, designations, projectCategories, projectMembers, projectStages, serviceCategories } from "@/server/db/schema"
 import { action, formAction } from "@/server/lib/action"
 import { AppError } from "@/server/lib/errors"
 import { reconcileGithubAccess } from "@/server/modules/github/access-sync"
@@ -50,7 +50,7 @@ export const saveBillingSettings = formAction({
   },
 })
 
-const lookupTables = { departments, designations, projectCategories, serviceCategories } as const
+const lookupTables = { departments, designations, projectCategories, projectStages, serviceCategories } as const
 const lookupSchema = z.object({ kind: z.enum(LOOKUP_KINDS), name: z.string().trim().min(2, "Enter a name").max(80) })
 
 export const addLookup = formAction({

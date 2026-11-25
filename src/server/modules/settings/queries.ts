@@ -2,7 +2,7 @@ import "server-only"
 import { asc, eq } from "drizzle-orm"
 import { cacheLife, cacheTag } from "next/cache"
 import { db } from "@/server/db"
-import { appSettings, departments, designations, projectCategories, serviceCategories } from "@/server/db/schema"
+import { appSettings, departments, designations, projectCategories, projectStages, serviceCategories } from "@/server/db/schema"
 import { logger } from "@/server/lib/logger"
 import type { CurrencyFormat, InvoiceFormat } from "@/config/finance"
 import type { BillingSettings } from "./schema"
@@ -32,18 +32,20 @@ export async function getCompanyName(): Promise<string> {
 }
 
 export async function listLookups() {
-  const list = (table: typeof departments | typeof designations | typeof projectCategories | typeof serviceCategories) =>
+  const list = (table: typeof departments | typeof designations | typeof projectCategories | typeof projectStages | typeof serviceCategories) =>
     db.select({ id: table.id, name: table.name }).from(table).orderBy(asc(table.name))
-  const [departmentRows, designationRows, projectCategoryRows, serviceCategoryRows] = await Promise.all([
+  const [departmentRows, designationRows, projectCategoryRows, projectStageRows, serviceCategoryRows] = await Promise.all([
     list(departments),
     list(designations),
     list(projectCategories),
+    list(projectStages),
     list(serviceCategories),
   ])
   return {
     departments: departmentRows,
     designations: designationRows,
     projectCategories: projectCategoryRows,
+    projectStages: projectStageRows,
     serviceCategories: serviceCategoryRows,
   }
 }
