@@ -3,7 +3,7 @@ import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { nextCookies } from "better-auth/next-js"
 import { eq } from "drizzle-orm"
-import { env, isProduction } from "@/config/env"
+import { env } from "@/config/env"
 import { db } from "@/server/db"
 import { accounts, rateLimits, sessions, users, verifications } from "@/server/db/schema"
 import { sendMail } from "@/server/services/mailer"
@@ -80,7 +80,7 @@ export const auth = betterAuth({
     },
   },
   advanced: {
-    useSecureCookies: isProduction,
+    useSecureCookies: env.APP_URL.startsWith("https://"),
     ipAddress: { ipAddressHeaders: ["x-forwarded-for", "x-real-ip"] },
     database: { generateId: () => crypto.randomUUID() },
   },
