@@ -13,6 +13,7 @@ import {
   useSensors,
 } from "@dnd-kit/core"
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable"
+import { useSearchParams } from "next/navigation"
 import { useCallback, useId, useMemo, useState, useTransition } from "react"
 import { toast } from "sonner"
 import type { BoardColumn as Column, BoardTask } from "@/server/modules/projects/board"
@@ -37,6 +38,13 @@ function toLanes(columns: Column[], tasks: BoardTask[]): Lanes {
   return lanes
 }
 
+function syncTaskParam(number: number | null) {
+  const url = new URL(window.location.href)
+  if (number === null) url.searchParams.delete("task")
+  else url.searchParams.set("task", String(number))
+  window.history.replaceState(window.history.state, "", url)
+}
+
 function findLane(lanes: Lanes, id: string): string | undefined {
   if (id in lanes) return id
   return Object.keys(lanes).find((columnId) => lanes[columnId]?.some((task) => task.id === id))
@@ -47,7 +55,12 @@ export function KanbanBoard({ projectId, projectCode, columns, tasks, canEdit }:
   const [lanes, setLanes] = useState(serverLanes)
   const [syncedLanes, setSyncedLanes] = useState(serverLanes)
   const [activeTask, setActiveTask] = useState<BoardTask | null>(null)
-  const [dialog, setDialog] = useState<TaskDialogState>(null)
+  const searchParams = useSearchParams()
+  const [dialog, setDialog] = useState<TaskDialogState>(() => {
+    const number = Number(searchParams.get("task"))
+    const linked = Number.isInteger(number) ? tasks.find((task) => task.number === number) : undefined
+    return linked ? { mode: "view", task: linked } : null
+  })
   const [, startTransition] = useTransition()
   const dndId = useId()
 
@@ -116,8 +129,15 @@ export function KanbanBoard({ projectId, projectCode, columns, tasks, canEdit }:
     })
   }
 
-  const openTask = useCallback((task: BoardTask) => setDialog({ mode: "edit", task }), [])
+  const openTask = useCallback((task: BoardTask) => {
+    setDialog({ mode: "view", task })
+    syncTaskParam(task.number)
+  }, [])
   const addTask = useCallback((columnId: string) => setDialog({ mode: "create", columnId }), [])
+  const closeDialog = useCallback(() => {
+    setDialog(null)
+    syncTaskParam(null)
+  }, [])
 
   return (
     <>
@@ -150,11 +170,10 @@ export function KanbanBoard({ projectId, projectCode, columns, tasks, canEdit }:
       </DndContext>
       <TaskDialog
         state={dialog}
-        onClose={() => setDialog(null)}
+        onClose={closeDialog}
         projectId={projectId}
         projectCode={projectCode}
         columns={columns}
-        canEdit={canEdit}
       />
     </>
   )

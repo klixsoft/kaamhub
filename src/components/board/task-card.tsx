@@ -2,7 +2,7 @@
 
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { BugIcon, CalendarIcon, EyeIcon } from "lucide-react"
+import { BugIcon, CalendarIcon, CheckSquareIcon, EyeIcon, MessageSquareIcon } from "lucide-react"
 import { PriorityBadge } from "@/components/projects/badges"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { TASK_TYPE_LABELS } from "@/config/domain"
@@ -41,6 +41,21 @@ export function TaskCardContent({ task, projectCode, onOpen, overlay }: TaskCard
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <PriorityBadge priority={task.priority} />
+          {task.commentCount > 0 ? (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground" aria-label={`${task.commentCount} comments`}>
+              <MessageSquareIcon className="size-3" aria-hidden />
+              {task.commentCount}
+            </span>
+          ) : null}
+          {task.checklistTotal > 0 ? (
+            <span
+              className={cn("flex items-center gap-1 text-xs", task.checklistDone === task.checklistTotal ? "text-emerald-600" : "text-muted-foreground")}
+              aria-label={`Checklist ${task.checklistDone} of ${task.checklistTotal} done`}
+            >
+              <CheckSquareIcon className="size-3" aria-hidden />
+              {task.checklistDone}/{task.checklistTotal}
+            </span>
+          ) : null}
           {task.dueDate ? (
             <span className={cn("flex items-center gap-1 text-xs", overdue ? "text-destructive" : "text-muted-foreground")}>
               <CalendarIcon className="size-3" aria-hidden />
