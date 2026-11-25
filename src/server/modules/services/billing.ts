@@ -29,11 +29,11 @@ async function draftForPeriod(service: ServiceWithClient, createdById: string | 
       {
         clientId: service.clientId as string,
         projectId: service.projectId,
-        taxTreatment: service.taxTreatment,
         issueDate,
         dueDate: shiftDate(issueDate, billing.paymentTermsDays),
         discount: 0,
         notes: null,
+        taxes: [],
         serviceId: service.id,
         servicePeriodStart: periodStart,
         items: [

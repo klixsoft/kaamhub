@@ -9,7 +9,7 @@ import { OptionCombobox } from "@/components/forms/option-combobox"
 import { SubmitButton } from "@/components/forms/submit-button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { BILLING_CYCLE_LABELS, SERVICE_STATUS_LABELS, SERVICE_TYPE_LABELS, type TaxConfig, taxTreatmentOptions } from "@/config/finance"
+import { BILLING_CYCLE_LABELS, SERVICE_STATUS_LABELS, SERVICE_TYPE_LABELS } from "@/config/finance"
 import { type Option, toOptions } from "@/lib/options"
 import type { ServiceRow } from "@/server/modules/services/queries"
 import { createService, updateService } from "@/server/modules/services/actions"
@@ -23,13 +23,11 @@ interface ServiceFormProps {
   projectId: string
   service?: ServiceRow
   currencySymbol: string
-  tax: TaxConfig
   today: string
   onSaved: () => void
 }
 
-export function ServiceForm({ projectId, service, currencySymbol, tax, today, onSaved }: ServiceFormProps) {
-  const treatmentOptions = taxTreatmentOptions(tax)
+export function ServiceForm({ projectId, service, currencySymbol, today, onSaved }: ServiceFormProps) {
   const [state, submit] = useActionState(service ? updateService : createService, null)
   const errors = state && !state.ok ? state.fieldErrors : undefined
 
@@ -58,7 +56,7 @@ export function ServiceForm({ projectId, service, currencySymbol, tax, today, on
       <FormField id="service-expires" label="Expires on" errors={errors?.expiresOn} description="When it must be renewed with the provider.">
         <DatePicker id="service-expires" name="expiresOn" defaultValue={service?.expiresOn} />
       </FormField>
-      <FormField id="service-amount" label={`Amount (${currencySymbol})`} required errors={errors?.amount}>
+      <FormField id="service-amount" label={`Amount (${currencySymbol})`} required errors={errors?.amount} description="Before tax. Add any taxes on the draft invoice.">
         <Input id="service-amount" name="amount" type="number" min={0} step="any" defaultValue={service?.amount} required />
       </FormField>
       <FormField id="service-cycle" label="Billing cycle" required errors={errors?.billingCycle}>
@@ -66,15 +64,6 @@ export function ServiceForm({ projectId, service, currencySymbol, tax, today, on
       </FormField>
       <FormField id="service-next" label="Next billing date" required errors={errors?.nextBillingOn} description="A draft invoice is prepared before this date.">
         <DatePicker id="service-next" name="nextBillingOn" defaultValue={service?.nextBillingOn ?? today} required />
-      </FormField>
-      <FormField id="service-tax" label="Tax" required errors={errors?.taxTreatment}>
-        <OptionCombobox
-          id="service-tax"
-          name="taxTreatment"
-          required
-          options={treatmentOptions}
-          defaultValue={pick(treatmentOptions, service?.taxTreatment ?? (tax.enabled ? "standard" : "exempt"))}
-        />
       </FormField>
       <FormField id="service-started" label="Started on" errors={errors?.startedOn}>
         <DatePicker id="service-started" name="startedOn" defaultValue={service?.startedOn} />

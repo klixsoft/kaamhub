@@ -7,7 +7,7 @@ import { todayIso } from "@/lib/dates"
 import { can } from "@/server/auth/session"
 import { loadProjectContext } from "@/server/modules/projects/context"
 import { listProjectServices } from "@/server/modules/services/queries"
-import { currencyFormatOf, getSettings, taxConfigOf } from "@/server/modules/settings/queries"
+import { currencyFormatOf, getSettings } from "@/server/modules/settings/queries"
 
 export const metadata: Metadata = { title: "Services" }
 
@@ -24,7 +24,6 @@ async function Services({ params }: { params: PageProps<"/projects/[projectId]/s
       canManage={can(user, "finance:write")}
       hasClient={project.clientId !== null}
       currency={currencyFormatOf(billing)}
-      tax={taxConfigOf(billing)}
       today={todayIso()}
     />
   )

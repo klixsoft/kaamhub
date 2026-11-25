@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { BILLING_CYCLES, SERVICE_STATUSES, SERVICE_TYPES, TAX_TREATMENTS } from "@/config/finance"
+import { BILLING_CYCLES, SERVICE_STATUSES, SERVICE_TYPES } from "@/config/finance"
 
 const emptyToNull = (value: string) => (value === "" ? null : value)
 const optionalDate = z.string().trim().transform(emptyToNull).pipe(z.iso.date("Enter a valid date").nullable()).nullish()
@@ -15,7 +15,6 @@ export const serviceSchema = z.object({
   expiresOn: optionalDate,
   billingCycle: z.enum(BILLING_CYCLES),
   amount: z.coerce.number("Enter the amount").min(0).max(1_000_000_000),
-  taxTreatment: z.enum(TAX_TREATMENTS),
   nextBillingOn: z.iso.date("Choose the next billing date"),
   notes: optionalText(1000),
 })

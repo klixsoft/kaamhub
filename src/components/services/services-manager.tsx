@@ -6,7 +6,7 @@ import { ConfirmDialog } from "@/components/forms/confirm-dialog"
 import { FormDialog } from "@/components/forms/form-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { BILLING_CYCLE_LABELS, type CurrencyFormat, type TaxConfig, SERVICE_STATUS_LABELS, SERVICE_TYPE_LABELS } from "@/config/finance"
+import { BILLING_CYCLE_LABELS, type CurrencyFormat, SERVICE_STATUS_LABELS, SERVICE_TYPE_LABELS } from "@/config/finance"
 import { useServerAction } from "@/hooks/use-server-action"
 import { formatDate } from "@/lib/format"
 import { formatMoney } from "@/lib/money"
@@ -21,14 +21,13 @@ interface ServicesManagerProps {
   canManage: boolean
   hasClient: boolean
   currency: CurrencyFormat
-  tax: TaxConfig
   today: string
 }
 
-export function ServicesManager({ projectId, services, canManage, hasClient, currency, tax, today }: ServicesManagerProps) {
+export function ServicesManager({ projectId, services, canManage, hasClient, currency, today }: ServicesManagerProps) {
   const router = useRouter()
   const { isPending, run } = useServerAction()
-  const formProps = { projectId, currencySymbol: currency.symbol, tax, today }
+  const formProps = { projectId, currencySymbol: currency.symbol, today }
 
   return (
     <div className="flex flex-col gap-4">
