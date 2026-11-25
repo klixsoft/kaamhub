@@ -14,7 +14,7 @@ Projects and Kanban boards, employees and freelancers, clients with their own po
 
 [Features](#features) · [Screenshots](#screenshots) · [Quick start](#quick-start) · [Deploy](#deploy-on-your-own-server) · [Docs](#documentation) · [Roadmap](#roadmap) · [Contributing](#contributing)
 
-![KaamHub project board](docs/images/board.png)
+![KaamHub project overview](docs/images/project-overview.png)
 
 </div>
 
@@ -39,6 +39,10 @@ Most service businesses run on a patchwork of tools: one for tasks, a spreadshee
 ## Features
 
 ### Projects and Kanban boards
+- A **project workspace** with its own side menu: Overview, Board, Team, Environments, Repositories and Settings
+- **Overview** shows progress, stage, deadline, team, live environment status, linked repositories and recurring services together
+- Project **stages** (e.g. In development, Live, Support and maintenance) from your own list
+- A **full-page board**: the main menu collapses and opens as an overlay, so the board gets the whole screen
 - Projects with code, client, type, priority, status, start date and deadline
 - A Kanban board for every project with drag and drop by **mouse, touch or keyboard**
 - Optimistic updates with automatic rollback if the server rejects a move
@@ -63,8 +67,13 @@ Most service businesses run on a patchwork of tools: one for tasks, a spreadshee
 - **A4 PDF** generated on the server, downloadable and emailed to the client with one click
 - Clients see their invoices in the portal
 
+### Websites and environments
+- Production, staging and development environments per project, with URL and branch
+- Hosting provider, domain registrar, and **domain and hosting expiry dates** with reminders
+- **Uptime checks** every hour, with HTTP status and response time, plus a "Check now" button
+
 ### Recurring services
-- Turn on recurring billing for any project
+- One **Services** page for every subscription, retainer and maintenance plan, with search and filters by status, billing cycle, type and project
 - Track subscriptions, retainers, support plans or maintenance per project, with supplier and renewal date
 - Service types are your own list, managed in Settings
 - Monthly, quarterly, half-yearly or yearly billing; **draft invoices are created automatically** before each period, never twice
@@ -89,8 +98,8 @@ Most service businesses run on a patchwork of tools: one for tasks, a spreadshee
 - A webhook keeps the repository list in sync
 
 ### Modules and categories
-- Switch **Clients**, **Invoices**, **Recurring services** and **GitHub** on or off; disabled modules disappear from the app and their data is kept
-- Your own **project categories** and **service types**
+- Switch **Clients**, **Invoices**, **Recurring services**, **Websites and environments** and **GitHub** on or off; disabled modules disappear from the app and their data is kept
+- Your own **project categories**, **project stages** and **service types**
 - Generic project roles: **Manager**, **Member** and **Viewer**
 
 ### Administration
@@ -122,13 +131,17 @@ Most service businesses run on a patchwork of tools: one for tasks, a spreadshee
 |---|---|
 | ![Invoice editor](docs/images/invoice-new.png) | ![Invoice PDF](docs/images/invoice-pdf.png) |
 
-| Billing settings | Recurring services |
+| Billing settings | |
 |---|---|
-| ![Billing settings](docs/images/billing-settings.png) | ![Recurring services](docs/images/services.png) |
+| ![Billing settings](docs/images/billing-settings.png) | |
 
-| Project overview | People with facet filters |
+| Full-page board | Environments with uptime |
 |---|---|
-| ![Project overview](docs/images/project-overview.png) | ![People](docs/images/people.png) |
+| ![Board](docs/images/board.png) | ![Environments](docs/images/environments.png) |
+
+| People with facet filters | Services |
+|---|---|
+| ![People](docs/images/people.png) | ![Services](docs/images/services.png) |
 
 ---
 

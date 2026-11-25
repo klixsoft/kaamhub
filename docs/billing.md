@@ -75,18 +75,18 @@ If the currency changes after a draft was saved, KaamHub asks you to save the dr
 
 ## Recurring services
 
-Turn on **Bill recurring services for this project** on the project. A **Services** tab appears (the Recurring services module must be on).
+Open **Services** in the sidebar (the Recurring services module must be on). Every recurring service is listed there, with search and filters by status, billing cycle, type and project. A project's overview also lists its services.
 
-For each service, record the type (from your own list in Settings), name, supplier, renewal date with the provider, amount before tax, billing cycle (monthly, quarterly, every 6 months or yearly) and the next billing date.
+For each service, choose the project (its client is billed) and record the type (from your own list in Settings), name, supplier, renewal date with the provider, amount before tax, billing cycle (monthly, quarterly, every 6 months or yearly) and the next billing date.
 
 - **Recurring drafts**: every day, KaamHub creates a draft invoice for each active service due within the configured lead time and moves its next billing date forward one cycle. Each billing period is invoiced only once, guaranteed by a database constraint.
 - **Taxes on recurring drafts**: drafts start without taxes. Add the taxes that apply while reviewing the draft, then issue it.
-- **Bill next period**: create the next draft immediately from the Services tab.
+- **Bill next period**: create the next draft immediately from the row menu on the Services page.
 - **Renewal reminders**: admins get an email 30, 7 and 1 day before a service expires with its provider, and the dashboard lists renewals due within 30 days.
 
 ### Scheduling the daily job
 
-The daily job runs at `POST /api/cron/daily` and requires `Authorization: Bearer <CRON_SECRET>`.
+The scheduled job (hourly with the provided stack) prepares recurring drafts, sends reminders once a day and checks environment uptime. It runs at `POST /api/cron/daily` and requires `Authorization: Bearer <CRON_SECRET>`.
 
 With the provided Docker Compose stack, the updater service calls the job every hour once `CRON_SECRET` is set; the job is safe to run repeatedly. Without the updater, call it from any scheduler:
 
