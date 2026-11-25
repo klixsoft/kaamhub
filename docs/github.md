@@ -1,5 +1,7 @@
 # GitHub integration
 
+GitHub is an optional module for software teams. Turn it on in **Settings → Modules**; until then it is hidden everywhere.
+
 KaamHub uses a **GitHub App** installed on your organisation. A GitHub App is safer than a personal access token: it has only the permissions you grant, is not tied to one person, and its tokens expire automatically.
 
 ## 1. Create the GitHub App

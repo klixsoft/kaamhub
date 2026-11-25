@@ -73,11 +73,11 @@ Numbers are `{prefix}{fiscal year}-{sequence}`. The sequence comes from an atomi
 
 If the currency changes after a draft was saved, KaamHub asks you to save the draft again before issuing.
 
-## Managed services and recurring billing
+## Recurring services
 
-When your company manages a client's domain, hosting or maintenance, turn on **We manage the domain and hosting** on the project. A **Services** tab appears.
+Turn on **Bill recurring services for this project** on the project. A **Services** tab appears (the Recurring services module must be on).
 
-For each service, record the type, name (e.g. the domain), provider, renewal date with the provider, amount before tax, billing cycle (monthly, quarterly, every 6 months or yearly) and the next billing date.
+For each service, record the type (from your own list in Settings), name, supplier, renewal date with the provider, amount before tax, billing cycle (monthly, quarterly, every 6 months or yearly) and the next billing date.
 
 - **Recurring drafts**: every day, KaamHub creates a draft invoice for each active service due within the configured lead time and moves its next billing date forward one cycle. Each billing period is invoiced only once, guaranteed by a database constraint.
 - **Taxes on recurring drafts**: drafts start without taxes. Add the taxes that apply while reviewing the draft, then issue it.

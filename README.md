@@ -2,9 +2,9 @@
 
 # KaamHub
 
-**The open-source operating system for IT companies and digital agencies.**
+**The open-source workspace to run your business: projects, people, clients and billing in one place.**
 
-Projects and Kanban boards, employees and freelancers, clients with their own portal, invoicing with whatever taxes your invoices need, recurring billing for the services you manage, and GitHub repository access that follows your team automatically. Self-hosted on your own server, updated in one click.
+Projects and Kanban boards, employees and freelancers, clients with their own portal, invoicing with whatever taxes you need, and recurring billing for subscriptions and retainers. Built for agencies, consultancies, studios, IT companies and any team that delivers work for clients. Turn on only the modules you need. Self-hosted on your own server, updated in one click.
 
 [![CI](https://github.com/klixsoft/kaamhub/actions/workflows/ci.yml/badge.svg)](https://github.com/klixsoft/kaamhub/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/klixsoft/kaamhub?sort=semver)](https://github.com/klixsoft/kaamhub/releases)
@@ -14,7 +14,7 @@ Projects and Kanban boards, employees and freelancers, clients with their own po
 
 [Features](#features) · [Screenshots](#screenshots) · [Quick start](#quick-start) · [Deploy](#deploy-on-your-own-server) · [Docs](#documentation) · [Roadmap](#roadmap) · [Contributing](#contributing)
 
-![KaamHub Kanban board](docs/images/board.png)
+![KaamHub project board](docs/images/board.png)
 
 </div>
 
@@ -24,13 +24,13 @@ Projects and Kanban boards, employees and freelancers, clients with their own po
 
 *Kaam* (काम) means **work** in Nepali.
 
-Most IT companies run on a patchwork of tools: one for tasks, a spreadsheet for staff, a shared drive for client updates and a person who remembers to add or remove developers on GitHub. KaamHub puts the day-to-day running of a software company in one place that you own:
+Most service businesses run on a patchwork of tools: one for tasks, a spreadsheet for staff, email threads for client updates and another app for invoices. KaamHub puts the day-to-day running of the business in one place that you own:
 
 - **One source of truth** for projects, people, clients and code access.
 - **Clients see progress** on a read-only board without seeing your internal work, and receive invoices from the same place.
 - **Bill anywhere.** Add any taxes per invoice (percentage or fixed), with your own currency, fiscal year and numbering.
-- **Never miss a renewal.** Domains, hosting and maintenance plans you manage are billed on schedule and renewals are flagged before they expire.
-- **Access follows the team.** Add a developer to a project and they get the repositories; remove them, or let a freelancer's contract end, and the access goes away.
+- **Never miss a renewal.** Subscriptions, retainers and maintenance plans are billed on schedule and renewals are flagged before they expire.
+- **Only what you need.** Clients, invoices, recurring services and GitHub are modules you switch on or off.
 - **Your data stays on your server.** It is a single Docker Compose stack with PostgreSQL, so there is no per-seat pricing and no vendor lock-in.
 - **Built to be extended.** It is a clean, typed Next.js codebase with documented patterns, so your team can add what your company needs.
 
@@ -63,9 +63,10 @@ Most IT companies run on a patchwork of tools: one for tasks, a spreadsheet for 
 - **A4 PDF** generated on the server, downloadable and emailed to the client with one click
 - Clients see their invoices in the portal
 
-### Managed services and recurring billing
-- Mark projects where your company manages the domain and hosting
-- Track domains, hosting, maintenance (AMC) and email per project with provider and renewal date
+### Recurring services
+- Turn on recurring billing for any project
+- Track subscriptions, retainers, support plans or maintenance per project, with supplier and renewal date
+- Service types are your own list, managed in Settings
 - Monthly, quarterly, half-yearly or yearly billing; **draft invoices are created automatically** before each period, never twice
 - Renewal reminder emails 30, 7 and 1 day before expiry, and a renewals list on the dashboard
 
@@ -73,18 +74,24 @@ Most IT companies run on a patchwork of tools: one for tasks, a spreadsheet for 
 - Invite employees and freelancers by email
 - Seven system roles: **Super Admin, Admin, HR, Project Manager, Employee, Freelancer, Client**
 - Department, designation, reporting manager, employee code, phone, joining date and contract end date
-- **Freelancer access expiry**: sign-in and GitHub access stop automatically on the date you set
+- **Freelancer access expiry**: sign-in (and GitHub access, if enabled) stops automatically on the date you set
 - Deactivate or reactivate with one click; deactivation signs the person out everywhere immediately
 
-### GitHub integration
+### GitHub integration (optional module for software teams)
+- Off by default; enable it in Settings → Modules
 - Connects to your organisation through a **GitHub App** with minimal permissions
 - Link **several repositories to one project** (frontend, backend, mobile, infrastructure, docs)
 - Create new organisation repositories without leaving the project
 - Team members connect their GitHub account from their profile
-- **Automatic access by project role**, configurable per role (e.g. Manager → Maintain, Developer → Write, Viewer → Read); when someone has several roles, the strongest permission wins
+- **Automatic access by project role**, configurable per role (e.g. Manager → Maintain, Member → Write, Viewer → Read); when someone has several roles, the strongest permission wins
 - Access is removed when someone leaves a project, is deactivated or their freelancer access expires
 - Per-repository, per-person status: *Active*, *Invitation sent* or *Failed*, with the reason
 - A webhook keeps the repository list in sync
+
+### Modules and categories
+- Switch **Clients**, **Invoices**, **Recurring services** and **GitHub** on or off; disabled modules disappear from the app and their data is kept
+- Your own **project categories** and **service types**
+- Generic project roles: **Manager**, **Member** and **Viewer**
 
 ### Administration
 - First-run setup screen that creates the first super admin
@@ -107,7 +114,7 @@ Most IT companies run on a patchwork of tools: one for tasks, a spreadsheet for 
 |---|---|
 | ![Sign in](docs/images/login.png) | ![Projects list with filters](docs/images/projects.png) |
 
-| Task editor | Team and GitHub access |
+| Task editor | Project team |
 |---|---|
 | ![Task editor](docs/images/task.png) | ![Project team](docs/images/team.png) |
 
@@ -115,13 +122,13 @@ Most IT companies run on a patchwork of tools: one for tasks, a spreadsheet for 
 |---|---|
 | ![Invoice editor](docs/images/invoice-new.png) | ![Invoice PDF](docs/images/invoice-pdf.png) |
 
-| Billing settings | Managed services |
+| Billing settings | Recurring services |
 |---|---|
-| ![Billing settings](docs/images/billing-settings.png) | ![Managed services](docs/images/services.png) |
+| ![Billing settings](docs/images/billing-settings.png) | ![Recurring services](docs/images/services.png) |
 
-| People with facet filters | GitHub settings |
+| Project overview | People with facet filters |
 |---|---|
-| ![People](docs/images/people.png) | ![GitHub settings](docs/images/github.png) |
+| ![Project overview](docs/images/project-overview.png) | ![People](docs/images/people.png) |
 
 ---
 
@@ -209,7 +216,7 @@ Open **System** in the sidebar. When a new release is available, click **Update*
 | Settings, billing and GitHub | ✓ | ✓ | | | | | |
 | System updates | ✓ | | | | | | |
 
-Inside a project, the **project role** decides what someone can do: Managers manage the project and team, Developers, Designers and QA edit tasks, and Viewers are read-only. Anyone who is a Manager on a project can manage that project, whatever their system role.
+Inside a project, the **project role** decides what someone can do: Managers manage the project and team, Members work on tasks, and Viewers are read-only. Anyone who is a Manager on a project can manage that project, whatever their system role.
 
 All permissions are defined in one file: [`src/config/roles.ts`](src/config/roles.ts).
 
@@ -223,7 +230,7 @@ All permissions are defined in one file: [`src/config/roles.ts`](src/config/role
 | [Architecture](docs/architecture.md) | Folder structure, data access, authorization and reusable components |
 | [Deployment](docs/deployment.md) | Docker Compose on a VPS, HTTPS, backups and updates |
 | [Invoicing and billing](docs/billing.md) | Billing settings, tax lines, invoice lifecycle and recurring services |
-| [GitHub integration](docs/github.md) | Creating the GitHub App and how access sync works |
+| [GitHub integration](docs/github.md) | Optional module: creating the GitHub App and how access sync works |
 | [Contributing](CONTRIBUTING.md) | Workflow and code guidelines |
 | [Security](SECURITY.md) | Reporting vulnerabilities and the security model |
 
