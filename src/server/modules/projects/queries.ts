@@ -136,6 +136,7 @@ export async function getProjectSummary(projectId: string) {
       dueDate: projects.dueDate,
       clientId: projects.clientId,
       clientName: clients.name,
+      managesInfrastructure: projects.managesInfrastructure,
       createdAt: projects.createdAt,
       updatedAt: projects.updatedAt,
     })

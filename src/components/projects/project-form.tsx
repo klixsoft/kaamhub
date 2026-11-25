@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useActionState, useEffect } from "react"
+import { useActionState, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { FormAlert } from "@/components/forms/form-alert"
 import { FormField } from "@/components/forms/form-field"
@@ -9,6 +9,7 @@ import { OptionCombobox } from "@/components/forms/option-combobox"
 import { SubmitButton } from "@/components/forms/submit-button"
 import { DatePicker } from "@/components/forms/date-picker"
 import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import {
   PRIORITY_LABELS,
@@ -37,6 +38,7 @@ export interface ProjectFormDefaults {
   startDate: string | null
   dueDate: string | null
   client: Option | null
+  managesInfrastructure: boolean
 }
 
 export function ProjectForm({ defaults, codePrefix = "" }: { defaults?: ProjectFormDefaults; codePrefix?: string }) {
@@ -44,6 +46,7 @@ export function ProjectForm({ defaults, codePrefix = "" }: { defaults?: ProjectF
   const [state, submit] = useActionState(defaults ? updateProject : createProject, null)
   const errors = state && !state.ok ? state.fieldErrors : undefined
   const invalid = (field: string) => Boolean(errors?.[field]) || undefined
+  const [managesInfrastructure, setManagesInfrastructure] = useState(defaults?.managesInfrastructure ?? false)
 
   useEffect(() => {
     if (!state?.ok) return
@@ -103,6 +106,14 @@ export function ProjectForm({ defaults, codePrefix = "" }: { defaults?: ProjectF
       <FormField id="project-description" label="Description" errors={errors?.description} className="sm:col-span-2">
         <Textarea id="project-description" name="description" rows={4} defaultValue={defaults?.description ?? ""} />
       </FormField>
+      <label htmlFor="project-manages-infrastructure" className="flex items-start gap-3 text-sm sm:col-span-2">
+        <Switch id="project-manages-infrastructure" checked={managesInfrastructure} onCheckedChange={setManagesInfrastructure} />
+        <input type="hidden" name="managesInfrastructure" value={String(managesInfrastructure)} />
+        <span>
+          <span className="block font-medium">We manage the domain and hosting</span>
+          <span className="text-muted-foreground">Adds a Services tab to track renewals and bill the client on a recurring schedule.</span>
+        </span>
+      </label>
       <div className="flex justify-end sm:col-span-2">
         <SubmitButton pendingLabel="Saving…">{defaults ? "Save changes" : "Create project"}</SubmitButton>
       </div>

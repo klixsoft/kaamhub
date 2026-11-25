@@ -33,6 +33,7 @@ async function Overview({ params }: { params: PageProps<"/projects/[projectId]/o
               startDate: project.startDate,
               dueDate: project.dueDate,
               client: project.clientId && project.clientName ? { value: project.clientId, label: project.clientName } : null,
+              managesInfrastructure: project.managesInfrastructure,
             }}
           />
         </CardContent>

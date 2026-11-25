@@ -24,6 +24,7 @@ export const projectSchema = z
     startDate: optionalDate,
     dueDate: optionalDate,
     managerId: optionalText(64),
+    managesInfrastructure: z.stringbool().default(false),
   })
   .refine((value) => !value.startDate || !value.dueDate || value.dueDate >= value.startDate, {
     path: ["dueDate"],

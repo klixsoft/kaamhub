@@ -3,16 +3,19 @@ import { PageHeader } from "@/components/layout/page-header"
 import { ProjectStatusBadge } from "@/components/projects/badges"
 import { ProjectTabs } from "@/components/projects/project-tabs"
 import { Skeleton } from "@/components/ui/skeleton"
+import { can } from "@/server/auth/session"
 import { loadProjectContext } from "@/server/modules/projects/context"
 
 async function ProjectShell({ params, children }: { params: LayoutProps<"/projects/[projectId]">["params"]; children: React.ReactNode }) {
   const { projectId } = await params
-  const { access, project } = await loadProjectContext(projectId)
+  const { user, access, project } = await loadProjectContext(projectId)
+  const showServices = project.managesInfrastructure && !access.isClientViewer && (access.canManage || can(user, "finance:read"))
   const base = `/projects/${project.id}`
   const tabs = [
     { href: base, label: "Board" },
     { href: `${base}/overview`, label: "Overview" },
     ...(access.isClientViewer ? [] : [{ href: `${base}/team`, label: "Team" }, { href: `${base}/repositories`, label: "Repositories" }]),
+    ...(showServices ? [{ href: `${base}/services`, label: "Services" }] : []),
   ]
 
   return (
