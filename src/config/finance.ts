@@ -13,22 +13,42 @@ export interface CurrencyFormat {
   numbering: NumberingSystem
 }
 
-export const DEFAULT_CURRENCY: CurrencyFormat = {
-  code: "NPR",
-  symbol: "Rs.",
-  majorName: "Rupees",
-  minorName: "Paisa",
-  numbering: "south_asian",
+
+export const TAX_TREATMENTS = ["standard", "zero_rated", "exempt"] as const
+export type TaxTreatment = (typeof TAX_TREATMENTS)[number]
+
+export function taxTreatmentLabel(treatment: TaxTreatment, taxName: string, rate: number): string {
+  if (treatment === "standard") return `${taxName} ${rate}%`
+  if (treatment === "zero_rated") return `Zero-rated ${taxName} (0%)`
+  return `No ${taxName}`
 }
 
-export const VAT_RATE = 13
+export interface TaxConfig {
+  enabled: boolean
+  name: string
+  rate: number
+}
 
-export const TAX_TREATMENTS = ["vat", "zero_rated", "exempt"] as const
-export type TaxTreatment = (typeof TAX_TREATMENTS)[number]
-export const TAX_TREATMENT_LABELS: Record<TaxTreatment, string> = {
-  vat: `VAT ${VAT_RATE}%`,
-  zero_rated: "Zero-rated (export)",
-  exempt: "No VAT",
+export function taxTreatmentOptions(tax: TaxConfig): Array<{ value: TaxTreatment; label: string }> {
+  const available: readonly TaxTreatment[] = tax.enabled ? TAX_TREATMENTS : ["exempt"]
+  return available.map((value) => ({ value, label: taxTreatmentLabel(value, tax.name, tax.rate) }))
+}
+
+export const CALENDARS = ["gregorian", "bikram_sambat"] as const
+export type Calendar = (typeof CALENDARS)[number]
+export const CALENDAR_LABELS: Record<Calendar, string> = {
+  gregorian: "Gregorian",
+  bikram_sambat: "Gregorian with Bikram Sambat (Nepal)",
+}
+
+export const MONTH_LABELS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"] as const
+
+export interface InvoiceFormat {
+  taxName: string
+  taxIdLabel: string
+  title: string
+  calendar: Calendar
+  showAmountInWords: boolean
 }
 
 export const INVOICE_STATUSES = ["draft", "issued", "partially_paid", "paid", "cancelled"] as const
@@ -52,13 +72,6 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   fonepay: "Fonepay",
   card: "Card",
   other: "Other",
-}
-
-export const TAX_REGISTRATIONS = ["vat", "pan"] as const
-export type TaxRegistration = (typeof TAX_REGISTRATIONS)[number]
-export const TAX_REGISTRATION_LABELS: Record<TaxRegistration, string> = {
-  vat: "VAT registered",
-  pan: "PAN only (not VAT registered)",
 }
 
 export const SERVICE_TYPES = ["domain", "hosting", "maintenance", "email", "other"] as const

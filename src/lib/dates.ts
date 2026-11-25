@@ -9,6 +9,11 @@ function fromUtc(time: number): string {
   return new Date(time).toISOString().slice(0, 10)
 }
 
+export function todayIso(): string {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
+}
+
 export function daysBetween(from: string, to: string): number {
   return Math.round((toUtc(to) - toUtc(from)) / DAY_MS)
 }

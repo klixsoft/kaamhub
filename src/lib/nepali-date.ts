@@ -11,13 +11,8 @@ export function toBsDate(isoDate: string): string {
   return toNepaliDate(isoDate).format("YYYY-MM-DD")
 }
 
-export function fiscalYearOf(isoDate: string): string {
+export function bsFiscalYear(isoDate: string): string {
   const bs = toNepaliDate(isoDate)
   const startYear = bs.getMonth() >= SHRAWAN_INDEX ? bs.getYear() : bs.getYear() - 1
   return `${startYear}/${String((startYear + 1) % 100).padStart(2, "0")}`
-}
-
-export function todayIso(): string {
-  const now = new Date()
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
 }
