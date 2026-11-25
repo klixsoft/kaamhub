@@ -14,6 +14,7 @@ import { homePathFor, navigationFor } from "@/config/navigation"
 import { SYSTEM_ROLE_LABELS } from "@/config/roles"
 import { requireUser } from "@/server/auth/session"
 import { getCompanyName, getModules } from "@/server/modules/settings/queries"
+import { SidebarHydrated } from "./focus-mode"
 import { NavMain } from "./nav-main"
 import { UserMenu } from "./user-menu"
 
@@ -42,6 +43,7 @@ export async function AppSidebar() {
         <UserMenu user={{ name: user.name, email: user.email, image: user.image, roleLabel: SYSTEM_ROLE_LABELS[user.role] }} />
       </SidebarFooter>
       <SidebarRail />
+      <SidebarHydrated />
     </Sidebar>
   )
 }

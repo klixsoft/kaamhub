@@ -1,7 +1,8 @@
 import { Suspense } from "react"
 import { AppSidebar } from "@/components/layout/app-sidebar"
 import { Separator } from "@/components/ui/separator"
-import { Sidebar, SidebarContent, SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { AppSidebarProvider } from "@/components/layout/app-sidebar-provider"
+import { Sidebar, SidebarContent, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
 
 function SidebarFallback() {
@@ -18,7 +19,7 @@ function SidebarFallback() {
 
 export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
-    <SidebarProvider>
+    <AppSidebarProvider>
       <Suspense fallback={<SidebarFallback />}>
         <AppSidebar />
       </Suspense>
@@ -31,6 +32,6 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
           {children}
         </div>
       </SidebarInset>
-    </SidebarProvider>
+    </AppSidebarProvider>
   )
 }
