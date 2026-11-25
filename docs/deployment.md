@@ -30,7 +30,7 @@ The installer:
 1. installs Docker if it is missing,
 2. asks for your domain (leave empty to run on `http://<server-ip>:3000`) and, optionally, an SMTP host,
 3. downloads `docker-compose.yml` and the `Caddyfile` into `/opt/kaamhub`,
-4. generates every secret (database password, auth secret, updater token, cron secret) into `/opt/kaamhub/.env`,
+4. generates every secret (database password, auth secret, updater token, cron secret, encryption key) into `/opt/kaamhub/.env`,
 5. starts the stack, waits until it is healthy and prints the URL.
 
 Open `https://your-domain/setup` to create the first administrator.
