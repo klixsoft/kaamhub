@@ -22,6 +22,7 @@ Edit `.env.local`:
 | `SMTP_*` | No | Without SMTP, emails are written to the server log |
 | `GITHUB_*` | No | Only needed to test the GitHub integration |
 | `UPDATE_REPOSITORY`, `UPDATER_*` | No | Only needed for the System update page |
+| `CRON_SECRET` | No | Enables `POST /api/cron/daily` for recurring invoices and renewal reminders |
 
 Apply migrations and start the dev server:
 

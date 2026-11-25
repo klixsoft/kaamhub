@@ -6,7 +6,7 @@ KaamHub runs as three containers managed by Docker Compose:
 |---|---|
 | `db` | PostgreSQL 17 with a named volume |
 | `app` | The Next.js application. Runs database migrations on start. |
-| `updater` | A small service that pulls a new app image and restarts it when an admin clicks **Update** |
+| `updater` | Pulls a new app image and restarts it when an admin clicks **Update**, and triggers the daily billing job |
 
 ## 1. Publish images
 
@@ -47,7 +47,7 @@ mv .env.production.example .env
 chmod 600 .env
 ```
 
-Fill in `.env`. At minimum: `APP_IMAGE`, `UPDATER_IMAGE`, `APP_URL`, `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET`, `UPDATER_TOKEN` and `UPDATE_REPOSITORY`. Generate secrets with:
+Fill in `.env`. At minimum: `APP_IMAGE`, `UPDATER_IMAGE`, `APP_URL`, `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET`, `UPDATER_TOKEN`, `CRON_SECRET` and `UPDATE_REPOSITORY`. `CRON_SECRET` enables the daily job that prepares recurring invoices and sends renewal reminders (see [billing.md](billing.md#scheduling-the-daily-job)). Generate secrets with:
 
 ```bash
 openssl rand -base64 48

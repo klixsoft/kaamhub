@@ -4,7 +4,7 @@
 
 **The open-source operating system for IT companies and digital agencies.**
 
-Projects and Kanban boards, employees and freelancers, clients with their own portal, and GitHub repository access that follows your team automatically. Self-hosted on your own server, updated in one click.
+Projects and Kanban boards, employees and freelancers, clients with their own portal, invoicing with your country's tax rules, recurring billing for the services you manage, and GitHub repository access that follows your team automatically. Self-hosted on your own server, updated in one click.
 
 [![CI](https://github.com/klixsoft/kaamhub/actions/workflows/ci.yml/badge.svg)](https://github.com/klixsoft/kaamhub/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/klixsoft/kaamhub?sort=semver)](https://github.com/klixsoft/kaamhub/releases)
@@ -27,7 +27,9 @@ Projects and Kanban boards, employees and freelancers, clients with their own po
 Most IT companies run on a patchwork of tools: one for tasks, a spreadsheet for staff, a shared drive for client updates and a person who remembers to add or remove developers on GitHub. KaamHub puts the day-to-day running of a software company in one place that you own:
 
 - **One source of truth** for projects, people, clients and code access.
-- **Clients see progress** on a read-only board without seeing your internal work.
+- **Clients see progress** on a read-only board without seeing your internal work, and receive invoices from the same place.
+- **Bill anywhere.** Tax name, rate, currency, fiscal year and numbering are configurable, with presets for several countries.
+- **Never miss a renewal.** Domains, hosting and maintenance plans you manage are billed on schedule and renewals are flagged before they expire.
 - **Access follows the team.** Add a developer to a project and they get the repositories; remove them, or let a freelancer's contract end, and the access goes away.
 - **Your data stays on your server.** It is a single Docker Compose stack with PostgreSQL, so there is no per-seat pricing and no vendor lock-in.
 - **Built to be extended.** It is a clean, typed Next.js codebase with documented patterns, so your team can add what your company needs.
@@ -50,6 +52,24 @@ Most IT companies run on a patchwork of tools: one for tasks, a spreadsheet for 
 - Clients only ever see **their own company's projects**
 - A read-only board that shows only client-visible tasks
 - Internal sections (team, repositories, people, settings) are blocked for clients
+
+### Invoicing that works in any country
+- Tax name, standard rate and tax-number label are configurable (VAT, GST, sales tax or none)
+- One-click **country presets**: Nepal, India, United Kingdom, European Union, United States, Australia, or generic
+- Global currency setting with symbol, number format (100,000 or 1,00,000) and optional **total in words**
+- Fiscal-year based numbering with your own prefix, e.g. `INV-2026-0001`, `INV-2026-27-0001`
+- Optional **Bikram Sambat** dates and fiscal year for Nepal
+- Standard, zero-rated and no-tax treatments per invoice
+- Draft → issue → partial or full payment → paid, with cancellation instead of deletion once issued
+- Seller and buyer details are frozen when an invoice is issued
+- **A4 PDF** generated on the server, downloadable and emailed to the client with one click
+- Clients see their invoices in the portal
+
+### Managed services and recurring billing
+- Mark projects where your company manages the domain and hosting
+- Track domains, hosting, maintenance (AMC) and email per project with provider and renewal date
+- Monthly, quarterly, half-yearly or yearly billing; **draft invoices are created automatically** before each period, never twice
+- Renewal reminder emails 30, 7 and 1 day before expiry, and a renewals list on the dashboard
 
 ### People and freelancers
 - Invite employees and freelancers by email
@@ -93,6 +113,14 @@ Most IT companies run on a patchwork of tools: one for tasks, a spreadsheet for 
 |---|---|
 | ![Task editor](docs/images/task.png) | ![Project team](docs/images/team.png) |
 
+| Invoice | Invoice PDF |
+|---|---|
+| ![Invoice details](docs/images/invoice.png) | ![Invoice PDF](docs/images/invoice-pdf.png) |
+
+| Billing settings with country presets | Managed services |
+|---|---|
+| ![Billing settings](docs/images/billing-settings.png) | ![Managed services](docs/images/services.png) |
+
 | People with facet filters | GitHub settings |
 |---|---|
 | ![People](docs/images/people.png) | ![GitHub settings](docs/images/github.png) |
@@ -109,6 +137,7 @@ Most IT companies run on a patchwork of tools: one for tasks, a spreadsheet for 
 | Database | PostgreSQL with [Drizzle ORM](https://orm.drizzle.team) |
 | Auth | [Better Auth](https://www.better-auth.com) |
 | Drag and drop | [dnd-kit](https://dndkit.com) |
+| PDF | [react-pdf](https://react-pdf.org) |
 | Validation | [zod](https://zod.dev) |
 | GitHub | GitHub App via [Octokit](https://github.com/octokit) |
 | Deployment | Docker, Docker Compose, GitHub Actions, GitHub Container Registry |
@@ -196,7 +225,9 @@ Open **System** in the sidebar. When a new release is available, click **Update*
 | Invite and edit people | ✓ | ✓ | ✓ | | | | |
 | View clients | ✓ | ✓ | ✓ | ✓ | | | |
 | Edit clients | ✓ | ✓ | | | | | |
-| Settings and GitHub | ✓ | ✓ | | | | | |
+| Invoices and services | ✓ | ✓ | | | | | |
+| See own company's issued invoices | | | | | | | ✓ |
+| Settings, billing and GitHub | ✓ | ✓ | | | | | |
 | System updates | ✓ | | | | | | |
 
 Inside a project, the **project role** decides what someone can do: Managers manage the project and team, Developers, Designers and QA edit tasks, and Viewers are read-only. Anyone who is a Manager on a project can manage that project, whatever their system role.
@@ -212,6 +243,7 @@ All permissions are defined in one file: [`src/config/roles.ts`](src/config/role
 | [Development](docs/development.md) | Local setup, scripts and database migrations |
 | [Architecture](docs/architecture.md) | Folder structure, data access, authorization and reusable components |
 | [Deployment](docs/deployment.md) | Docker Compose on a VPS, HTTPS, backups and updates |
+| [Invoicing and billing](docs/billing.md) | Tax settings, country presets, invoice lifecycle and recurring services |
 | [GitHub integration](docs/github.md) | Creating the GitHub App and how access sync works |
 | [Contributing](CONTRIBUTING.md) | Workflow and code guidelines |
 | [Security](SECURITY.md) | Reporting vulnerabilities and the security model |
@@ -220,12 +252,14 @@ All permissions are defined in one file: [`src/config/roles.ts`](src/config/role
 
 ## Roadmap
 
-- [ ] **Invoices and VAT bills** following Nepal's tax invoice format, with A4 PDF output and client delivery
-- [ ] **Managed services**: domain, hosting and maintenance per project, with recurring billing and expiry reminders
+- [x] **Invoices** with configurable tax, country presets, A4 PDF and email delivery
+- [x] **Managed services** with recurring billing and renewal reminders
+- [ ] Credit notes and recurring invoices for non-service work
+- [ ] Custom fonts and logo on invoices
 - [ ] **Company letters** on your letterhead (offer letter, contract, NDA, experience letter) with configurable page offsets
 - [ ] **My letters** on employee profiles
 - [ ] Time tracking and timesheets
-- [ ] Attendance and leave, with Bikram Sambat (BS) dates
+- [ ] Attendance and leave with configurable work weeks and holiday calendars
 - [ ] Support tickets from the client portal
 - [ ] Commits and pull requests linked to tasks
 - [ ] Two-factor authentication
