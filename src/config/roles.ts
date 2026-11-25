@@ -20,15 +20,13 @@ export const SYSTEM_ROLE_LABELS: Record<SystemRole, string> = {
   client: "Client",
 }
 
-export const PROJECT_ROLES = ["manager", "developer", "designer", "qa", "viewer"] as const
+export const PROJECT_ROLES = ["manager", "member", "viewer"] as const
 
 export type ProjectRole = (typeof PROJECT_ROLES)[number]
 
 export const PROJECT_ROLE_LABELS: Record<ProjectRole, string> = {
   manager: "Manager",
-  developer: "Developer",
-  designer: "Designer",
-  qa: "QA",
+  member: "Member",
   viewer: "Viewer",
 }
 

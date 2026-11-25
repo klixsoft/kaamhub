@@ -33,16 +33,6 @@ export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
   cancelled: "Cancelled",
 }
 
-export const PROJECT_TYPES = ["website", "mobile_app", "software", "maintenance", "other"] as const
-export type ProjectType = (typeof PROJECT_TYPES)[number]
-export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
-  website: "Website",
-  mobile_app: "Mobile app",
-  software: "Software",
-  maintenance: "Maintenance",
-  other: "Other",
-}
-
 export const PRIORITIES = ["low", "medium", "high", "urgent"] as const
 export type Priority = (typeof PRIORITIES)[number]
 export const PRIORITY_LABELS: Record<Priority, string> = {

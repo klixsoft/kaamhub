@@ -7,13 +7,18 @@ import {
   invoiceStatusEnum,
   paymentMethodEnum,
   serviceStatusEnum,
-  serviceTypeEnum,
   taxKindEnum,
 } from "./enums"
 import { id, timestamps } from "./helpers"
 import { projects } from "./projects"
 
 const money = (name: string) => numeric(name, { precision: 14, scale: 2, mode: "number" })
+
+export const serviceCategories = pgTable("service_category", {
+  id: id(),
+  name: text("name").notNull().unique(),
+  ...timestamps,
+})
 
 export const managedServices = pgTable(
   "managed_service",
@@ -22,7 +27,7 @@ export const managedServices = pgTable(
     projectId: uuid("project_id")
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
-    type: serviceTypeEnum("type").notNull(),
+    categoryId: uuid("category_id").references(() => serviceCategories.id, { onDelete: "set null" }),
     name: text("name").notNull(),
     provider: text("provider"),
     status: serviceStatusEnum("status").notNull().default("active"),

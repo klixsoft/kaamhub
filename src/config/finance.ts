@@ -60,16 +60,6 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   other: "Other",
 }
 
-export const SERVICE_TYPES = ["domain", "hosting", "maintenance", "email", "other"] as const
-export type ServiceType = (typeof SERVICE_TYPES)[number]
-export const SERVICE_TYPE_LABELS: Record<ServiceType, string> = {
-  domain: "Domain",
-  hosting: "Hosting",
-  maintenance: "Maintenance (AMC)",
-  email: "Email",
-  other: "Other",
-}
-
 export const BILLING_CYCLES = ["monthly", "quarterly", "half_yearly", "yearly"] as const
 export type BillingCycle = (typeof BILLING_CYCLES)[number]
 export const BILLING_CYCLE_LABELS: Record<BillingCycle, string> = {

@@ -13,8 +13,14 @@ import {
 } from "drizzle-orm/pg-core"
 import { users } from "./auth"
 import { clients } from "./clients"
-import { priorityEnum, projectRoleEnum, projectStatusEnum, projectTypeEnum, taskTypeEnum, taskVisibilityEnum } from "./enums"
+import { priorityEnum, projectRoleEnum, projectStatusEnum, taskTypeEnum, taskVisibilityEnum } from "./enums"
 import { id, timestamps } from "./helpers"
+
+export const projectCategories = pgTable("project_category", {
+  id: id(),
+  name: text("name").notNull().unique(),
+  ...timestamps,
+})
 
 export const projects = pgTable(
   "project",
@@ -25,12 +31,12 @@ export const projects = pgTable(
     description: text("description"),
     clientId: uuid("client_id").references(() => clients.id, { onDelete: "set null" }),
     status: projectStatusEnum("status").notNull().default("planning"),
-    type: projectTypeEnum("type").notNull().default("software"),
     priority: priorityEnum("priority").notNull().default("medium"),
     startDate: date("start_date"),
     dueDate: date("due_date"),
     taskSequence: integer("task_sequence").notNull().default(0),
-    managesInfrastructure: boolean("manages_infrastructure").notNull().default(false),
+    categoryId: uuid("category_id").references(() => projectCategories.id, { onDelete: "set null" }),
+    recurringBilling: boolean("recurring_billing").notNull().default(false),
     createdById: text("created_by_id").references(() => users.id, { onDelete: "set null" }),
     ...timestamps,
   },
@@ -38,6 +44,7 @@ export const projects = pgTable(
     uniqueIndex("project_code_idx").on(table.code),
     index("project_client_idx").on(table.clientId),
     index("project_status_idx").on(table.status),
+    index("project_category_idx").on(table.categoryId),
   ],
 )
 
@@ -50,7 +57,7 @@ export const projectMembers = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    role: projectRoleEnum("role").notNull().default("developer"),
+    role: projectRoleEnum("role").notNull().default("member"),
     ...timestamps,
   },
   (table) => [primaryKey({ columns: [table.projectId, table.userId] }), index("project_member_user_idx").on(table.userId)],
