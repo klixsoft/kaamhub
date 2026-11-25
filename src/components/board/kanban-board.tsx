@@ -133,7 +133,7 @@ export function KanbanBoard({ projectId, projectCode, columns, tasks, canEdit }:
           setLanes(serverLanes)
         }}
       >
-        <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-4 md:-mx-6 md:px-6">
+        <div className="-mx-4 flex min-h-0 flex-1 gap-4 overflow-x-auto px-4 pb-2 md:-mx-6 md:px-6">
           {columns.map((column) => (
             <BoardColumn
               key={column.id}

@@ -74,3 +74,16 @@ export async function getBoard(access: ProjectAccess): Promise<{ columns: BoardC
 
   return { columns, tasks: rows }
 }
+
+export async function getColumnCounts(access: ProjectAccess) {
+  return db
+    .select({ id: boardColumns.id, name: boardColumns.name, isDone: boardColumns.isDone, count: sql<number>`cast(count(${tasks.id}) as integer)` })
+    .from(boardColumns)
+    .leftJoin(
+      tasks,
+      and(eq(tasks.columnId, boardColumns.id), access.isClientViewer ? eq(tasks.visibility, "client") : undefined),
+    )
+    .where(eq(boardColumns.projectId, access.projectId))
+    .groupBy(boardColumns.id, boardColumns.name, boardColumns.isDone, boardColumns.position)
+    .orderBy(asc(boardColumns.position))
+}

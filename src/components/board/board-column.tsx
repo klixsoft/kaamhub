@@ -23,7 +23,7 @@ export function BoardColumn({ column, tasks, projectCode, canEdit, onOpenTask, o
   return (
     <section
       aria-labelledby={`column-${column.id}`}
-      className="flex w-72 shrink-0 flex-col rounded-xl bg-muted/50 md:w-80"
+      className="flex max-h-full w-72 shrink-0 flex-col rounded-xl bg-muted/50 md:w-80"
     >
       <header className="flex items-center justify-between gap-2 px-3 pt-3 pb-2">
         <h2 id={`column-${column.id}`} className="flex items-center gap-2 text-sm font-semibold">
@@ -39,7 +39,7 @@ export function BoardColumn({ column, tasks, projectCode, canEdit, onOpenTask, o
       <SortableContext items={tasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>
         <ul
           ref={setNodeRef}
-          className={cn("flex min-h-24 flex-1 flex-col gap-2 rounded-b-xl p-2 transition-colors", isOver && "bg-primary/5")}
+          className={cn("flex min-h-24 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain rounded-b-xl p-2 transition-colors", isOver && "bg-primary/5")}
         >
           {tasks.map((task) => (
             <SortableTaskCard key={task.id} task={task} projectCode={projectCode} onOpen={onOpenTask} disabled={!canEdit} />
