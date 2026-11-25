@@ -156,7 +156,19 @@ Restore into an empty database:
 docker compose exec -T db pg_restore -U kaamhub -d kaamhub --clean < backup.dump
 ```
 
-Keep `.env` in a safe place too; `BETTER_AUTH_SECRET` is needed to keep existing sessions valid.
+Project documents are stored in the `app-storage` volume. Back them up with the database:
+
+```bash
+docker compose run --rm --no-deps -u 0 -v "$PWD":/backup --entrypoint tar app czf /backup/documents-$(date +%F).tar.gz -C /app storage
+```
+
+Restore them into the volume:
+
+```bash
+docker compose run --rm --no-deps -u 0 -v "$PWD":/backup --entrypoint tar app xzf /backup/documents.tar.gz -C /app
+```
+
+Keep `.env` in a safe place too; `BETTER_AUTH_SECRET` is needed to keep existing sessions valid and `ENCRYPTION_KEY` to read environment credentials.
 
 ## Publishing images
 

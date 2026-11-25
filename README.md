@@ -39,7 +39,8 @@ Most service businesses run on a patchwork of tools: one for tasks, a spreadshee
 ## Features
 
 ### Projects and Kanban boards
-- A **project workspace** with its own side menu: Overview, Board, Team, Environments, Repositories and Settings
+- A **project workspace** with its own side menu: Overview, Board, Documents, Team, Environments, Repositories and Settings
+- **Project documents**: upload requirements (SRS), designs, contracts and other files for the whole project team, and share chosen ones with the client. PDF, Office, OpenDocument, text, images and ZIP up to 25 MB, stored on your own server
 - **Overview** shows progress, stage, deadline, team, live environment status, linked repositories and recurring services together
 - Project **stages** (e.g. In development, Live, Support and maintenance) from your own list
 - A **full-page board**: the main menu collapses and opens as an overlay, so the board gets the whole screen
@@ -59,6 +60,7 @@ Most service businesses run on a patchwork of tools: one for tasks, a spreadshee
 - Clients only ever see **their own company's projects**
 - A read-only board that shows only client-visible tasks
 - Clients can **join the discussion** on client-visible cards; they only see comments shared with them
+- Clients can open and download documents shared with them
 - Internal sections (team, repositories, people, settings) are blocked for clients
 
 ### Invoicing that works in any country
