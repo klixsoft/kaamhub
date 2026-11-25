@@ -17,9 +17,10 @@ export async function GET(request: NextRequest, context: RouteContext<"/api/opti
   const search = request.nextUrl.searchParams
   const query = (search.get("q") ?? "").trim().slice(0, 100)
   const projectId = search.get("projectId") ?? undefined
+  const clientId = search.get("clientId") ?? undefined
 
   try {
-    const items = await resolveOptions(resource, query, { projectId }, user)
+    const items = await resolveOptions(resource, query, { projectId, clientId }, user)
     if (items === null) return NextResponse.json({ error: "Forbidden" }, { status: 403, headers: NO_STORE })
     return NextResponse.json({ items }, { headers: NO_STORE })
   } catch (error) {

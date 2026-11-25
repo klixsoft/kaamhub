@@ -4,7 +4,7 @@ import { SYSTEM_ROLE_LABELS } from "@/config/roles"
 import type { Option, OptionParams, OptionResource } from "@/lib/options"
 import { type CurrentUser, can } from "@/server/auth/session"
 import { db } from "@/server/db"
-import { clients, departments, designations, githubRepositories, projectMembers, users } from "@/server/db/schema"
+import { clients, departments, designations, githubRepositories, projectMembers, projects, users } from "@/server/db/schema"
 import { isUuid, searchAcross } from "@/server/lib/query"
 import { resolveProjectAccess } from "@/server/modules/projects/access"
 
@@ -54,6 +54,16 @@ const resolvers: Record<OptionResource, Resolver> = {
       .orderBy(asc(githubRepositories.fullName))
       .limit(LIMIT)
     return rows.map((row) => ({ value: row.id, label: row.fullName, description: row.description ?? undefined }))
+  },
+  "client-projects": async (query, params, user) => {
+    if (!can(user, "finance:read") || !params.clientId || !isUuid(params.clientId)) return null
+    const rows = await db
+      .select({ id: projects.id, code: projects.code, name: projects.name })
+      .from(projects)
+      .where(and(eq(projects.clientId, params.clientId), searchAcross(query, [projects.name, projects.code])))
+      .orderBy(asc(projects.name))
+      .limit(LIMIT)
+    return rows.map((row) => ({ value: row.id, label: row.name, description: row.code }))
   },
   "project-members": async (query, params, user) => {
     if (!params.projectId || !isUuid(params.projectId)) return null
