@@ -2,14 +2,23 @@
 
 import { eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
-import { db } from "@/server/db"
-import { projectEnvironments } from "@/server/db/schema"
+import { db, type Transaction } from "@/server/db"
+import { environmentCredentialAccess, environmentCredentials, projectEnvironments } from "@/server/db/schema"
 import { action, formAction } from "@/server/lib/action"
 import { AppError, notFoundError } from "@/server/lib/errors"
 import { requireProjectCapability } from "@/server/modules/projects/guard"
 import { recordAudit } from "@/server/services/audit"
+import { decryptSecret, encryptSecret } from "@/server/lib/crypto"
+import { loadCredentialProject, loadEnvironmentProject, projectMemberIds, readableCredential } from "./credentials"
 import { checkEnvironment } from "./health"
-import { environmentIdSchema, environmentSchema, environmentUpdateSchema } from "./schema"
+import {
+  credentialCreateSchema,
+  credentialIdSchema,
+  credentialUpdateSchema,
+  environmentIdSchema,
+  environmentSchema,
+  environmentUpdateSchema,
+} from "./schema"
 
 const environmentsPath = (projectId: string) => `/projects/${projectId}/environments`
 
@@ -73,5 +82,100 @@ export const checkEnvironmentNow = action({
     const result = await checkEnvironment(environmentId, environment.url)
     revalidatePath(environmentsPath(environment.projectId))
     return result
+  },
+})
+
+async function requireCredentialManager(user: Parameters<typeof requireProjectCapability>[0], projectId: string | null) {
+  if (!projectId) throw notFoundError("Environment")
+  const access = await requireProjectCapability(user, projectId, "manage")
+  if (access.isClientViewer) throw new AppError("Clients cannot manage credentials.", "FORBIDDEN")
+  return projectId
+}
+
+async function writeAccess(tx: Transaction, credentialId: string, projectId: string, userIds: string[]) {
+  const allowed = await projectMemberIds(projectId, userIds)
+  if (allowed.length !== new Set(userIds).size) throw new AppError("Credentials can only be shared with members of this project.")
+  await tx.delete(environmentCredentialAccess).where(eq(environmentCredentialAccess.credentialId, credentialId))
+  if (allowed.length > 0) await tx.insert(environmentCredentialAccess).values(allowed.map((userId) => ({ credentialId, userId })))
+}
+
+export const createCredential = action({
+  schema: credentialCreateSchema,
+  module: "environments",
+  handler: async ({ environmentId, secret, notes, userIds, ...fields }, { user }) => {
+    const projectId = await requireCredentialManager(user, await loadEnvironmentProject(environmentId))
+    const created = await db.transaction(async (tx) => {
+      const [credential] = await tx
+        .insert(environmentCredentials)
+        .values({
+          ...fields,
+          environmentId,
+          username: fields.username ?? null,
+          loginUrl: fields.loginUrl ?? null,
+          secretEncrypted: encryptSecret(secret),
+          notesEncrypted: notes ? encryptSecret(notes) : null,
+          createdById: user.id,
+        })
+        .returning({ id: environmentCredentials.id })
+      if (!credential) throw new Error("Credential insert returned no row")
+      await writeAccess(tx, credential.id, projectId, userIds)
+      return credential
+    })
+    await recordAudit({ actorId: user.id, action: "credential.created", entityType: "project", entityId: projectId, metadata: { credentialId: created.id } })
+    revalidatePath(environmentsPath(projectId))
+    return created
+  },
+})
+
+export const updateCredential = action({
+  schema: credentialUpdateSchema,
+  module: "environments",
+  handler: async ({ credentialId, environmentId: _environmentId, secret, notes, userIds, ...fields }, { user }) => {
+    const location = await loadCredentialProject(credentialId)
+    const projectId = await requireCredentialManager(user, location?.projectId ?? null)
+    await db.transaction(async (tx) => {
+      await tx
+        .update(environmentCredentials)
+        .set({
+          label: fields.label,
+          username: fields.username ?? null,
+          loginUrl: fields.loginUrl ?? null,
+          notesEncrypted: notes ? encryptSecret(notes) : null,
+          ...(secret ? { secretEncrypted: encryptSecret(secret) } : {}),
+        })
+        .where(eq(environmentCredentials.id, credentialId))
+      await writeAccess(tx, credentialId, projectId, userIds)
+    })
+    await recordAudit({ actorId: user.id, action: "credential.updated", entityType: "project", entityId: projectId, metadata: { credentialId } })
+    revalidatePath(environmentsPath(projectId))
+    return undefined
+  },
+})
+
+export const deleteCredential = action({
+  schema: credentialIdSchema,
+  module: "environments",
+  handler: async ({ credentialId }, { user }) => {
+    const location = await loadCredentialProject(credentialId)
+    const projectId = await requireCredentialManager(user, location?.projectId ?? null)
+    await db.delete(environmentCredentials).where(eq(environmentCredentials.id, credentialId))
+    await recordAudit({ actorId: user.id, action: "credential.deleted", entityType: "project", entityId: projectId, metadata: { credentialId } })
+    revalidatePath(environmentsPath(projectId))
+    return undefined
+  },
+})
+
+export const revealCredential = action({
+  schema: credentialIdSchema,
+  module: "environments",
+  handler: async ({ credentialId }, { user }) => {
+    const location = await loadCredentialProject(credentialId)
+    if (!location) throw notFoundError("Credential")
+    const access = await requireProjectCapability(user, location.projectId, "view")
+    if (access.isClientViewer) throw notFoundError("Credential")
+    const credential = await readableCredential(credentialId, { userId: user.id, canManage: access.canManage })
+    if (!credential) throw notFoundError("Credential")
+    await recordAudit({ actorId: user.id, action: "credential.revealed", entityType: "project", entityId: location.projectId, metadata: { credentialId } })
+    return { secret: decryptSecret(credential.secretEncrypted), notes: credential.notesEncrypted ? decryptSecret(credential.notesEncrypted) : null }
   },
 })
