@@ -12,6 +12,7 @@ function navigationFor(base: string, access: ProjectAccess, modules: ModuleState
   return [
     { href: base, label: "Overview", icon: "overview", exact: true },
     { href: `${base}/board`, label: "Board", icon: "board" },
+    { href: `${base}/documents`, label: "Documents", icon: "documents" },
     ...(internal ? [{ href: `${base}/team`, label: "Team", icon: "team" } as const] : []),
     ...(internal && modules.environments ? [{ href: `${base}/environments`, label: "Environments", icon: "environments" } as const] : []),
     ...(internal && modules.github ? [{ href: `${base}/repositories`, label: "Repositories", icon: "repositories" } as const] : []),
