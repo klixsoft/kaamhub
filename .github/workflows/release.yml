@@ -3,6 +3,12 @@ name: Release
 on:
   push:
     tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, e.g. 0.1.0. Creates the tag v<version> on the selected branch."
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -27,8 +33,13 @@ jobs:
 
       - name: Resolve version and image name
         id: meta
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
-          echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          VERSION="${INPUT_VERSION:-${GITHUB_REF_NAME#v}}"
+          VERSION="${VERSION#v}"
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid version: $VERSION" >&2; exit 1; }
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "image=ghcr.io/${GITHUB_REPOSITORY,,}${{ matrix.suffix }}" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-qemu-action@v3
@@ -61,10 +72,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Resolve tag
+        id: tag
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          VERSION="${INPUT_VERSION:-${GITHUB_REF_NAME#v}}"
+          echo "name=v${VERSION#v}" >> "$GITHUB_OUTPUT"
+
       - name: Pin the installer to this release
-        run: sed "s|KAAMHUB_BRANCH:-main|KAAMHUB_BRANCH:-${GITHUB_REF_NAME}|" scripts/install.sh > install.sh
+        run: sed "s|KAAMHUB_BRANCH:-main|KAAMHUB_BRANCH:-${{ steps.tag.outputs.name }}|" scripts/install.sh > install.sh
 
       - uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.tag.outputs.name }}
+          target_commitish: ${{ github.sha }}
+          name: KaamHub ${{ steps.tag.outputs.name }}
           generate_release_notes: true
           files: install.sh
