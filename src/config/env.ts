@@ -30,6 +30,7 @@ const envSchema = z.object({
   UPDATE_REPOSITORY: optionalString,
   UPDATER_URL: optionalString,
   UPDATER_TOKEN: optionalString,
+  CRON_SECRET: optionalString,
 })
 
 export type Env = z.infer<typeof envSchema>
