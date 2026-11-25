@@ -89,3 +89,15 @@ export const GITHUB_PERMISSION_LABELS: Record<GithubPermission, string> = {
 
 export const GITHUB_ACCESS_STATUSES = ["pending", "invited", "active", "failed"] as const
 export type GithubAccessStatus = (typeof GITHUB_ACCESS_STATUSES)[number]
+
+export const ENVIRONMENT_KINDS = ["production", "staging", "development", "other"] as const
+export type EnvironmentKind = (typeof ENVIRONMENT_KINDS)[number]
+export const ENVIRONMENT_KIND_LABELS: Record<EnvironmentKind, string> = {
+  production: "Production",
+  staging: "Staging",
+  development: "Development",
+  other: "Other",
+}
+
+export const ENVIRONMENT_HEALTH = ["unknown", "up", "down"] as const
+export type EnvironmentHealth = (typeof ENVIRONMENT_HEALTH)[number]

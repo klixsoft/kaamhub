@@ -10,6 +10,8 @@ import { PROJECT_ROLES, SYSTEM_ROLES } from "@/config/roles"
 import {
   CLIENT_STATUSES,
   ENGAGEMENT_TYPES,
+  ENVIRONMENT_HEALTH,
+  ENVIRONMENT_KINDS,
   GITHUB_ACCESS_STATUSES,
   GITHUB_PERMISSIONS,
   PRIORITIES,
@@ -38,3 +40,5 @@ export const invoiceStatusEnum = pgEnum("invoice_status", INVOICE_STATUSES)
 export const paymentMethodEnum = pgEnum("payment_method", PAYMENT_METHODS)
 export const billingCycleEnum = pgEnum("billing_cycle", BILLING_CYCLES)
 export const serviceStatusEnum = pgEnum("service_status", SERVICE_STATUSES)
+export const environmentKindEnum = pgEnum("environment_kind", ENVIRONMENT_KINDS)
+export const environmentHealthEnum = pgEnum("environment_health", ENVIRONMENT_HEALTH)

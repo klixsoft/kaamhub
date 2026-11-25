@@ -57,6 +57,20 @@
       "when": 1795595295111,
       "tag": "0007_drop_fixed_types",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795595912225,
+      "tag": "0008_stages_and_environments",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1795595917771,
+      "tag": "0009_drop_recurring_billing_flag",
+      "breakpoints": true
     }
   ]
 }

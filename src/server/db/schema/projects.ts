@@ -8,15 +8,22 @@ import {
   pgTable,
   primaryKey,
   text,
+  timestamp,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core"
 import { users } from "./auth"
 import { clients } from "./clients"
-import { priorityEnum, projectRoleEnum, projectStatusEnum, taskTypeEnum, taskVisibilityEnum } from "./enums"
+import { environmentHealthEnum, environmentKindEnum, priorityEnum, projectRoleEnum, projectStatusEnum, taskTypeEnum, taskVisibilityEnum } from "./enums"
 import { id, timestamps } from "./helpers"
 
 export const projectCategories = pgTable("project_category", {
+  id: id(),
+  name: text("name").notNull().unique(),
+  ...timestamps,
+})
+
+export const projectStages = pgTable("project_stage", {
   id: id(),
   name: text("name").notNull().unique(),
   ...timestamps,
@@ -36,7 +43,7 @@ export const projects = pgTable(
     dueDate: date("due_date"),
     taskSequence: integer("task_sequence").notNull().default(0),
     categoryId: uuid("category_id").references(() => projectCategories.id, { onDelete: "set null" }),
-    recurringBilling: boolean("recurring_billing").notNull().default(false),
+    stageId: uuid("stage_id").references(() => projectStages.id, { onDelete: "set null" }),
     createdById: text("created_by_id").references(() => users.id, { onDelete: "set null" }),
     ...timestamps,
   },
@@ -45,6 +52,7 @@ export const projects = pgTable(
     index("project_client_idx").on(table.clientId),
     index("project_status_idx").on(table.status),
     index("project_category_idx").on(table.categoryId),
+    index("project_stage_idx").on(table.stageId),
   ],
 )
 
@@ -117,4 +125,33 @@ export const taskAssignees = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
   },
   (table) => [primaryKey({ columns: [table.taskId, table.userId] }), index("task_assignee_user_idx").on(table.userId)],
+)
+
+export const projectEnvironments = pgTable(
+  "project_environment",
+  {
+    id: id(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    kind: environmentKindEnum("kind").notNull().default("production"),
+    url: text("url"),
+    branch: text("branch"),
+    hostingProvider: text("hosting_provider"),
+    domainRegistrar: text("domain_registrar"),
+    domainExpiresOn: date("domain_expires_on"),
+    hostingExpiresOn: date("hosting_expires_on"),
+    notes: text("notes"),
+    health: environmentHealthEnum("health").notNull().default("unknown"),
+    lastStatusCode: integer("last_status_code"),
+    lastResponseMs: integer("last_response_ms"),
+    lastCheckedAt: timestamp("last_checked_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (table) => [
+    index("project_environment_project_idx").on(table.projectId),
+    index("project_environment_domain_expiry_idx").on(table.domainExpiresOn),
+    index("project_environment_hosting_expiry_idx").on(table.hostingExpiresOn),
+  ],
 )

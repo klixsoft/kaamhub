@@ -4,7 +4,7 @@ import { clientContacts, clients } from "./clients"
 import { githubAccessGrants, githubRepositories, projectRepositories } from "./github"
 import { departments, designations, memberProfiles } from "./people"
 import { invoiceItems, invoicePayments, invoices, invoiceTaxes, managedServices } from "./finance"
-import { boardColumns, projectMembers, projects, taskAssignees, tasks } from "./projects"
+import { boardColumns, projectEnvironments, projectMembers, projects, taskAssignees, tasks } from "./projects"
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   profile: one(memberProfiles, { fields: [users.id], references: [memberProfiles.userId], relationName: "profile_user" }),
@@ -46,6 +46,11 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   tasks: many(tasks),
   repositories: many(projectRepositories),
   services: many(managedServices),
+  environments: many(projectEnvironments),
+}))
+
+export const projectEnvironmentsRelations = relations(projectEnvironments, ({ one }) => ({
+  project: one(projects, { fields: [projectEnvironments.projectId], references: [projects.id] }),
 }))
 
 export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
