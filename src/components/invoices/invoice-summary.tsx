@@ -1,6 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { taxTreatmentLabel } from "@/config/finance"
 import { formatDate } from "@/lib/format"
+import { taxLabel } from "@/lib/invoice-math"
 import { amountInWords, formatMoney } from "@/lib/money"
 import { toBsDate } from "@/lib/nepali-date"
 import type { InvoiceView } from "@/server/modules/invoices/view"
@@ -33,8 +33,8 @@ export function InvoiceSummary({ invoice }: { invoice: InvoiceView }) {
   const rows: Array<[string, number, boolean?]> = [
     ["Subtotal", invoice.subtotal],
     ...(invoice.discount > 0 ? [["Discount", -invoice.discount] as [string, number]] : []),
-    ["Taxable amount", invoice.taxableAmount],
-    [taxTreatmentLabel(invoice.taxTreatment, invoice.taxName, invoice.taxRate), invoice.taxAmount],
+    ...(invoice.taxes.length > 0 ? [["Taxable amount", invoice.taxableAmount] as [string, number]] : []),
+    ...invoice.taxes.map((tax) => [taxLabel(tax), tax.amount] as [string, number]),
     ["Total", invoice.total, true],
   ]
 
@@ -100,8 +100,8 @@ export function InvoiceSummary({ invoice }: { invoice: InvoiceView }) {
         </Table>
       </div>
       <dl className="ml-auto grid w-full max-w-sm grid-cols-2 gap-y-1 text-sm">
-        {rows.map(([label, value, strong]) => (
-          <div key={label} className={strong ? "col-span-2 mt-1 flex justify-between border-t pt-2 text-base font-semibold" : "col-span-2 flex justify-between"}>
+        {rows.map(([label, value, strong], index) => (
+          <div key={`${label}-${index}`} className={strong ? "col-span-2 mt-1 flex justify-between border-t pt-2 text-base font-semibold" : "col-span-2 flex justify-between"}>
             <dt>{label}</dt>
             <dd className="tabular-nums">{money(value)}</dd>
           </div>

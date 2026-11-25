@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { todayIso } from "@/lib/dates"
 import { can } from "@/server/auth/session"
 import { loadInvoice } from "@/server/modules/invoices/context"
-import { currencyFormatOf, getSettings, taxConfigOf } from "@/server/modules/settings/queries"
+import { currencyFormatOf, getSettings } from "@/server/modules/settings/queries"
 
 export const metadata: Metadata = { title: "Edit invoice" }
 
@@ -23,12 +23,11 @@ async function EditInvoiceForm({ params }: { params: PageProps<"/invoices/[invoi
       currency={currencyFormatOf(billing)}
       today={todayIso()}
       paymentTermsDays={billing.paymentTermsDays}
-      tax={taxConfigOf(billing)}
       defaults={{
         invoiceId: invoice.id,
         client: { value: invoice.clientId, label: invoice.clientName },
         project: invoice.projectId && invoice.projectName ? { value: invoice.projectId, label: invoice.projectName } : null,
-        taxTreatment: invoice.taxTreatment,
+        taxes: invoice.taxes.map((tax) => ({ name: tax.name, kind: tax.kind, value: tax.kind === "fixed" ? tax.amount : (tax.rate ?? 0) })),
         issueDate: invoice.issueDate,
         dueDate: invoice.dueDate,
         discount: invoice.discount,

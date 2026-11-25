@@ -13,12 +13,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { type CurrencyFormat, type TaxConfig, type TaxTreatment, taxTreatmentLabel, taxTreatmentOptions } from "@/config/finance"
+import type { CurrencyFormat, TaxKind } from "@/config/finance"
 import { shiftDate } from "@/lib/dates"
 import { calculateTotals, lineAmount } from "@/lib/invoice-math"
 import { formatMoney } from "@/lib/money"
 import type { Option } from "@/lib/options"
 import { saveInvoiceDraft } from "@/server/modules/invoices/actions"
+import { type TaxLineState, TaxLinesEditor } from "./tax-lines-editor"
 
 interface LineState {
   key: string
@@ -32,7 +33,7 @@ export interface InvoiceFormDefaults {
   invoiceId: string
   client: Option
   project: Option | null
-  taxTreatment: TaxTreatment
+  taxes: Array<{ name: string; kind: TaxKind; value: number }>
   issueDate: string
   dueDate: string | null
   discount: number
@@ -44,22 +45,23 @@ interface InvoiceFormProps {
   currency: CurrencyFormat
   today: string
   paymentTermsDays: number
-  tax: TaxConfig
   defaults?: InvoiceFormDefaults
 }
 
 let lineCounter = 0
 const newLine = (values?: Partial<LineState>): LineState => ({ key: `line-${lineCounter++}`, description: "", quantity: "1", unit: "", rate: "", ...values })
+const newTaxLine = (values?: Partial<TaxLineState>): TaxLineState => ({ key: `tax-${lineCounter++}`, name: "", kind: "percentage", value: "", ...values })
 const toNumber = (value: string) => (value.trim() === "" ? Number.NaN : Number(value))
 
-export function InvoiceForm({ currency, today, paymentTermsDays, tax, defaults }: InvoiceFormProps) {
-  const treatmentOptions = taxTreatmentOptions(tax)
+export function InvoiceForm({ currency, today, paymentTermsDays, defaults }: InvoiceFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [client, setClient] = useState<Option | null>(defaults?.client ?? null)
   const [project, setProject] = useState<Option | null>(defaults?.project ?? null)
-  const [treatment, setTreatment] = useState<TaxTreatment>(defaults?.taxTreatment ?? (tax.enabled ? "standard" : "exempt"))
+  const [taxLines, setTaxLines] = useState<TaxLineState[]>(
+    defaults?.taxes.map((tax) => newTaxLine({ name: tax.name, kind: tax.kind, value: String(tax.value) })) ?? [],
+  )
   const [issueDate, setIssueDate] = useState<string | null>(defaults?.issueDate ?? today)
   const [dueDate, setDueDate] = useState<string | null>(defaults ? defaults.dueDate : shiftDate(today, paymentTermsDays))
   const [discount, setDiscount] = useState(String(defaults?.discount ?? ""))
@@ -69,7 +71,8 @@ export function InvoiceForm({ currency, today, paymentTermsDays, tax, defaults }
   )
 
   const numericLines = lines.map((line) => ({ quantity: toNumber(line.quantity) || 0, rate: toNumber(line.rate) || 0 }))
-  const totals = calculateTotals(numericLines, Number(discount) || 0, treatment, tax.rate)
+  const taxInputs = taxLines.map((line) => ({ name: line.name.trim(), kind: line.kind, value: toNumber(line.value) }))
+  const totals = calculateTotals(numericLines, Number(discount) || 0, taxInputs.map((tax) => ({ ...tax, value: tax.value || 0 })))
   const money = (value: number) => formatMoney(value, currency)
 
   const updateLine = (key: string, patch: Partial<LineState>) => setLines((current) => current.map((line) => (line.key === key ? { ...line, ...patch } : line)))
@@ -82,13 +85,16 @@ export function InvoiceForm({ currency, today, paymentTermsDays, tax, defaults }
     if (items.some((item) => !item.description.trim() || !Number.isFinite(item.quantity) || !Number.isFinite(item.rate))) {
       return setError("Every item needs a description, quantity and rate.")
     }
+    if (taxInputs.some((tax) => !tax.name || !Number.isFinite(tax.value))) {
+      return setError("Every tax needs a name and a rate or amount.")
+    }
 
     startTransition(async () => {
       const result = await saveInvoiceDraft({
         invoiceId: defaults?.invoiceId ?? null,
         clientId: client.value,
         projectId: project?.value ?? null,
-        taxTreatment: treatment,
+        taxes: taxInputs,
         issueDate,
         dueDate,
         discount: Number(discount) || 0,
@@ -144,15 +150,6 @@ export function InvoiceForm({ currency, today, paymentTermsDays, tax, defaults }
               onChange={setProject}
               disabled={!client}
               placeholder={client ? "Search this client's projects…" : "Choose a client first"}
-            />
-          </FormField>
-          <FormField id="invoice-treatment" label="Tax" required>
-            <OptionCombobox
-              id="invoice-treatment"
-              required
-              options={treatmentOptions}
-              value={treatmentOptions.find((option) => option.value === treatment) ?? null}
-              onChange={(option) => option && setTreatment(option.value as TaxTreatment)}
             />
           </FormField>
           <FormField id="invoice-date" label="Invoice date" required description="Replaced with the actual date when the invoice is issued.">
@@ -261,12 +258,15 @@ export function InvoiceForm({ currency, today, paymentTermsDays, tax, defaults }
               />
             </div>
             <div className="flex justify-between">
-              <span>Taxable amount</span>
+              <span>{taxLines.length > 0 ? "Taxable amount" : "Amount before tax"}</span>
               <span className="tabular-nums">{money(totals.taxableAmount)}</span>
             </div>
-            <div className="flex justify-between">
-              <span>{taxTreatmentLabel(treatment, tax.name, totals.taxRate)}</span>
-              <span className="tabular-nums">{money(totals.taxAmount)}</span>
+            <div className="flex flex-col gap-2 border-t pt-3">
+              <span className="font-medium">Taxes</span>
+              <TaxLinesEditor lines={taxLines} calculated={totals.taxes} onChange={setTaxLines} formatAmount={money} createLine={newTaxLine} />
+              {taxLines.some((line) => line.kind === "percentage") ? (
+                <p className="text-xs text-muted-foreground">Percentage taxes are calculated on the taxable amount. Fixed taxes are added as entered.</p>
+              ) : null}
             </div>
             <div className="mt-2 flex justify-between border-t pt-3 text-base font-semibold">
               <span>Total</span>

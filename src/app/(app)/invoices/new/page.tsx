@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/layout/page-header"
 import { Skeleton } from "@/components/ui/skeleton"
 import { todayIso } from "@/lib/dates"
 import { requirePermission } from "@/server/auth/session"
-import { currencyFormatOf, getSettings, taxConfigOf } from "@/server/modules/settings/queries"
+import { currencyFormatOf, getSettings } from "@/server/modules/settings/queries"
 
 export const metadata: Metadata = { title: "New invoice" }
 
@@ -17,7 +17,6 @@ async function NewInvoiceForm() {
       currency={currencyFormatOf(billing)}
       today={todayIso()}
       paymentTermsDays={billing.paymentTermsDays}
-      tax={taxConfigOf(billing)}
     />
   )
 }
