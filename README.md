@@ -12,6 +12,10 @@ Projects and Kanban boards, employees and freelancers, clients with their own po
 [![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-336791)](https://www.postgresql.org)
 
+```bash
+curl -fsSL https://github.com/klixsoft/kaamhub/releases/latest/download/install.sh | sudo bash
+```
+
 [Features](#features) · [Screenshots](#screenshots) · [Quick start](#quick-start) · [Deploy](#deploy-on-your-own-server) · [Docs](#documentation) · [Roadmap](#roadmap) · [Contributing](#contributing)
 
 ![KaamHub project overview](docs/images/project-overview.png)
@@ -206,10 +210,12 @@ Full guide: [docs/development.md](docs/development.md)
 On any Linux VPS, one command installs Docker if needed, asks for your domain, generates all secrets and starts KaamHub with automatic HTTPS:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/klixsoft/kaamhub/main/scripts/install.sh | sudo bash
+curl -fsSL https://github.com/klixsoft/kaamhub/releases/latest/download/install.sh | sudo bash
 ```
 
 Then open `https://your-domain/setup` to create the first administrator. Point your domain's DNS A record at the server before running it.
+
+The command always installs the latest release, with configuration files that match its version. To try unreleased changes from `main`, use `https://raw.githubusercontent.com/klixsoft/kaamhub/main/scripts/install.sh` instead.
 
 Prefer to do it by hand, or already run Nginx or Traefik? See [docs/deployment.md](docs/deployment.md) for the manual install, reverse proxy examples, backups and updates.
 

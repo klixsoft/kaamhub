@@ -22,8 +22,10 @@ The stack is managed by Docker Compose:
 Run as root on the server:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/klixsoft/kaamhub/main/scripts/install.sh | sudo bash
+curl -fsSL https://github.com/klixsoft/kaamhub/releases/latest/download/install.sh | sudo bash
 ```
+
+This downloads the installer attached to the latest release. Every release pins the installer to its own configuration files. To install unreleased changes from `main`, use `https://raw.githubusercontent.com/klixsoft/kaamhub/main/scripts/install.sh`.
 
 The installer:
 
