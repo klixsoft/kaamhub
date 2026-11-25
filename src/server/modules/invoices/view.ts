@@ -1,5 +1,6 @@
 import "server-only"
-import type { CurrencyFormat, InvoiceStatus, TaxTreatment } from "@/config/finance"
+import type { Calendar, CurrencyFormat, InvoiceStatus, TaxTreatment } from "@/config/finance"
+import { invoiceFormatOf } from "@/server/modules/settings/queries"
 import type { BillingSettings } from "@/server/modules/settings/schema"
 import type { InvoiceDetail } from "./queries"
 
@@ -12,6 +13,9 @@ export interface InvoiceView {
   dueDate: string | null
   currency: CurrencyFormat
   taxTreatment: TaxTreatment
+  taxName: string
+  calendar: Calendar
+  showAmountInWords: boolean
   seller: { name: string; address: string | null; contact: string | null; taxNumber: string | null; taxLabel: string }
   buyer: { name: string; address: string | null; taxNumber: string | null }
   projectName: string | null
@@ -19,8 +23,8 @@ export interface InvoiceView {
   subtotal: number
   discount: number
   taxableAmount: number
-  vatRate: number
-  vatAmount: number
+  taxRate: number
+  taxAmount: number
   total: number
   amountPaid: number
   notes: string | null
@@ -31,24 +35,27 @@ export interface InvoiceView {
 
 export function toInvoiceView(invoice: InvoiceDetail, billing: BillingSettings): InvoiceView {
   const issued = invoice.status !== "draft"
-  const isVatInvoice = billing.taxRegistration === "vat" && invoice.taxTreatment !== "exempt"
-  const contact = [billing.phone, billing.email, billing.website].filter(Boolean).join(" · ")
+  const format = issued && invoice.format ? invoice.format : invoiceFormatOf(billing)
+  const contact = issued ? invoice.sellerContact : [billing.phone, billing.email, billing.website].filter(Boolean).join(" · ")
 
   return {
     number: invoice.number,
     fiscalYear: invoice.fiscalYear,
     status: invoice.status,
-    title: isVatInvoice ? "TAX INVOICE" : "INVOICE",
+    title: format.title,
     issueDate: invoice.issueDate,
     dueDate: invoice.dueDate,
     currency: invoice.currency,
     taxTreatment: invoice.taxTreatment,
+    taxName: format.taxName,
+    calendar: format.calendar,
+    showAmountInWords: format.showAmountInWords,
     seller: {
       name: (issued ? invoice.sellerName : billing.legalName) || "Your company",
       address: issued ? invoice.sellerAddress : billing.address || null,
       contact: contact || null,
       taxNumber: issued ? invoice.sellerTaxNumber : billing.taxNumber || null,
-      taxLabel: billing.taxRegistration === "vat" ? "VAT No." : "PAN No.",
+      taxLabel: format.taxIdLabel,
     },
     buyer: { name: invoice.buyerName, address: invoice.buyerAddress, taxNumber: invoice.buyerTaxNumber },
     projectName: invoice.projectName,
@@ -56,8 +63,8 @@ export function toInvoiceView(invoice: InvoiceDetail, billing: BillingSettings):
     subtotal: invoice.subtotal,
     discount: invoice.discount,
     taxableAmount: invoice.taxableAmount,
-    vatRate: invoice.vatRate,
-    vatAmount: invoice.vatAmount,
+    taxRate: invoice.taxRate,
+    taxAmount: invoice.taxAmount,
     total: invoice.total,
     amountPaid: invoice.amountPaid,
     notes: invoice.notes,

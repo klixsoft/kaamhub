@@ -1,7 +1,7 @@
 import "server-only"
 import { and, asc, eq, gte, isNotNull, lte, ne } from "drizzle-orm"
 import { shiftDate } from "@/lib/dates"
-import { todayIso } from "@/lib/nepali-date"
+import { todayIso } from "@/lib/dates"
 import type { CurrentUser } from "@/server/auth/session"
 import { db } from "@/server/db"
 import { managedServices, projects } from "@/server/db/schema"

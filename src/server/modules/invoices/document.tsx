@@ -1,5 +1,5 @@
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer"
-import { TAX_TREATMENT_LABELS } from "@/config/finance"
+import { type Calendar, taxTreatmentLabel } from "@/config/finance"
 import { amountInWords, formatMoney } from "@/lib/money"
 import { toBsDate } from "@/lib/nepali-date"
 import type { InvoiceView } from "./view"
@@ -36,9 +36,9 @@ const styles = StyleSheet.create({
   watermark: { position: "absolute", top: 330, left: 0, right: 0, textAlign: "center", fontSize: 72, color: "#ef4444", opacity: 0.12, transform: "rotate(-30deg)", fontFamily: "Helvetica-Bold" },
 })
 
-function formatDateWithBs(isoDate: string | null): string {
+function formatInvoiceDate(isoDate: string | null, calendar: Calendar): string {
   if (!isoDate) return "—"
-  return `${isoDate} (${toBsDate(isoDate)} BS)`
+  return calendar === "bikram_sambat" ? `${isoDate} (${toBsDate(isoDate)} BS)` : isoDate
 }
 
 export function InvoiceDocument({ invoice }: { invoice: InvoiceView }) {
@@ -57,19 +57,19 @@ export function InvoiceDocument({ invoice }: { invoice: InvoiceView }) {
             {invoice.seller.taxNumber ? <Text style={styles.bold}>{invoice.seller.taxLabel}: {invoice.seller.taxNumber}</Text> : null}
           </View>
           <View>
-            <Text style={styles.title}>{invoice.title}</Text>
+            <Text style={styles.title}>{invoice.title.toUpperCase()}</Text>
             <View style={styles.metaRow}>
               <Text style={styles.metaLabel}>Invoice no.</Text>
               <Text style={styles.metaValue}>{invoice.number ?? "Not issued"}</Text>
             </View>
             <View style={styles.metaRow}>
               <Text style={styles.metaLabel}>Date</Text>
-              <Text style={styles.metaValue}>{formatDateWithBs(invoice.issueDate)}</Text>
+              <Text style={styles.metaValue}>{formatInvoiceDate(invoice.issueDate, invoice.calendar)}</Text>
             </View>
             {invoice.dueDate ? (
               <View style={styles.metaRow}>
                 <Text style={styles.metaLabel}>Due date</Text>
-                <Text style={styles.metaValue}>{formatDateWithBs(invoice.dueDate)}</Text>
+                <Text style={styles.metaValue}>{formatInvoiceDate(invoice.dueDate, invoice.calendar)}</Text>
               </View>
             ) : null}
             {invoice.fiscalYear ? (
@@ -85,7 +85,11 @@ export function InvoiceDocument({ invoice }: { invoice: InvoiceView }) {
           <Text style={styles.sectionLabel}>Bill to</Text>
           <Text style={styles.bold}>{invoice.buyer.name}</Text>
           {invoice.buyer.address ? <Text>{invoice.buyer.address}</Text> : null}
-          {invoice.buyer.taxNumber ? <Text>PAN/VAT No.: {invoice.buyer.taxNumber}</Text> : null}
+          {invoice.buyer.taxNumber ? (
+            <Text>
+              {invoice.seller.taxLabel}: {invoice.buyer.taxNumber}
+            </Text>
+          ) : null}
           {invoice.projectName ? <Text style={styles.muted}>Project: {invoice.projectName}</Text> : null}
         </View>
 
@@ -126,8 +130,8 @@ export function InvoiceDocument({ invoice }: { invoice: InvoiceView }) {
             <Text>{money(invoice.taxableAmount)}</Text>
           </View>
           <View style={styles.totalRow}>
-            <Text>{invoice.taxTreatment === "vat" ? `VAT (${invoice.vatRate}%)` : TAX_TREATMENT_LABELS[invoice.taxTreatment]}</Text>
-            <Text>{money(invoice.vatAmount)}</Text>
+            <Text>{taxTreatmentLabel(invoice.taxTreatment, invoice.taxName, invoice.taxRate)}</Text>
+            <Text>{money(invoice.taxAmount)}</Text>
           </View>
           <View style={styles.grandTotal}>
             <Text>Total</Text>
@@ -147,12 +151,14 @@ export function InvoiceDocument({ invoice }: { invoice: InvoiceView }) {
           ) : null}
         </View>
 
-        <View style={styles.words} wrap={false}>
-          <Text>
-            <Text style={styles.bold}>In words: </Text>
-            {amountInWords(invoice.total, invoice.currency)}
-          </Text>
-        </View>
+        {invoice.showAmountInWords ? (
+          <View style={styles.words} wrap={false}>
+            <Text>
+              <Text style={styles.bold}>In words: </Text>
+              {amountInWords(invoice.total, invoice.currency)}
+            </Text>
+          </View>
+        ) : null}
 
         {invoice.bankDetails ? (
           <View style={[styles.section, { marginTop: 16 }]} wrap={false}>

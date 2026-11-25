@@ -3,13 +3,13 @@ import { and, eq, lte } from "drizzle-orm"
 import { BILLING_CYCLE_LABELS, BILLING_CYCLE_MONTHS, SERVICE_TYPE_LABELS } from "@/config/finance"
 import { addMonths, shiftDate } from "@/lib/dates"
 import { formatDate } from "@/lib/format"
-import { todayIso } from "@/lib/nepali-date"
+import { todayIso } from "@/lib/dates"
 import { db } from "@/server/db"
 import { managedServices, projects } from "@/server/db/schema"
 import { AppError, notFoundError } from "@/server/lib/errors"
 import { logger } from "@/server/lib/logger"
 import { insertDraft } from "@/server/modules/invoices/drafts"
-import { getCurrencyFormat, getSettings } from "@/server/modules/settings/queries"
+import { getSettings } from "@/server/modules/settings/queries"
 
 const MAX_PERIODS_PER_RUN = 12
 
@@ -17,7 +17,7 @@ type ServiceWithClient = typeof managedServices.$inferSelect & { clientId: strin
 
 async function draftForPeriod(service: ServiceWithClient, createdById: string | null) {
   if (!service.clientId) throw new AppError("Link this project to a client before invoicing its services.")
-  const [billing, currency] = await Promise.all([getSettings("billing"), getCurrencyFormat()])
+  const billing = await getSettings("billing")
   const periodStart = service.nextBillingOn
   const nextPeriod = addMonths(periodStart, BILLING_CYCLE_MONTHS[service.billingCycle])
   const periodEnd = shiftDate(nextPeriod, -1)
@@ -45,7 +45,7 @@ async function draftForPeriod(service: ServiceWithClient, createdById: string | 
           },
         ],
       },
-      currency,
+      billing,
       createdById,
     )
     await tx.update(managedServices).set({ nextBillingOn: nextPeriod }).where(eq(managedServices.id, service.id))

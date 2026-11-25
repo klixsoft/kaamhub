@@ -3,16 +3,15 @@
 import { and, eq, sql } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import type { InvoiceStatus } from "@/config/finance"
-import { daysBetween, shiftDate } from "@/lib/dates"
 import { roundMoney } from "@/lib/money"
-import { todayIso } from "@/lib/nepali-date"
+import { daysBetween, shiftDate, todayIso } from "@/lib/dates"
 import { db, type Transaction } from "@/server/db"
 import { clients, invoicePayments, invoices, projects } from "@/server/db/schema"
 import { action, formAction } from "@/server/lib/action"
 import { AppError, notFoundError } from "@/server/lib/errors"
-import { getCurrencyFormat, getSettings } from "@/server/modules/settings/queries"
+import { getSettings, invoiceFormatOf } from "@/server/modules/settings/queries"
 import { recordAudit } from "@/server/services/audit"
-import { insertDraft, replaceDraft } from "./drafts"
+import { assertTreatmentAllowed, insertDraft, replaceDraft } from "./drafts"
 import { allocateInvoiceNumber } from "./numbering"
 import { cancelInvoiceSchema, invoiceDraftSchema, invoiceIdSchema, paymentSchema } from "./schema"
 import { deliverInvoice } from "./delivery"
@@ -39,17 +38,17 @@ export const saveInvoiceDraft = action({
   permission: "finance:write",
   handler: async ({ invoiceId, ...values }, { user }) => {
     await assertProjectBelongsToClient(values.projectId, values.clientId)
-    const currency = await getCurrencyFormat()
+    const billing = await getSettings("billing")
 
     const saved = await db.transaction(async (tx) => {
       if (!invoiceId) {
-        const created = await insertDraft(tx, values, currency, user.id)
+        const created = await insertDraft(tx, values, billing, user.id)
         if (!created) throw new Error("Draft insert returned no row")
         return created
       }
       const existing = await lockInvoice(tx, invoiceId)
       if (existing.status !== "draft") throw new AppError("Only draft invoices can be edited.")
-      await replaceDraft(tx, invoiceId, values, currency)
+      await replaceDraft(tx, invoiceId, values, billing)
       return { id: invoiceId }
     })
 
@@ -79,15 +78,20 @@ export const issueInvoice = action({
   permission: "finance:write",
   handler: async ({ invoiceId }, { user }) => {
     const billing = await getSettings("billing")
-    if (!billing.legalName || !billing.taxNumber) {
-      throw new AppError("Add your registered company name and PAN/VAT number in Billing settings before issuing invoices.")
+    if (!billing.legalName) throw new AppError("Add your registered company name in Billing settings before issuing invoices.")
+    if (billing.chargesTax && !billing.taxNumber) {
+      throw new AppError(`Add your ${billing.taxIdLabel} in Billing settings before issuing ${billing.taxName} invoices.`)
     }
 
     const issued = await db.transaction(async (tx) => {
       const invoice = await lockInvoice(tx, invoiceId)
       if (invoice.status !== "draft") throw new AppError("This invoice has already been issued.")
-      if (invoice.taxTreatment !== "exempt" && billing.taxRegistration !== "vat") {
-        throw new AppError("Your company is set up as PAN only, so invoices cannot charge VAT. Change the tax treatment to No VAT.")
+      assertTreatmentAllowed(billing, invoice.taxTreatment)
+      if (invoice.taxTreatment === "standard" && invoice.taxRate !== billing.taxRate) {
+        throw new AppError(`The ${billing.taxName} rate changed since this draft was saved. Open the draft and save it again to recalculate.`)
+      }
+      if (invoice.currency.code !== billing.currencyCode) {
+        throw new AppError("The billing currency changed since this draft was saved. Open the draft and save it again.")
       }
       const [client] = await tx
         .select({ name: clients.name, address: clients.address, taxNumber: clients.taxNumber })
@@ -96,7 +100,12 @@ export const issueInvoice = action({
         .limit(1)
       const issueDate = todayIso()
       const dueDate = invoice.dueDate ? shiftDate(issueDate, daysBetween(invoice.issueDate, invoice.dueDate)) : null
-      const { number, fiscalYear } = await allocateInvoiceNumber(tx, issueDate)
+      const { number, fiscalYear } = await allocateInvoiceNumber(tx, issueDate, {
+        calendar: billing.calendar,
+        startMonth: billing.fiscalYearStartMonth,
+        prefix: billing.invoicePrefix,
+      })
+      const contact = [billing.phone, billing.email, billing.website].filter(Boolean).join(" · ")
       await tx
         .update(invoices)
         .set({
@@ -108,7 +117,9 @@ export const issueInvoice = action({
           issuedAt: new Date(),
           sellerName: billing.legalName,
           sellerAddress: billing.address || null,
-          sellerTaxNumber: billing.taxNumber,
+          sellerTaxNumber: billing.taxNumber || null,
+          sellerContact: contact || null,
+          format: invoiceFormatOf(billing),
           buyerName: client?.name ?? invoice.buyerName,
           buyerAddress: client?.address ?? invoice.buyerAddress,
           buyerTaxNumber: client?.taxNumber ?? invoice.buyerTaxNumber,
