@@ -4,7 +4,7 @@ import { SYSTEM_ROLE_LABELS } from "@/config/roles"
 import type { Option, OptionParams, OptionResource } from "@/lib/options"
 import { type CurrentUser, can } from "@/server/auth/session"
 import { db } from "@/server/db"
-import { clients, departments, designations, githubRepositories, projectMembers, projects, users } from "@/server/db/schema"
+import { clients, departments, designations, githubRepositories, projectCategories, projectMembers, projects, serviceCategories, users } from "@/server/db/schema"
 import { isUuid, searchAcross } from "@/server/lib/query"
 import { resolveProjectAccess } from "@/server/modules/projects/access"
 import { isModuleEnabled } from "@/server/modules/settings/queries"
@@ -55,6 +55,16 @@ const resolvers: Record<OptionResource, Resolver> = {
       .orderBy(asc(githubRepositories.fullName))
       .limit(LIMIT)
     return rows.map((row) => ({ value: row.id, label: row.fullName, description: row.description ?? undefined }))
+  },
+  "project-categories": async (query, _params, user) => {
+    if (user.role === "client") return null
+    const rows = await db.select().from(projectCategories).where(searchAcross(query, [projectCategories.name])).orderBy(asc(projectCategories.name)).limit(LIMIT)
+    return rows.map((row) => ({ value: row.id, label: row.name }))
+  },
+  "service-categories": async (query, _params, user) => {
+    if (!can(user, "finance:read")) return null
+    const rows = await db.select().from(serviceCategories).where(searchAcross(query, [serviceCategories.name])).orderBy(asc(serviceCategories.name)).limit(LIMIT)
+    return rows.map((row) => ({ value: row.id, label: row.name }))
   },
   "client-projects": async (query, params, user) => {
     if (!can(user, "finance:read") || !params.clientId || !isUuid(params.clientId)) return null

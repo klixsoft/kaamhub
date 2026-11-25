@@ -5,12 +5,13 @@ import { revalidatePath } from "next/cache"
 import { after } from "next/server"
 import { z } from "zod"
 import { db } from "@/server/db"
-import { departments, designations, projectMembers } from "@/server/db/schema"
+import { departments, designations, projectCategories, projectMembers, serviceCategories } from "@/server/db/schema"
 import { action, formAction } from "@/server/lib/action"
 import { AppError } from "@/server/lib/errors"
 import { reconcileGithubAccess } from "@/server/modules/github/access-sync"
 import { syncRepositories } from "@/server/modules/github/repositories"
 import { recordAudit } from "@/server/services/audit"
+import { LOOKUP_KINDS } from "./schema"
 import { billingSettingsFormSchema, generalSettingsSchema, moduleSettingsFormSchema, projectRolePermissionsSchema } from "./schema"
 import { saveSettings } from "./service"
 
@@ -49,8 +50,8 @@ export const saveBillingSettings = formAction({
   },
 })
 
-const lookupTables = { departments, designations } as const
-const lookupSchema = z.object({ kind: z.enum(["departments", "designations"]), name: z.string().trim().min(2, "Enter a name").max(80) })
+const lookupTables = { departments, designations, projectCategories, serviceCategories } as const
+const lookupSchema = z.object({ kind: z.enum(LOOKUP_KINDS), name: z.string().trim().min(2, "Enter a name").max(80) })
 
 export const addLookup = formAction({
   schema: lookupSchema,
@@ -65,7 +66,7 @@ export const addLookup = formAction({
 })
 
 export const removeLookup = action({
-  schema: z.object({ kind: z.enum(["departments", "designations"]), id: z.uuid() }),
+  schema: z.object({ kind: z.enum(LOOKUP_KINDS), id: z.uuid() }),
   permission: "settings:manage",
   handler: async ({ kind, id }) => {
     const table = lookupTables[kind]

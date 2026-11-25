@@ -4,6 +4,9 @@ import { CALENDARS, NUMBERING_SYSTEMS } from "@/config/finance"
 import { DEFAULT_MODULES, type ModuleState } from "@/config/modules"
 import type { ProjectRole } from "@/config/roles"
 
+export const LOOKUP_KINDS = ["departments", "designations", "projectCategories", "serviceCategories"] as const
+export type LookupKind = (typeof LOOKUP_KINDS)[number]
+
 export const generalSettingsSchema = z.object({
   companyName: z.string().trim().min(2, "Enter the company name").max(80),
   projectCodePrefix: z
@@ -18,11 +21,9 @@ export type GeneralSettings = z.infer<typeof generalSettingsSchema>
 const githubPermission = z.enum(GITHUB_PERMISSIONS)
 
 export const projectRolePermissionsSchema = z.object({
-  manager: githubPermission,
-  developer: githubPermission,
-  designer: githubPermission,
-  qa: githubPermission,
-  viewer: githubPermission,
+  manager: githubPermission.default("maintain"),
+  member: githubPermission.default("push"),
+  viewer: githubPermission.default("pull"),
 }) satisfies z.ZodType<Record<ProjectRole, GithubPermission>>
 
 export const githubSettingsSchema = z.object({
@@ -112,7 +113,7 @@ export const SETTINGS_DEFAULTS = {
     currencyNumbering: "international",
   } satisfies BillingSettings,
   github: {
-    projectRolePermissions: { manager: "maintain", developer: "push", designer: "pull", qa: "triage", viewer: "pull" },
+    projectRolePermissions: { manager: "maintain", member: "push", viewer: "pull" },
     removeAccessOnUnassign: true,
   } satisfies GithubSettings,
 }

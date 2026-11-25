@@ -9,9 +9,10 @@ import { Field, FieldError } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { useServerAction } from "@/hooks/use-server-action"
 import { addLookup, removeLookup } from "@/server/modules/settings/actions"
+import type { LookupKind } from "@/server/modules/settings/schema"
 
 interface LookupListProps {
-  kind: "departments" | "designations"
+  kind: LookupKind
   label: string
   items: Array<{ id: string; name: string }>
 }
