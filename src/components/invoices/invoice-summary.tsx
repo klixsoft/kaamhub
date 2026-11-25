@@ -5,13 +5,25 @@ import { amountInWords, formatMoney } from "@/lib/money"
 import { toBsDate } from "@/lib/nepali-date"
 import type { InvoiceView } from "@/server/modules/invoices/view"
 
-function Party({ label, name, address, taxNumber }: { label: string; name: string; address: string | null; taxNumber: string | null }) {
+interface PartyProps {
+  label: string
+  name: string
+  address: string | null
+  taxNumber: string | null
+  taxLabel?: string
+}
+
+function Party({ label, name, address, taxNumber, taxLabel = "PAN/VAT No." }: PartyProps) {
   return (
     <div className="space-y-0.5 text-sm">
       <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
       <p className="font-medium">{name}</p>
       {address ? <p className="whitespace-pre-line text-muted-foreground">{address}</p> : null}
-      {taxNumber ? <p>PAN/VAT No.: {taxNumber}</p> : null}
+      {taxNumber ? (
+        <p>
+          {taxLabel}: {taxNumber}
+        </p>
+      ) : null}
     </div>
   )
 }
@@ -29,7 +41,13 @@ export function InvoiceSummary({ invoice }: { invoice: InvoiceView }) {
   return (
     <article className="flex flex-col gap-6 rounded-lg border bg-card p-4 sm:p-6" aria-label="Invoice">
       <div className="flex flex-col justify-between gap-4 sm:flex-row">
-        <Party label="From" name={invoice.seller.name} address={invoice.seller.address} taxNumber={invoice.seller.taxNumber} />
+        <Party
+          label="From"
+          name={invoice.seller.name}
+          address={invoice.seller.address}
+          taxNumber={invoice.seller.taxNumber}
+          taxLabel={invoice.seller.taxLabel}
+        />
         <dl className="grid grid-cols-[auto_auto] gap-x-4 gap-y-1 text-sm sm:text-right">
           <dt className="text-muted-foreground">Document</dt>
           <dd className="font-semibold">{invoice.title}</dd>
