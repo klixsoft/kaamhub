@@ -65,13 +65,15 @@ curl -fsSL https://raw.githubusercontent.com/klixsoft/kaamhub/main/docker/Caddyf
 curl -fsSL https://raw.githubusercontent.com/klixsoft/kaamhub/main/.env.production.example -o .env && chmod 600 .env
 ```
 
-Fill in `.env`. At minimum: `DOMAIN`, `APP_URL`, `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET`, `UPDATER_TOKEN` and `CRON_SECRET`. Generate each secret with:
+Fill in `.env`. At minimum: `DOMAIN`, `APP_URL`, `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET`, `UPDATER_TOKEN`, `CRON_SECRET` and `ENCRYPTION_KEY`. Generate each secret with:
 
 ```bash
 openssl rand -hex 32
 ```
 
 Start the stack:
+
+`ENCRYPTION_KEY` encrypts environment credentials. Keep a backup of it: credentials saved with a lost key cannot be recovered, and changing it makes existing credentials unreadable.
 
 ```bash
 docker compose up -d

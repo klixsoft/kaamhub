@@ -50,11 +50,15 @@ Most service businesses run on a patchwork of tools: one for tasks, a spreadshee
 - Readable task IDs per project, e.g. `WEB-42`
 - Per-task visibility: **internal** or **visible to client**
 - Progress per project based on completed tasks
+- **Card details** like Trello: description, checklist with progress, threaded discussion and a full activity log of every change
+- Comments are **internal** or **shared with the client**, and each author is labelled **Staff** or **Client**
+- Shareable card links (`?task=42`) open the card directly
 
 ### Client portal
 - Invite people from a client company; they set their own password
 - Clients only ever see **their own company's projects**
 - A read-only board that shows only client-visible tasks
+- Clients can **join the discussion** on client-visible cards; they only see comments shared with them
 - Internal sections (team, repositories, people, settings) are blocked for clients
 
 ### Invoicing that works in any country
@@ -71,6 +75,9 @@ Most service businesses run on a patchwork of tools: one for tasks, a spreadshee
 - Production, staging and development environments per project, with URL and branch
 - Hosting provider, domain registrar, and **domain and hosting expiry dates** with reminders
 - **Uptime checks** every hour, with HTTP status and response time, plus a "Check now" button
+- One tab per environment, each with its own **test credentials** (username, password, login URL and notes)
+- Credentials are **encrypted at rest** (AES-256-GCM) and revealed on demand; every reveal is written to the audit log
+- Share a credential with **chosen team members**, or leave it open to the whole project team. Clients never see credentials
 
 ### Recurring services
 - One **Services** page for every subscription, retainer and maintenance plan, with search and filters by status, billing cycle, type and project
