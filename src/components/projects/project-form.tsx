@@ -15,15 +15,12 @@ import {
   PRIORITY_LABELS,
   type Priority,
   PROJECT_STATUS_LABELS,
-  PROJECT_TYPE_LABELS,
   type ProjectStatus,
-  type ProjectType,
 } from "@/config/domain"
 import { type Option, toOptions } from "@/lib/options"
 import { createProject, updateProject } from "@/server/modules/projects/actions"
 
 const statusOptions = toOptions(PROJECT_STATUS_LABELS)
-const typeOptions = toOptions(PROJECT_TYPE_LABELS)
 const priorityOptions = toOptions(PRIORITY_LABELS)
 const pick = (options: Option[], value: string) => options.find((option) => option.value === value) ?? null
 
@@ -33,12 +30,12 @@ export interface ProjectFormDefaults {
   name: string
   description: string | null
   status: ProjectStatus
-  type: ProjectType
+  category: Option | null
   priority: Priority
   startDate: string | null
   dueDate: string | null
   client: Option | null
-  managesInfrastructure: boolean
+  recurringBilling: boolean
 }
 
 interface ProjectFormProps {
@@ -53,7 +50,7 @@ export function ProjectForm({ defaults, codePrefix = "", clientsEnabled, service
   const [state, submit] = useActionState(defaults ? updateProject : createProject, null)
   const errors = state && !state.ok ? state.fieldErrors : undefined
   const invalid = (field: string) => Boolean(errors?.[field]) || undefined
-  const [managesInfrastructure, setManagesInfrastructure] = useState(defaults?.managesInfrastructure ?? false)
+  const [recurringBilling, setRecurringBilling] = useState(defaults?.recurringBilling ?? false)
 
   useEffect(() => {
     if (!state?.ok) return
@@ -94,8 +91,8 @@ export function ProjectForm({ defaults, codePrefix = "", clientsEnabled, service
       <FormField id="project-status" label="Status" required errors={errors?.status}>
         <OptionCombobox id="project-status" name="status" required options={statusOptions} defaultValue={pick(statusOptions, defaults?.status ?? "planning")} />
       </FormField>
-      <FormField id="project-type" label="Type" required errors={errors?.type}>
-        <OptionCombobox id="project-type" name="type" required options={typeOptions} defaultValue={pick(typeOptions, defaults?.type ?? "software")} />
+      <FormField id="project-category" label="Category" errors={errors?.categoryId} description="Managed in Settings.">
+        <OptionCombobox id="project-category" name="categoryId" resource="project-categories" defaultValue={defaults?.category} placeholder="Choose a category…" />
       </FormField>
       <FormField id="project-priority" label="Priority" required errors={errors?.priority}>
         <OptionCombobox
@@ -116,16 +113,16 @@ export function ProjectForm({ defaults, codePrefix = "", clientsEnabled, service
         <Textarea id="project-description" name="description" rows={4} defaultValue={defaults?.description ?? ""} />
       </FormField>
       {servicesEnabled ? (
-      <label htmlFor="project-manages-infrastructure" className="flex items-start gap-3 text-sm sm:col-span-2">
-        <Switch id="project-manages-infrastructure" checked={managesInfrastructure} onCheckedChange={setManagesInfrastructure} />
-        <input type="hidden" name="managesInfrastructure" value={String(managesInfrastructure)} />
+      <label htmlFor="project-recurring-billing" className="flex items-start gap-3 text-sm sm:col-span-2">
+        <Switch id="project-recurring-billing" checked={recurringBilling} onCheckedChange={setRecurringBilling} />
+        <input type="hidden" name="recurringBilling" value={String(recurringBilling)} />
         <span>
-          <span className="block font-medium">We manage the domain and hosting</span>
-          <span className="text-muted-foreground">Adds a Services tab to track renewals and bill the client on a recurring schedule.</span>
+          <span className="block font-medium">Bill recurring services for this project</span>
+          <span className="text-muted-foreground">Adds a Services tab for subscriptions, retainers or maintenance billed on a schedule.</span>
         </span>
       </label>
       ) : (
-        <input type="hidden" name="managesInfrastructure" value={String(managesInfrastructure)} />
+        <input type="hidden" name="recurringBilling" value={String(recurringBilling)} />
       )}
       <div className="flex justify-end sm:col-span-2">
         <SubmitButton pendingLabel="Saving…">{defaults ? "Save changes" : "Create project"}</SubmitButton>

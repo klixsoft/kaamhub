@@ -4,7 +4,6 @@ import Link from "next/link"
 import { TableRender } from "@/components/data-table/table-render"
 import type { TableColumn } from "@/components/data-table/types"
 import { EmptyState } from "@/components/layout/empty-state"
-import { PROJECT_TYPE_LABELS } from "@/config/domain"
 import { formatDate } from "@/lib/format"
 import type { Facet, PageResult } from "@/lib/list-params"
 import type { ProjectRow } from "@/server/modules/projects/queries"
@@ -29,7 +28,7 @@ const columns: TableColumn<ProjectRow>[] = [
     ),
   },
   { id: "status", header: "Status", cell: (row) => <ProjectStatusBadge status={row.status} /> },
-  { id: "type", header: "Type", hideBelow: "lg", cell: (row) => PROJECT_TYPE_LABELS[row.type] },
+  { id: "category", header: "Category", hideBelow: "lg", cell: (row) => row.categoryName ?? "—" },
   { id: "priority", header: "Priority", hideBelow: "md", cell: (row) => <PriorityBadge priority={row.priority} /> },
   {
     id: "progress",

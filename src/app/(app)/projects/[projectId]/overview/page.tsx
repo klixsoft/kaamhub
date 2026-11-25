@@ -4,7 +4,6 @@ import { PriorityBadge, ProjectStatusBadge } from "@/components/projects/badges"
 import { ProjectForm } from "@/components/projects/project-form"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { PROJECT_TYPE_LABELS } from "@/config/domain"
 import { formatDate } from "@/lib/format"
 import { loadProjectContext } from "@/server/modules/projects/context"
 import { getModules } from "@/server/modules/settings/queries"
@@ -31,12 +30,12 @@ async function Overview({ params }: { params: PageProps<"/projects/[projectId]/o
               name: project.name,
               description: project.description,
               status: project.status,
-              type: project.type,
+              category: project.categoryId && project.categoryName ? { value: project.categoryId, label: project.categoryName } : null,
               priority: project.priority,
               startDate: project.startDate,
               dueDate: project.dueDate,
               client: project.clientId && project.clientName ? { value: project.clientId, label: project.clientName } : null,
-              managesInfrastructure: project.managesInfrastructure,
+              recurringBilling: project.recurringBilling,
             }}
           />
         </CardContent>
@@ -46,7 +45,7 @@ async function Overview({ params }: { params: PageProps<"/projects/[projectId]/o
 
   const details = [
     { label: "Status", value: <ProjectStatusBadge status={project.status} /> },
-    { label: "Type", value: PROJECT_TYPE_LABELS[project.type] },
+    { label: "Category", value: project.categoryName ?? "—" },
     { label: "Priority", value: <PriorityBadge priority={project.priority} /> },
     { label: "Client", value: project.clientName ?? "Internal" },
     { label: "Start date", value: formatDate(project.startDate) },

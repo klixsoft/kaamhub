@@ -6,8 +6,6 @@ import {
   PRIORITY_LABELS,
   PROJECT_STATUS_LABELS,
   PROJECT_STATUSES,
-  PROJECT_TYPE_LABELS,
-  PROJECT_TYPES,
 } from "@/config/domain"
 import { type Facet, type ListParams, type PageResult, toPageResult } from "@/lib/list-params"
 import type { CurrentUser } from "@/server/auth/session"
@@ -19,17 +17,18 @@ import {
   githubRepositories,
   memberProfiles,
   designations,
+  projectCategories,
   projectMembers,
   projectRepositories,
   projects,
   tasks,
   users,
 } from "@/server/db/schema"
-import { facetCounts, filterIn, orderFrom, pageWindow, searchAcross, totalCount } from "@/server/lib/query"
+import { facetCounts, filterIdsIn, filterIn, orderFrom, pageWindow, searchAcross, totalCount } from "@/server/lib/query"
 import { projectVisibilityCondition } from "./access"
 
 export const PROJECT_LIST_CONFIG = {
-  filters: ["status", "type", "priority"] as const,
+  filters: ["status", "category", "priority"] as const,
   sorts: ["name", "code", "dueDate", "updatedAt"] as const,
   defaultSort: { id: "updatedAt" as const, desc: true },
 }
@@ -42,7 +41,7 @@ function projectConditions(user: CurrentUser, params: ProjectListParams, exclude
     projectVisibilityCondition(user),
     searchAcross(params.q, [projects.name, projects.code, clients.name]),
     exclude === "status" ? undefined : filterIn(projects.status, filters.status, PROJECT_STATUSES),
-    exclude === "type" ? undefined : filterIn(projects.type, filters.type, PROJECT_TYPES),
+    exclude === "category" ? undefined : filterIdsIn(projects.categoryId, filters.category),
     exclude === "priority" ? undefined : filterIn(projects.priority, filters.priority, PRIORITIES),
   )
 }
@@ -63,7 +62,7 @@ export async function listProjects(user: CurrentUser, params: ProjectListParams)
       code: projects.code,
       name: projects.name,
       status: projects.status,
-      type: projects.type,
+      categoryName: projectCategories.name,
       priority: projects.priority,
       dueDate: projects.dueDate,
       updatedAt: projects.updatedAt,
@@ -74,6 +73,7 @@ export async function listProjects(user: CurrentUser, params: ProjectListParams)
     })
     .from(projects)
     .leftJoin(clients, eq(clients.id, projects.clientId))
+    .leftJoin(projectCategories, eq(projectCategories.id, projects.categoryId))
     .where(projectConditions(user, params))
     .orderBy(
       ...orderFrom(
@@ -95,7 +95,7 @@ export async function listProjects(user: CurrentUser, params: ProjectListParams)
 export type ProjectRow = Awaited<ReturnType<typeof listProjects>> extends PageResult<infer TRow> ? TRow : never
 
 export async function projectFacets(user: CurrentUser, params: ProjectListParams): Promise<Facet[]> {
-  const grouped = <TColumn extends typeof projects.status | typeof projects.type | typeof projects.priority>(
+  const grouped = <TColumn extends typeof projects.status | typeof projects.priority | typeof projects.categoryId>(
     column: TColumn,
     exclude: keyof ProjectListParams["filters"],
   ) =>
@@ -106,20 +106,28 @@ export async function projectFacets(user: CurrentUser, params: ProjectListParams
       .where(projectConditions(user, params, exclude))
       .groupBy(column)
 
-  const [statusRows, typeRows, priorityRows] = await Promise.all([
+  const [statusRows, priorityRows, categoryCountRows, categories] = await Promise.all([
     grouped(projects.status, "status"),
-    grouped(projects.type, "type"),
     grouped(projects.priority, "priority"),
+    grouped(projects.categoryId, "category"),
+    db.select({ id: projectCategories.id, name: projectCategories.name }).from(projectCategories).orderBy(asc(projectCategories.name)),
   ])
   const statusCounts = facetCounts(statusRows)
-  const typeCounts = facetCounts(typeRows)
   const priorityCounts = facetCounts(priorityRows)
+  const categoryCounts = facetCounts(categoryCountRows)
 
-  return [
+  const facets: Facet[] = [
     { key: "status", title: "Status", options: PROJECT_STATUSES.map((value) => ({ value, label: PROJECT_STATUS_LABELS[value], count: statusCounts.get(value) ?? 0 })) },
-    { key: "type", title: "Type", options: PROJECT_TYPES.map((value) => ({ value, label: PROJECT_TYPE_LABELS[value], count: typeCounts.get(value) ?? 0 })) },
     { key: "priority", title: "Priority", options: PRIORITIES.map((value) => ({ value, label: PRIORITY_LABELS[value], count: priorityCounts.get(value) ?? 0 })) },
   ]
+  if (categories.length > 0) {
+    facets.splice(1, 0, {
+      key: "category",
+      title: "Category",
+      options: categories.map((category) => ({ value: category.id, label: category.name, count: categoryCounts.get(category.id) ?? 0 })),
+    })
+  }
+  return facets
 }
 
 export async function getProjectSummary(projectId: string) {
@@ -130,18 +138,20 @@ export async function getProjectSummary(projectId: string) {
       name: projects.name,
       description: projects.description,
       status: projects.status,
-      type: projects.type,
+      categoryId: projects.categoryId,
+      categoryName: projectCategories.name,
       priority: projects.priority,
       startDate: projects.startDate,
       dueDate: projects.dueDate,
       clientId: projects.clientId,
       clientName: clients.name,
-      managesInfrastructure: projects.managesInfrastructure,
+      recurringBilling: projects.recurringBilling,
       createdAt: projects.createdAt,
       updatedAt: projects.updatedAt,
     })
     .from(projects)
     .leftJoin(clients, eq(clients.id, projects.clientId))
+    .leftJoin(projectCategories, eq(projectCategories.id, projects.categoryId))
     .where(eq(projects.id, projectId))
     .limit(1)
   return row ?? null

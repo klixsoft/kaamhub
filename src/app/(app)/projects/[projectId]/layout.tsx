@@ -10,7 +10,7 @@ import { getModules } from "@/server/modules/settings/queries"
 async function ProjectShell({ params, children }: { params: LayoutProps<"/projects/[projectId]">["params"]; children: React.ReactNode }) {
   const { projectId } = await params
   const [{ user, access, project }, modules] = await Promise.all([loadProjectContext(projectId), getModules()])
-  const showServices = modules.services && project.managesInfrastructure && !access.isClientViewer && (access.canManage || can(user, "finance:read"))
+  const showServices = modules.services && project.recurringBilling && !access.isClientViewer && (access.canManage || can(user, "finance:read"))
   const base = `/projects/${project.id}`
   const tabs = [
     { href: base, label: "Board" },

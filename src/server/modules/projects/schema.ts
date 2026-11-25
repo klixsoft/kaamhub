@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { PRIORITIES, PROJECT_STATUSES, PROJECT_TYPES, REPOSITORY_LABELS, TASK_TYPES, TASK_VISIBILITIES } from "@/config/domain"
+import { PRIORITIES, PROJECT_STATUSES, REPOSITORY_LABELS, TASK_TYPES, TASK_VISIBILITIES } from "@/config/domain"
 import { PROJECT_ROLES } from "@/config/roles"
 
 const emptyToNull = (value: string) => (value === "" ? null : value)
@@ -19,12 +19,12 @@ export const projectSchema = z
     description: optionalText(5000),
     clientId: optionalUuid,
     status: z.enum(PROJECT_STATUSES),
-    type: z.enum(PROJECT_TYPES),
+    categoryId: optionalUuid,
     priority: z.enum(PRIORITIES),
     startDate: optionalDate,
     dueDate: optionalDate,
     managerId: optionalText(64),
-    managesInfrastructure: z.stringbool().default(false),
+    recurringBilling: z.stringbool().default(false),
   })
   .refine((value) => !value.startDate || !value.dueDate || value.dueDate >= value.startDate, {
     path: ["dueDate"],
