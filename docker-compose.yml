@@ -40,6 +40,8 @@ services:
       COMPOSE_FILE: /stack/docker-compose.yml
       ENV_FILE: /stack/.env
       APP_SERVICE: app
+      CRON_URL: http://app:3000/api/cron/daily
+      CRON_SECRET: ${CRON_SECRET:-}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./:/stack

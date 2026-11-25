@@ -11,6 +11,9 @@ const config = {
   projectName: process.env.COMPOSE_PROJECT_NAME ?? "kaamhub",
   service: process.env.APP_SERVICE ?? "app",
   tagVariable: process.env.IMAGE_TAG_VARIABLE ?? "APP_TAG",
+  cronUrl: process.env.CRON_URL ?? "",
+  cronSecret: process.env.CRON_SECRET ?? "",
+  cronIntervalMs: Number(process.env.CRON_INTERVAL_MINUTES ?? 60) * 60 * 1000,
 }
 
 if (config.token.length < 32) {
@@ -114,5 +117,24 @@ const server = createServer(async (request, response) => {
 
   return send(response, 404, { error: "Not found" })
 })
+
+async function triggerDailyJobs() {
+  try {
+    const response = await fetch(config.cronUrl, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${config.cronSecret}` },
+      signal: AbortSignal.timeout(5 * 60 * 1000),
+    })
+    console.log(`[${new Date().toISOString()}] Daily jobs responded with ${response.status}`)
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] Daily jobs request failed: ${error instanceof Error ? error.message : String(error)}`)
+  }
+}
+
+if (config.cronUrl && config.cronSecret) {
+  setTimeout(triggerDailyJobs, 60 * 1000)
+  setInterval(triggerDailyJobs, config.cronIntervalMs)
+  console.log(`Scheduler enabled: ${config.cronUrl} every ${config.cronIntervalMs / 60000} minutes`)
+}
 
 server.listen(config.port, () => console.log(`Updater listening on ${config.port}`))
