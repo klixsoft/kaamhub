@@ -11,7 +11,7 @@ import { action, formAction } from "@/server/lib/action"
 import { AppError, notFoundError } from "@/server/lib/errors"
 import { getSettings, invoiceFormatOf } from "@/server/modules/settings/queries"
 import { recordAudit } from "@/server/services/audit"
-import { assertTreatmentAllowed, insertDraft, replaceDraft } from "./drafts"
+import { insertDraft, replaceDraft } from "./drafts"
 import { allocateInvoiceNumber } from "./numbering"
 import { cancelInvoiceSchema, invoiceDraftSchema, invoiceIdSchema, paymentSchema } from "./schema"
 import { deliverInvoice } from "./delivery"
@@ -79,17 +79,10 @@ export const issueInvoice = action({
   handler: async ({ invoiceId }, { user }) => {
     const billing = await getSettings("billing")
     if (!billing.legalName) throw new AppError("Add your registered company name in Billing settings before issuing invoices.")
-    if (billing.chargesTax && !billing.taxNumber) {
-      throw new AppError(`Add your ${billing.taxIdLabel} in Billing settings before issuing ${billing.taxName} invoices.`)
-    }
 
     const issued = await db.transaction(async (tx) => {
       const invoice = await lockInvoice(tx, invoiceId)
       if (invoice.status !== "draft") throw new AppError("This invoice has already been issued.")
-      assertTreatmentAllowed(billing, invoice.taxTreatment)
-      if (invoice.taxTreatment === "standard" && invoice.taxRate !== billing.taxRate) {
-        throw new AppError(`The ${billing.taxName} rate changed since this draft was saved. Open the draft and save it again to recalculate.`)
-      }
       if (invoice.currency.code !== billing.currencyCode) {
         throw new AppError("The billing currency changed since this draft was saved. Open the draft and save it again.")
       }

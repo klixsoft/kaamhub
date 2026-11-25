@@ -4,7 +4,7 @@ import { INVOICE_STATUS_LABELS, INVOICE_STATUSES } from "@/config/finance"
 import { type Facet, type ListParams, type PageResult, toPageResult } from "@/lib/list-params"
 import type { CurrentUser } from "@/server/auth/session"
 import { db } from "@/server/db"
-import { clients, invoiceItems, invoicePayments, invoices, projects, users } from "@/server/db/schema"
+import { clients, invoiceItems, invoicePayments, invoices, invoiceTaxes, projects, users } from "@/server/db/schema"
 import { facetCounts, filterIn, orderFrom, pageWindow, searchAcross, totalCount } from "@/server/lib/query"
 import { invoiceVisibilityCondition } from "./access"
 
@@ -103,8 +103,13 @@ export async function fetchInvoice(invoiceId: string, visibility?: SQL) {
     .limit(1)
   if (!invoice) return null
 
-  const [items, payments] = await Promise.all([
+  const [items, taxes, payments] = await Promise.all([
     db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, invoiceId)).orderBy(asc(invoiceItems.position)),
+    db
+      .select({ name: invoiceTaxes.name, kind: invoiceTaxes.kind, rate: invoiceTaxes.rate, amount: invoiceTaxes.amount })
+      .from(invoiceTaxes)
+      .where(eq(invoiceTaxes.invoiceId, invoiceId))
+      .orderBy(asc(invoiceTaxes.position)),
     db
       .select({
         id: invoicePayments.id,
@@ -121,7 +126,7 @@ export async function fetchInvoice(invoiceId: string, visibility?: SQL) {
       .orderBy(desc(invoicePayments.paidOn)),
   ])
 
-  return { ...invoice.invoice, clientName: invoice.clientName, clientEmail: invoice.clientEmail, projectName: invoice.projectName, projectCode: invoice.projectCode, items, payments }
+  return { ...invoice.invoice, clientName: invoice.clientName, clientEmail: invoice.clientEmail, projectName: invoice.projectName, projectCode: invoice.projectCode, items, taxes, payments }
 }
 
 export type InvoiceDetail = NonNullable<Awaited<ReturnType<typeof getInvoice>>>

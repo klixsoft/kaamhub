@@ -1,5 +1,6 @@
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer"
-import { type Calendar, taxTreatmentLabel } from "@/config/finance"
+import type { Calendar } from "@/config/finance"
+import { taxLabel } from "@/lib/invoice-math"
 import { amountInWords, formatMoney } from "@/lib/money"
 import { toBsDate } from "@/lib/nepali-date"
 import type { InvoiceView } from "./view"
@@ -125,14 +126,18 @@ export function InvoiceDocument({ invoice }: { invoice: InvoiceView }) {
               <Text>- {money(invoice.discount)}</Text>
             </View>
           ) : null}
-          <View style={styles.totalRow}>
-            <Text>Taxable amount</Text>
-            <Text>{money(invoice.taxableAmount)}</Text>
-          </View>
-          <View style={styles.totalRow}>
-            <Text>{taxTreatmentLabel(invoice.taxTreatment, invoice.taxName, invoice.taxRate)}</Text>
-            <Text>{money(invoice.taxAmount)}</Text>
-          </View>
+          {invoice.taxes.length > 0 ? (
+            <View style={styles.totalRow}>
+              <Text>Taxable amount</Text>
+              <Text>{money(invoice.taxableAmount)}</Text>
+            </View>
+          ) : null}
+          {invoice.taxes.map((tax, index) => (
+            <View key={`${tax.name}-${index}`} style={styles.totalRow}>
+              <Text>{taxLabel(tax)}</Text>
+              <Text>{money(tax.amount)}</Text>
+            </View>
+          ))}
           <View style={styles.grandTotal}>
             <Text>Total</Text>
             <Text>{money(invoice.total)}</Text>

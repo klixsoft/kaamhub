@@ -2,8 +2,8 @@ import "server-only"
 import { eq } from "drizzle-orm"
 import { calculateTotals, lineAmount } from "@/lib/invoice-math"
 import type { Transaction } from "@/server/db"
-import { clients, invoiceItems, invoices } from "@/server/db/schema"
-import { AppError, notFoundError } from "@/server/lib/errors"
+import { clients, invoiceItems, invoices, invoiceTaxes } from "@/server/db/schema"
+import { notFoundError } from "@/server/lib/errors"
 import { currencyFormatOf, invoiceFormatOf } from "@/server/modules/settings/queries"
 import type { BillingSettings } from "@/server/modules/settings/schema"
 import type { InvoiceDraftInput, InvoiceItemInput } from "./schema"
@@ -35,33 +35,38 @@ function itemRows(invoiceId: string, items: InvoiceItemInput[]) {
   }))
 }
 
-export function assertTreatmentAllowed(billing: BillingSettings, treatment: InvoiceDraftInput["taxTreatment"]) {
-  if (!billing.chargesTax && treatment !== "exempt") {
-    throw new AppError(`Your company is set up not to charge ${billing.taxName}. Choose “No ${billing.taxName}” or update Billing settings.`)
+function draftColumns(values: DraftValues, billing: BillingSettings) {
+  const { taxes, ...totals } = calculateTotals(values.items, values.discount, values.taxes)
+  return {
+    taxes,
+    columns: {
+      clientId: values.clientId,
+      projectId: values.projectId ?? null,
+      currency: currencyFormatOf(billing),
+      format: invoiceFormatOf(billing),
+      issueDate: values.issueDate,
+      dueDate: values.dueDate ?? null,
+      notes: values.notes ?? null,
+      ...totals,
+    },
   }
 }
 
-function draftColumns(values: DraftValues, billing: BillingSettings) {
-  assertTreatmentAllowed(billing, values.taxTreatment)
-  const totals = calculateTotals(values.items, values.discount, values.taxTreatment, billing.taxRate)
-  return {
-    clientId: values.clientId,
-    projectId: values.projectId ?? null,
-    taxTreatment: values.taxTreatment,
-    currency: currencyFormatOf(billing),
-    format: invoiceFormatOf(billing),
-    issueDate: values.issueDate,
-    dueDate: values.dueDate ?? null,
-    notes: values.notes ?? null,
-    ...totals,
-  }
+function taxRows(invoiceId: string, taxes: ReturnType<typeof draftColumns>["taxes"]) {
+  return taxes.map((tax, position) => ({ invoiceId, position, ...tax }))
+}
+
+async function writeLines(tx: Transaction, invoiceId: string, values: DraftValues, taxes: ReturnType<typeof draftColumns>["taxes"]) {
+  await tx.insert(invoiceItems).values(itemRows(invoiceId, values.items))
+  if (taxes.length > 0) await tx.insert(invoiceTaxes).values(taxRows(invoiceId, taxes))
 }
 
 export async function insertDraft(tx: Transaction, values: DraftValues, billing: BillingSettings, createdById: string | null) {
+  const draft = draftColumns(values, billing)
   const [created] = await tx
     .insert(invoices)
     .values({
-      ...draftColumns(values, billing),
+      ...draft.columns,
       ...(await buyerSnapshot(tx, values.clientId)),
       serviceId: values.serviceId ?? null,
       servicePeriodStart: values.servicePeriodStart ?? null,
@@ -70,15 +75,17 @@ export async function insertDraft(tx: Transaction, values: DraftValues, billing:
     .onConflictDoNothing({ target: [invoices.serviceId, invoices.servicePeriodStart] })
     .returning({ id: invoices.id })
   if (!created) return null
-  await tx.insert(invoiceItems).values(itemRows(created.id, values.items))
+  await writeLines(tx, created.id, values, draft.taxes)
   return created
 }
 
 export async function replaceDraft(tx: Transaction, invoiceId: string, values: DraftValues, billing: BillingSettings) {
+  const draft = draftColumns(values, billing)
   await tx
     .update(invoices)
-    .set({ ...draftColumns(values, billing), ...(await buyerSnapshot(tx, values.clientId)) })
+    .set({ ...draft.columns, ...(await buyerSnapshot(tx, values.clientId)) })
     .where(eq(invoices.id, invoiceId))
   await tx.delete(invoiceItems).where(eq(invoiceItems.invoiceId, invoiceId))
-  await tx.insert(invoiceItems).values(itemRows(invoiceId, values.items))
+  await tx.delete(invoiceTaxes).where(eq(invoiceTaxes.invoiceId, invoiceId))
+  await writeLines(tx, invoiceId, values, draft.taxes)
 }

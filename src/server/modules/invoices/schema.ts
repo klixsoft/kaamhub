@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { PAYMENT_METHODS, TAX_TREATMENTS } from "@/config/finance"
+import { PAYMENT_METHODS, TAX_KINDS } from "@/config/finance"
 
 const isoDate = z.iso.date("Enter a valid date")
 const optionalText = (max: number) =>
@@ -17,17 +17,25 @@ export const invoiceItemSchema = z.object({
   rate: z.number("Enter a rate").min(0).max(1_000_000_000),
 })
 
+export const invoiceTaxSchema = z
+  .object({
+    name: z.string().trim().min(1, "Name each tax, e.g. VAT").max(40),
+    kind: z.enum(TAX_KINDS),
+    value: z.number("Enter the tax rate or amount").min(0).max(1_000_000_000),
+  })
+  .refine((tax) => tax.kind === "fixed" || tax.value <= 100, { path: ["value"], message: "A percentage cannot exceed 100" })
+
 export const invoiceDraftSchema = z
   .object({
     invoiceId: z.uuid().nullish(),
     clientId: z.uuid("Choose a client"),
     projectId: z.uuid().nullish(),
-    taxTreatment: z.enum(TAX_TREATMENTS),
     issueDate: isoDate,
     dueDate: isoDate.nullish(),
     discount: z.number().min(0).max(1_000_000_000).default(0),
     notes: optionalText(2000),
     items: z.array(invoiceItemSchema).min(1, "Add at least one item").max(100),
+    taxes: z.array(invoiceTaxSchema).max(10, "Add at most 10 taxes").default([]),
   })
   .refine((value) => !value.dueDate || value.dueDate >= value.issueDate, {
     path: ["dueDate"],
@@ -36,6 +44,7 @@ export const invoiceDraftSchema = z
 
 export type InvoiceDraftInput = z.infer<typeof invoiceDraftSchema>
 export type InvoiceItemInput = z.infer<typeof invoiceItemSchema>
+export type InvoiceTaxInput = z.infer<typeof invoiceTaxSchema>
 
 export const invoiceIdSchema = z.object({ invoiceId: z.uuid() })
 

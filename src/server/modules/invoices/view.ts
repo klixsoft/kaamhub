@@ -1,5 +1,6 @@
 import "server-only"
-import type { Calendar, CurrencyFormat, InvoiceStatus, TaxTreatment } from "@/config/finance"
+import type { Calendar, CurrencyFormat, InvoiceStatus } from "@/config/finance"
+import type { CalculatedTax } from "@/lib/invoice-math"
 import { invoiceFormatOf } from "@/server/modules/settings/queries"
 import type { BillingSettings } from "@/server/modules/settings/schema"
 import type { InvoiceDetail } from "./queries"
@@ -12,8 +13,6 @@ export interface InvoiceView {
   issueDate: string
   dueDate: string | null
   currency: CurrencyFormat
-  taxTreatment: TaxTreatment
-  taxName: string
   calendar: Calendar
   showAmountInWords: boolean
   seller: { name: string; address: string | null; contact: string | null; taxNumber: string | null; taxLabel: string }
@@ -23,7 +22,7 @@ export interface InvoiceView {
   subtotal: number
   discount: number
   taxableAmount: number
-  taxRate: number
+  taxes: CalculatedTax[]
   taxAmount: number
   total: number
   amountPaid: number
@@ -46,8 +45,6 @@ export function toInvoiceView(invoice: InvoiceDetail, billing: BillingSettings):
     issueDate: invoice.issueDate,
     dueDate: invoice.dueDate,
     currency: invoice.currency,
-    taxTreatment: invoice.taxTreatment,
-    taxName: format.taxName,
     calendar: format.calendar,
     showAmountInWords: format.showAmountInWords,
     seller: {
@@ -63,7 +60,7 @@ export function toInvoiceView(invoice: InvoiceDetail, billing: BillingSettings):
     subtotal: invoice.subtotal,
     discount: invoice.discount,
     taxableAmount: invoice.taxableAmount,
-    taxRate: invoice.taxRate,
+    taxes: invoice.taxes,
     taxAmount: invoice.taxAmount,
     total: invoice.total,
     amountPaid: invoice.amountPaid,
