@@ -8,6 +8,7 @@ import { recordAudit } from "@/server/services/audit"
 
 export const disconnectGithub = action({
   schema: z.object({}),
+  module: "github",
   handler: async (_input, { user }) => {
     await unlinkGithubAccount(user.id)
     await recordAudit({ actorId: user.id, action: "profile.github_disconnected", entityType: "user", entityId: user.id })

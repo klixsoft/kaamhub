@@ -1,8 +1,10 @@
 import "server-only"
 import { z } from "zod"
+import type { ModuleKey } from "@/config/modules"
 import type { Permission } from "@/config/roles"
 import { type CurrentUser, can, getCurrentUser } from "@/server/auth/session"
 import type { ActionResult } from "@/types/action"
+import { isModuleEnabled } from "@/server/modules/settings/queries"
 import { AppError } from "./errors"
 import { logger } from "./logger"
 
@@ -13,6 +15,7 @@ interface ActionContext {
 interface ActionOptions<TSchema extends z.ZodType, TData> {
   schema: TSchema
   permission?: Permission
+  module?: ModuleKey
   handler: (input: z.infer<TSchema>, context: ActionContext) => Promise<TData>
 }
 
@@ -34,6 +37,10 @@ async function execute<TSchema extends z.ZodType, TData>(
   if (!user) return { ok: false, error: "Your session has expired. Please sign in again." }
   if (options.permission && !can(user, options.permission)) {
     return { ok: false, error: "You do not have permission to do this." }
+  }
+
+  if (options.module && !(await isModuleEnabled(options.module))) {
+    return { ok: false, error: "This feature is turned off. An administrator can enable it in Settings." }
   }
 
   const parsed = options.schema.safeParse(raw)

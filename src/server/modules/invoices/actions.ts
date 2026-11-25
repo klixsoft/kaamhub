@@ -36,6 +36,7 @@ function revalidateInvoice(invoiceId?: string) {
 export const saveInvoiceDraft = action({
   schema: invoiceDraftSchema,
   permission: "finance:write",
+  module: "invoices",
   handler: async ({ invoiceId, ...values }, { user }) => {
     await assertProjectBelongsToClient(values.projectId, values.clientId)
     const billing = await getSettings("billing")
@@ -61,6 +62,7 @@ export const saveInvoiceDraft = action({
 export const deleteInvoiceDraft = action({
   schema: invoiceIdSchema,
   permission: "finance:write",
+  module: "invoices",
   handler: async ({ invoiceId }, { user }) => {
     const [deleted] = await db
       .delete(invoices)
@@ -76,6 +78,7 @@ export const deleteInvoiceDraft = action({
 export const issueInvoice = action({
   schema: invoiceIdSchema,
   permission: "finance:write",
+  module: "invoices",
   handler: async ({ invoiceId }, { user }) => {
     const billing = await getSettings("billing")
     if (!billing.legalName) throw new AppError("Add your registered company name in Billing settings before issuing invoices.")
@@ -130,6 +133,7 @@ export const issueInvoice = action({
 export const cancelInvoice = formAction({
   schema: cancelInvoiceSchema,
   permission: "finance:write",
+  module: "invoices",
   handler: async ({ invoiceId, reason }, { user }) => {
     await db.transaction(async (tx) => {
       const invoice = await lockInvoice(tx, invoiceId)
@@ -152,6 +156,7 @@ function paymentStatus(total: number, paid: number): InvoiceStatus {
 export const recordPayment = formAction({
   schema: paymentSchema,
   permission: "finance:write",
+  module: "invoices",
   handler: async ({ invoiceId, ...payment }, { user }) => {
     await db.transaction(async (tx) => {
       const invoice = await lockInvoice(tx, invoiceId)
@@ -176,6 +181,7 @@ export const recordPayment = formAction({
 export const sendInvoice = action({
   schema: invoiceIdSchema,
   permission: "finance:write",
+  module: "invoices",
   handler: async ({ invoiceId }, { user }) => {
     const result = await deliverInvoice(invoiceId)
     await recordAudit({ actorId: user.id, action: "invoice.sent", entityType: "invoice", entityId: invoiceId, metadata: result })

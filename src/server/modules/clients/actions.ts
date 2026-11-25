@@ -16,6 +16,7 @@ import { clientContactSchema, clientSchema } from "./schema"
 export const createClient = formAction({
   schema: clientSchema,
   permission: "clients:write",
+  module: "clients",
   handler: async (input, { user }) => {
     const [created] = await db.insert(clients).values(input).returning({ id: clients.id })
     if (!created) throw new Error("Client insert returned no row")
@@ -28,6 +29,7 @@ export const createClient = formAction({
 export const updateClient = formAction({
   schema: clientSchema.safeExtend({ clientId: z.uuid() }),
   permission: "clients:write",
+  module: "clients",
   handler: async ({ clientId, ...input }, { user }) => {
     const [updated] = await db.update(clients).set(input).where(eq(clients.id, clientId)).returning({ id: clients.id })
     if (!updated) throw notFoundError("Client")
@@ -41,6 +43,7 @@ export const updateClient = formAction({
 export const addClientContact = formAction({
   schema: clientContactSchema,
   permission: "clients:write",
+  module: "clients",
   handler: async ({ clientId, name, email, jobTitle }, { user }) => {
     const client = await db.query.clients.findFirst({ where: (table, { eq: equals }) => equals(table.id, clientId), columns: { id: true } })
     if (!client) throw notFoundError("Client")
@@ -63,6 +66,7 @@ export const addClientContact = formAction({
 export const setClientContactAccess = action({
   schema: z.object({ clientId: z.uuid(), userId: z.string().min(1), status: z.enum(["active", "inactive"]) }),
   permission: "clients:write",
+  module: "clients",
   handler: async ({ clientId, userId, status }, { user }) => {
     const contact = await db.query.clientContacts.findFirst({
       where: (table, { and: both, eq: equals }) => both(equals(table.clientId, clientId), equals(table.userId, userId)),

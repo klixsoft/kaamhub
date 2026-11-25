@@ -22,6 +22,7 @@ async function serviceProject(serviceId: string): Promise<string> {
 export const createService = formAction({
   schema: serviceSchema,
   permission: "finance:write",
+  module: "services",
   handler: async (input, { user }) => {
     await requireProjectCapability(user, input.projectId, "view")
     const [created] = await db.insert(managedServices).values(input).returning({ id: managedServices.id })
@@ -34,6 +35,7 @@ export const createService = formAction({
 export const updateService = formAction({
   schema: serviceUpdateSchema,
   permission: "finance:write",
+  module: "services",
   handler: async ({ serviceId, projectId: _projectId, ...input }, { user }) => {
     const projectId = await serviceProject(serviceId)
     await db.update(managedServices).set(input).where(and(eq(managedServices.id, serviceId), eq(managedServices.projectId, projectId)))
@@ -46,6 +48,7 @@ export const updateService = formAction({
 export const deleteService = action({
   schema: serviceIdSchema,
   permission: "finance:write",
+  module: "services",
   handler: async ({ serviceId }, { user }) => {
     const projectId = await serviceProject(serviceId)
     await db.delete(managedServices).where(eq(managedServices.id, serviceId))
@@ -58,6 +61,7 @@ export const deleteService = action({
 export const invoiceServiceNow = action({
   schema: serviceIdSchema,
   permission: "finance:write",
+  module: "services",
   handler: async ({ serviceId }, { user }) => {
     const projectId = await serviceProject(serviceId)
     const invoice = await generateServiceInvoice(serviceId, user.id)

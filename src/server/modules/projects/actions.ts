@@ -124,6 +124,7 @@ function requireGithubManager(user: Parameters<typeof can>[0]) {
 
 export const linkRepository = formAction({
   schema: repositoryLinkSchema,
+  module: "github",
   handler: async ({ projectId, repositoryId, label }, { user }) => {
     await requireProjectCapability(user, projectId, "manage")
     requireGithubManager(user)
@@ -140,6 +141,7 @@ export const linkRepository = formAction({
 
 export const createProjectRepository = formAction({
   schema: repositoryCreateSchema,
+  module: "github",
   handler: async ({ projectId, label, ...input }, { user }) => {
     await requireProjectCapability(user, projectId, "manage")
     if (!can(user, "github:manage")) throw forbiddenError()
@@ -155,6 +157,7 @@ export const createProjectRepository = formAction({
 
 export const unlinkRepository = action({
   schema: repositoryUnlinkSchema,
+  module: "github",
   handler: async ({ projectId, repositoryId }, { user }) => {
     await requireProjectCapability(user, projectId, "manage")
     requireGithubManager(user)
