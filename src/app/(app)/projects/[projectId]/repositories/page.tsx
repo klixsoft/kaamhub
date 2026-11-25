@@ -7,12 +7,14 @@ import { can } from "@/server/auth/session"
 import { isGithubAppConfigured } from "@/server/modules/github/client"
 import { loadProjectContext } from "@/server/modules/projects/context"
 import { listProjectRepositories } from "@/server/modules/projects/queries"
+import { requireModule } from "@/server/modules/settings/guards"
 
 export const metadata: Metadata = { title: "Repositories" }
 
 async function Repositories({ params }: { params: PageProps<"/projects/[projectId]/repositories">["params"] }) {
   const { projectId } = await params
   const { user, access, project } = await loadProjectContext(projectId)
+  await requireModule("github")
   if (access.isClientViewer) notFound()
   const repositories = await listProjectRepositories(project.id)
   const canLink = access.canManage && (can(user, "github:manage") || user.role === "project_manager")

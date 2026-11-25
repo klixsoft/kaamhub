@@ -13,6 +13,7 @@ import { formatDate } from "@/lib/format"
 import { can, requirePermission } from "@/server/auth/session"
 import { isUuid } from "@/server/lib/query"
 import { getClient } from "@/server/modules/clients/queries"
+import { requireModule } from "@/server/modules/settings/guards"
 
 export const metadata: Metadata = { title: "Client" }
 
@@ -27,6 +28,7 @@ function Detail({ label, children }: { label: string; children: React.ReactNode 
 
 async function ClientDetails({ params }: { params: PageProps<"/clients/[clientId]">["params"] }) {
   const [user, { clientId }] = await Promise.all([requirePermission("clients:read"), params])
+  await requireModule("clients")
   if (!isUuid(clientId)) notFound()
   const client = await getClient(clientId)
   if (!client) notFound()

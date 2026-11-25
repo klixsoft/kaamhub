@@ -11,6 +11,7 @@ import { todayIso } from "@/lib/dates"
 import { can, requireUser } from "@/server/auth/session"
 import { canSeeInvoices } from "@/server/modules/invoices/access"
 import { INVOICE_LIST_CONFIG, invoiceFacets, listInvoices } from "@/server/modules/invoices/queries"
+import { requireModule } from "@/server/modules/settings/guards"
 
 export const metadata: Metadata = { title: "Invoices" }
 
@@ -28,6 +29,7 @@ async function NewInvoiceAction() {
 async function InvoicesData({ searchParams }: { searchParams: PageProps<"/invoices">["searchParams"] }) {
   const user = await requireUser()
   if (!canSeeInvoices(user)) forbidden()
+  await requireModule("invoices")
   const params = parseListParams(await searchParams, INVOICE_LIST_CONFIG)
   const [result, facets] = await Promise.all([listInvoices(user, params), invoiceFacets(user, params)])
   return <InvoicesTable result={result} facets={facets} today={todayIso()} />

@@ -11,6 +11,7 @@ import { requirePermission } from "@/server/auth/session"
 import { SERVICE_TYPE_LABELS } from "@/config/finance"
 import { getExpiringAccess, getMyOpenTasks, getProjectStatusCounts, getUpcomingDeadlines } from "@/server/modules/dashboard/queries"
 import { upcomingRenewals } from "@/server/modules/services/queries"
+import { isModuleEnabled } from "@/server/modules/settings/queries"
 
 export const metadata: Metadata = { title: "Dashboard" }
 
@@ -25,7 +26,7 @@ async function DashboardContent() {
     getProjectStatusCounts(user),
     getUpcomingDeadlines(user),
     getExpiringAccess(user),
-    upcomingRenewals(user),
+    isModuleEnabled("services").then((enabled) => (enabled ? upcomingRenewals(user) : [])),
   ])
   const counts = new Map(statusCounts.map((row) => [row.status, row.count]))
   const today = new Date().toISOString().slice(0, 10)

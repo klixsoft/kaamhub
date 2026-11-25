@@ -3,11 +3,12 @@ import { type NextRequest, NextResponse } from "next/server"
 import { env } from "@/config/env"
 import { logger } from "@/server/lib/logger"
 import { handleGithubEvent } from "@/server/modules/github/webhooks"
+import { isModuleEnabled } from "@/server/modules/settings/queries"
 
 const MAX_PAYLOAD_BYTES = 5 * 1024 * 1024
 
 export async function POST(request: NextRequest) {
-  if (!env.GITHUB_WEBHOOK_SECRET) return NextResponse.json({ error: "Webhooks are not configured" }, { status: 404 })
+  if (!env.GITHUB_WEBHOOK_SECRET || !(await isModuleEnabled("github"))) return NextResponse.json({ error: "Webhooks are not configured" }, { status: 404 })
 
   const signature = request.headers.get("x-hub-signature-256")
   const event = request.headers.get("x-github-event")

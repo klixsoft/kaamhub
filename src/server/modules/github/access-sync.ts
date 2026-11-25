@@ -9,6 +9,7 @@ import { logger } from "@/server/lib/logger"
 import { getSettings } from "@/server/modules/settings/queries"
 import { getInstallationClient, isGithubAppConfigured } from "./client"
 import { strongestPermission } from "./permissions"
+import { isModuleEnabled } from "@/server/modules/settings/queries"
 
 interface SyncScope {
   userIds?: string[]
@@ -171,7 +172,7 @@ async function applyChange(change: Change): Promise<void> {
 }
 
 export async function reconcileGithubAccess(scope: SyncScope): Promise<{ applied: number }> {
-  if (!isGithubAppConfigured()) return { applied: 0 }
+  if (!isGithubAppConfigured() || !(await isModuleEnabled("github"))) return { applied: 0 }
   if (!scope.userIds?.length && !scope.repositoryIds?.length) return { applied: 0 }
 
   try {

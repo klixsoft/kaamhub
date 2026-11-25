@@ -5,16 +5,18 @@ import { ProjectTabs } from "@/components/projects/project-tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { can } from "@/server/auth/session"
 import { loadProjectContext } from "@/server/modules/projects/context"
+import { getModules } from "@/server/modules/settings/queries"
 
 async function ProjectShell({ params, children }: { params: LayoutProps<"/projects/[projectId]">["params"]; children: React.ReactNode }) {
   const { projectId } = await params
-  const { user, access, project } = await loadProjectContext(projectId)
-  const showServices = project.managesInfrastructure && !access.isClientViewer && (access.canManage || can(user, "finance:read"))
+  const [{ user, access, project }, modules] = await Promise.all([loadProjectContext(projectId), getModules()])
+  const showServices = modules.services && project.managesInfrastructure && !access.isClientViewer && (access.canManage || can(user, "finance:read"))
   const base = `/projects/${project.id}`
   const tabs = [
     { href: base, label: "Board" },
     { href: `${base}/overview`, label: "Overview" },
-    ...(access.isClientViewer ? [] : [{ href: `${base}/team`, label: "Team" }, { href: `${base}/repositories`, label: "Repositories" }]),
+    ...(access.isClientViewer ? [] : [{ href: `${base}/team`, label: "Team" }]),
+    ...(modules.github && !access.isClientViewer ? [{ href: `${base}/repositories`, label: "Repositories" }] : []),
     ...(showServices ? [{ href: `${base}/services`, label: "Services" }] : []),
   ]
 

@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/layout/page-header"
 import { parseListParams } from "@/lib/list-params"
 import { can, requirePermission } from "@/server/auth/session"
 import { CLIENT_LIST_CONFIG, clientFacets, listClients } from "@/server/modules/clients/queries"
+import { requireModule } from "@/server/modules/settings/guards"
 
 export const metadata: Metadata = { title: "Clients" }
 
@@ -17,6 +18,7 @@ async function AddClientAction() {
 
 async function ClientsData({ searchParams }: { searchParams: PageProps<"/clients">["searchParams"] }) {
   await requirePermission("clients:read")
+  await requireModule("clients")
   const params = parseListParams(await searchParams, CLIENT_LIST_CONFIG)
   const [result, facets] = await Promise.all([listClients(params), clientFacets(params)])
   return <ClientsTable result={result} facets={facets} />

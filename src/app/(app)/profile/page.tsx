@@ -8,11 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton"
 import { isGithubLoginConfigured } from "@/server/auth/auth"
 import { requireUser } from "@/server/auth/session"
+import { isModuleEnabled } from "@/server/modules/settings/queries"
 
 export const metadata: Metadata = { title: "My profile" }
 
 async function Profile() {
-  const user = await requireUser()
+  const [user, githubEnabled] = await Promise.all([requireUser(), isModuleEnabled("github")])
   return (
     <div className="flex flex-col gap-6">
       <Card>
@@ -24,7 +25,7 @@ async function Profile() {
           </CardDescription>
         </CardHeader>
       </Card>
-      {user.role !== "client" ? (
+      {githubEnabled && user.role !== "client" ? (
         <Card>
           <CardHeader>
             <CardTitle>GitHub</CardTitle>

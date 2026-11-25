@@ -41,7 +41,14 @@ export interface ProjectFormDefaults {
   managesInfrastructure: boolean
 }
 
-export function ProjectForm({ defaults, codePrefix = "" }: { defaults?: ProjectFormDefaults; codePrefix?: string }) {
+interface ProjectFormProps {
+  defaults?: ProjectFormDefaults
+  codePrefix?: string
+  clientsEnabled: boolean
+  servicesEnabled: boolean
+}
+
+export function ProjectForm({ defaults, codePrefix = "", clientsEnabled, servicesEnabled }: ProjectFormProps) {
   const router = useRouter()
   const [state, submit] = useActionState(defaults ? updateProject : createProject, null)
   const errors = state && !state.ok ? state.fieldErrors : undefined
@@ -74,9 +81,11 @@ export function ProjectForm({ defaults, codePrefix = "" }: { defaults?: ProjectF
           aria-invalid={invalid("code")}
         />
       </FormField>
-      <FormField id="project-client" label="Client" errors={errors?.clientId}>
-        <OptionCombobox id="project-client" name="clientId" resource="clients" defaultValue={defaults?.client} placeholder="Internal project" />
-      </FormField>
+      {clientsEnabled ? (
+        <FormField id="project-client" label="Client" errors={errors?.clientId}>
+          <OptionCombobox id="project-client" name="clientId" resource="clients" defaultValue={defaults?.client} placeholder="Internal project" />
+        </FormField>
+      ) : null}
       {defaults ? null : (
         <FormField id="project-manager" label="Project manager" errors={errors?.managerId}>
           <OptionCombobox id="project-manager" name="managerId" resource="people" placeholder="Search people…" />
@@ -106,6 +115,7 @@ export function ProjectForm({ defaults, codePrefix = "" }: { defaults?: ProjectF
       <FormField id="project-description" label="Description" errors={errors?.description} className="sm:col-span-2">
         <Textarea id="project-description" name="description" rows={4} defaultValue={defaults?.description ?? ""} />
       </FormField>
+      {servicesEnabled ? (
       <label htmlFor="project-manages-infrastructure" className="flex items-start gap-3 text-sm sm:col-span-2">
         <Switch id="project-manages-infrastructure" checked={managesInfrastructure} onCheckedChange={setManagesInfrastructure} />
         <input type="hidden" name="managesInfrastructure" value={String(managesInfrastructure)} />
@@ -114,6 +124,9 @@ export function ProjectForm({ defaults, codePrefix = "" }: { defaults?: ProjectF
           <span className="text-muted-foreground">Adds a Services tab to track renewals and bill the client on a recurring schedule.</span>
         </span>
       </label>
+      ) : (
+        <input type="hidden" name="managesInfrastructure" value={String(managesInfrastructure)} />
+      )}
       <div className="flex justify-end sm:col-span-2">
         <SubmitButton pendingLabel="Saving…">{defaults ? "Save changes" : "Create project"}</SubmitButton>
       </div>

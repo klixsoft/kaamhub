@@ -11,6 +11,7 @@ import { requirePermission } from "@/server/auth/session"
 import { githubOrg, isGithubAppConfigured } from "@/server/modules/github/client"
 import { getRepositoryStats } from "@/server/modules/github/repositories"
 import { getSettings } from "@/server/modules/settings/queries"
+import { requireModule } from "@/server/modules/settings/guards"
 
 export const metadata: Metadata = { title: "GitHub" }
 
@@ -30,6 +31,7 @@ function StatusRow({ label, ok, detail }: { label: string; ok: boolean; detail: 
 
 async function GithubSettingsContent() {
   await requirePermission("github:manage")
+  await requireModule("github")
   const [settings, repositoryStats] = await Promise.all([getSettings("github"), getRepositoryStats()])
   const appConfigured = isGithubAppConfigured()
 

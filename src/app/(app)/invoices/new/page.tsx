@@ -6,11 +6,13 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { todayIso } from "@/lib/dates"
 import { requirePermission } from "@/server/auth/session"
 import { currencyFormatOf, getSettings } from "@/server/modules/settings/queries"
+import { requireModule } from "@/server/modules/settings/guards"
 
 export const metadata: Metadata = { title: "New invoice" }
 
 async function NewInvoiceForm() {
   await requirePermission("finance:write")
+  await requireModule("invoices")
   const billing = await getSettings("billing")
   return (
     <InvoiceForm

@@ -7,12 +7,13 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { PROJECT_TYPE_LABELS } from "@/config/domain"
 import { formatDate } from "@/lib/format"
 import { loadProjectContext } from "@/server/modules/projects/context"
+import { getModules } from "@/server/modules/settings/queries"
 
 export const metadata: Metadata = { title: "Overview" }
 
 async function Overview({ params }: { params: PageProps<"/projects/[projectId]/overview">["params"] }) {
   const { projectId } = await params
-  const { access, project } = await loadProjectContext(projectId)
+  const [{ access, project }, modules] = await Promise.all([loadProjectContext(projectId), getModules()])
 
   if (access.canManage) {
     return (
@@ -22,6 +23,8 @@ async function Overview({ params }: { params: PageProps<"/projects/[projectId]/o
         </CardHeader>
         <CardContent>
           <ProjectForm
+            clientsEnabled={modules.clients}
+            servicesEnabled={modules.services}
             defaults={{
               id: project.id,
               code: project.code,

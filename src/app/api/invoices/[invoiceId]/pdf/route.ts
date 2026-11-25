@@ -7,12 +7,13 @@ import { invoiceFileName, renderInvoicePdf } from "@/server/modules/invoices/pdf
 import { getInvoice } from "@/server/modules/invoices/queries"
 import { toInvoiceView } from "@/server/modules/invoices/view"
 import { getSettings } from "@/server/modules/settings/queries"
+import { isModuleEnabled } from "@/server/modules/settings/queries"
 
 export async function GET(request: Request, context: RouteContext<"/api/invoices/[invoiceId]/pdf">) {
   const { invoiceId } = await context.params
   const user = await getCurrentUser()
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  if (!canSeeInvoices(user) || !isUuid(invoiceId)) return NextResponse.json({ error: "Not found" }, { status: 404 })
+  if (!canSeeInvoices(user) || !isUuid(invoiceId) || !(await isModuleEnabled("invoices"))) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
   const invoice = await getInvoice(user, invoiceId)
   if (!invoice) return NextResponse.json({ error: "Not found" }, { status: 404 })

@@ -9,6 +9,7 @@ import { appSettings, managedServices, projects, users } from "@/server/db/schem
 import { logger } from "@/server/lib/logger"
 import { generateDueServiceDrafts } from "@/server/modules/services/billing"
 import { sendMail } from "@/server/services/mailer"
+import { isModuleEnabled } from "@/server/modules/settings/queries"
 
 const REMINDER_OFFSETS = [30, 7, 1] as const
 
@@ -51,7 +52,7 @@ async function sendRenewalReminders(today: string): Promise<number> {
 
 export async function runDailyJobs() {
   const today = todayIso()
-  const drafts = await generateDueServiceDrafts()
+  const drafts = (await isModuleEnabled("services")) ? await generateDueServiceDrafts() : { created: 0, failed: 0 }
   const firstRunToday = await claimDailyRun(today)
   const reminders = firstRunToday ? await sendRenewalReminders(today) : 0
   logger.info("Daily jobs finished", { drafts, reminders, firstRunToday })

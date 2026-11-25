@@ -7,6 +7,7 @@ import { db } from "@/server/db"
 import { clients, departments, designations, githubRepositories, projectMembers, projects, users } from "@/server/db/schema"
 import { isUuid, searchAcross } from "@/server/lib/query"
 import { resolveProjectAccess } from "@/server/modules/projects/access"
+import { isModuleEnabled } from "@/server/modules/settings/queries"
 
 const LIMIT = 20
 
@@ -46,7 +47,7 @@ const resolvers: Record<OptionResource, Resolver> = {
     return rows.map((row) => ({ value: row.id, label: row.name }))
   },
   repositories: async (query, _params, user) => {
-    if (!can(user, "github:manage") && user.role !== "project_manager") return null
+    if ((!can(user, "github:manage") && user.role !== "project_manager") || !(await isModuleEnabled("github"))) return null
     const rows = await db
       .select({ id: githubRepositories.id, fullName: githubRepositories.fullName, description: githubRepositories.description })
       .from(githubRepositories)
