@@ -6,7 +6,7 @@ import { ConfirmDialog } from "@/components/forms/confirm-dialog"
 import { FormDialog } from "@/components/forms/form-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { BILLING_CYCLE_LABELS, type CurrencyFormat, SERVICE_STATUS_LABELS, SERVICE_TYPE_LABELS } from "@/config/finance"
+import { BILLING_CYCLE_LABELS, type CurrencyFormat, SERVICE_STATUS_LABELS } from "@/config/finance"
 import { useServerAction } from "@/hooks/use-server-action"
 import { formatDate } from "@/lib/format"
 import { formatMoney } from "@/lib/money"
@@ -37,7 +37,7 @@ export function ServicesManager({ projectId, services, canManage, hasClient, cur
       {canManage ? (
         <div className="flex justify-end">
           <FormDialog
-            title="Add managed service"
+            title="Add recurring service"
             trigger={
               <Button>
                 <PlusIcon aria-hidden />
@@ -51,7 +51,7 @@ export function ServicesManager({ projectId, services, canManage, hasClient, cur
       ) : null}
       {services.length === 0 ? (
         <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-          No services yet. Add the domain, hosting or maintenance plan you manage for this client.
+          No services yet. Add subscriptions, retainers or maintenance plans you bill this client for regularly.
         </p>
       ) : (
         <ul className="divide-y rounded-lg border">
@@ -62,7 +62,7 @@ export function ServicesManager({ projectId, services, canManage, hasClient, cur
                 <div className="min-w-0 space-y-1">
                   <p className="flex flex-wrap items-center gap-2">
                     <span className="font-medium">{service.name}</span>
-                    <Badge variant="secondary">{SERVICE_TYPE_LABELS[service.type]}</Badge>
+                    {service.categoryName ? <Badge variant="secondary">{service.categoryName}</Badge> : null}
                     {service.status !== "active" ? <Badge variant="outline">{SERVICE_STATUS_LABELS[service.status]}</Badge> : null}
                   </p>
                   <p className="text-sm text-muted-foreground">

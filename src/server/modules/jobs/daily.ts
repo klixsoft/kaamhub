@@ -1,11 +1,10 @@
 import "server-only"
 import { and, eq, inArray, ne } from "drizzle-orm"
-import { SERVICE_TYPE_LABELS } from "@/config/finance"
 import { shiftDate } from "@/lib/dates"
 import { formatDate } from "@/lib/format"
 import { todayIso } from "@/lib/dates"
 import { db } from "@/server/db"
-import { appSettings, managedServices, projects, users } from "@/server/db/schema"
+import { appSettings, managedServices, projects, serviceCategories, users } from "@/server/db/schema"
 import { logger } from "@/server/lib/logger"
 import { generateDueServiceDrafts } from "@/server/modules/services/billing"
 import { sendMail } from "@/server/services/mailer"
@@ -29,9 +28,10 @@ async function claimDailyRun(today: string): Promise<boolean> {
 async function sendRenewalReminders(today: string): Promise<number> {
   const dates = REMINDER_OFFSETS.map((days) => shiftDate(today, days))
   const expiring = await db
-    .select({ name: managedServices.name, type: managedServices.type, expiresOn: managedServices.expiresOn, project: projects.name })
+    .select({ name: managedServices.name, category: serviceCategories.name, expiresOn: managedServices.expiresOn, project: projects.name })
     .from(managedServices)
     .innerJoin(projects, eq(projects.id, managedServices.projectId))
+    .leftJoin(serviceCategories, eq(serviceCategories.id, managedServices.categoryId))
     .where(and(eq(managedServices.status, "active"), inArray(managedServices.expiresOn, dates)))
   if (expiring.length === 0) return 0
 
@@ -41,7 +41,7 @@ async function sendRenewalReminders(today: string): Promise<number> {
     .where(and(inArray(users.role, ["super_admin", "admin"]), eq(users.status, "active")))
   if (admins.length === 0) return 0
 
-  const lines = expiring.map((service) => `• ${SERVICE_TYPE_LABELS[service.type]} ${service.name} (${service.project}) expires on ${formatDate(service.expiresOn)}`)
+  const lines = expiring.map((service) => `• ${service.name}${service.category ? ` (${service.category})` : ""} for ${service.project} expires on ${formatDate(service.expiresOn)}`)
   await sendMail({
     to: admins.map((admin) => admin.email),
     subject: `${expiring.length} managed service${expiring.length === 1 ? "" : "s"} expiring soon`,

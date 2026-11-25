@@ -8,7 +8,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { PROJECT_STATUS_LABELS, PROJECT_STATUSES } from "@/config/domain"
 import { formatDate, formatDateTime } from "@/lib/format"
 import { requirePermission } from "@/server/auth/session"
-import { SERVICE_TYPE_LABELS } from "@/config/finance"
 import { getExpiringAccess, getMyOpenTasks, getProjectStatusCounts, getUpcomingDeadlines } from "@/server/modules/dashboard/queries"
 import { upcomingRenewals } from "@/server/modules/services/queries"
 import { isModuleEnabled } from "@/server/modules/settings/queries"
@@ -105,7 +104,7 @@ async function DashboardContent() {
           <Card>
             <CardHeader>
               <CardTitle>Renewals due</CardTitle>
-              <CardDescription>Managed domains, hosting and services expiring within 30 days.</CardDescription>
+              <CardDescription>Recurring services expiring within 30 days.</CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="divide-y">
@@ -114,7 +113,7 @@ async function DashboardContent() {
                     <Link href={`/projects/${service.projectId}/services`} className="min-w-0 truncate hover:underline">
                       <span className="mr-2 font-mono text-xs text-muted-foreground">{service.projectCode}</span>
                       {service.name}
-                      <span className="text-muted-foreground"> · {SERVICE_TYPE_LABELS[service.type]}</span>
+                      {service.categoryName ? <span className="text-muted-foreground"> · {service.categoryName}</span> : null}
                     </Link>
                     <span className={service.expiresOn && service.expiresOn < today ? "shrink-0 text-destructive" : "shrink-0 text-muted-foreground"}>
                       {formatDate(service.expiresOn)}

@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { BILLING_CYCLES, SERVICE_STATUSES, SERVICE_TYPES } from "@/config/finance"
+import { BILLING_CYCLES, SERVICE_STATUSES } from "@/config/finance"
 
 const emptyToNull = (value: string) => (value === "" ? null : value)
 const optionalDate = z.string().trim().transform(emptyToNull).pipe(z.iso.date("Enter a valid date").nullable()).nullish()
@@ -7,7 +7,7 @@ const optionalText = (max: number) => z.string().trim().max(max).transform(empty
 
 export const serviceSchema = z.object({
   projectId: z.uuid(),
-  type: z.enum(SERVICE_TYPES),
+  categoryId: z.string().trim().transform(emptyToNull).pipe(z.uuid().nullable()).nullish(),
   name: z.string().trim().min(2, "Enter the service name, e.g. the domain").max(200),
   provider: optionalText(120),
   status: z.enum(SERVICE_STATUSES),

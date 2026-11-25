@@ -16,7 +16,7 @@ async function Services({ params }: { params: PageProps<"/projects/[projectId]/s
   const { projectId } = await params
   const { user, access, project } = await loadProjectContext(projectId)
   await requireModule("services")
-  if (access.isClientViewer || !project.managesInfrastructure || !(access.canManage || can(user, "finance:read"))) notFound()
+  if (access.isClientViewer || !project.recurringBilling || !(access.canManage || can(user, "finance:read"))) notFound()
   const [services, billing] = await Promise.all([listProjectServices(project.id), getSettings("billing")])
 
   return (

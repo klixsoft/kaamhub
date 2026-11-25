@@ -4,15 +4,17 @@ import { shiftDate } from "@/lib/dates"
 import { todayIso } from "@/lib/dates"
 import type { CurrentUser } from "@/server/auth/session"
 import { db } from "@/server/db"
-import { managedServices, projects } from "@/server/db/schema"
+import { managedServices, projects, serviceCategories } from "@/server/db/schema"
 import { projectVisibilityCondition } from "@/server/modules/projects/access"
 
 export async function listProjectServices(projectId: string) {
-  return db
-    .select()
+  const rows = await db
+    .select({ service: managedServices, categoryName: serviceCategories.name })
     .from(managedServices)
+    .leftJoin(serviceCategories, eq(serviceCategories.id, managedServices.categoryId))
     .where(eq(managedServices.projectId, projectId))
-    .orderBy(asc(managedServices.status), asc(managedServices.type), asc(managedServices.name))
+    .orderBy(asc(managedServices.status), asc(managedServices.name))
+  return rows.map((row) => ({ ...row.service, categoryName: row.categoryName }))
 }
 
 export type ServiceRow = Awaited<ReturnType<typeof listProjectServices>>[number]
@@ -23,13 +25,14 @@ export async function upcomingRenewals(user: CurrentUser, days = 30) {
     .select({
       id: managedServices.id,
       name: managedServices.name,
-      type: managedServices.type,
+      categoryName: serviceCategories.name,
       expiresOn: managedServices.expiresOn,
       projectId: projects.id,
       projectCode: projects.code,
     })
     .from(managedServices)
     .innerJoin(projects, eq(projects.id, managedServices.projectId))
+    .leftJoin(serviceCategories, eq(serviceCategories.id, managedServices.categoryId))
     .where(
       and(
         projectVisibilityCondition(user),

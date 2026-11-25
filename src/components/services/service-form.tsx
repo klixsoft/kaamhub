@@ -9,12 +9,11 @@ import { OptionCombobox } from "@/components/forms/option-combobox"
 import { SubmitButton } from "@/components/forms/submit-button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { BILLING_CYCLE_LABELS, SERVICE_STATUS_LABELS, SERVICE_TYPE_LABELS } from "@/config/finance"
+import { BILLING_CYCLE_LABELS, SERVICE_STATUS_LABELS } from "@/config/finance"
 import { type Option, toOptions } from "@/lib/options"
 import type { ServiceRow } from "@/server/modules/services/queries"
 import { createService, updateService } from "@/server/modules/services/actions"
 
-const typeOptions = toOptions(SERVICE_TYPE_LABELS)
 const cycleOptions = toOptions(BILLING_CYCLE_LABELS)
 const statusOptions = toOptions(SERVICE_STATUS_LABELS)
 const pick = (options: Option[], value: string) => options.find((option) => option.value === value) ?? null
@@ -44,16 +43,22 @@ export function ServiceForm({ projectId, service, currencySymbol, today, onSaved
       <div className="sm:col-span-2">
         <FormAlert state={state} />
       </div>
-      <FormField id="service-type" label="Type" required errors={errors?.type}>
-        <OptionCombobox id="service-type" name="type" required options={typeOptions} defaultValue={pick(typeOptions, service?.type ?? "domain")} />
+      <FormField id="service-category" label="Type" errors={errors?.categoryId} description="Managed in Settings.">
+        <OptionCombobox
+          id="service-category"
+          name="categoryId"
+          resource="service-categories"
+          defaultValue={service?.categoryId && service.categoryName ? { value: service.categoryId, label: service.categoryName } : null}
+          placeholder="Subscription, retainer…"
+        />
       </FormField>
-      <FormField id="service-name" label="Name" required errors={errors?.name} description="e.g. example.com.np or Business hosting">
+      <FormField id="service-name" label="Name" required errors={errors?.name} description="e.g. Monthly retainer, Support plan, example.com">
         <Input id="service-name" name="name" defaultValue={service?.name} required />
       </FormField>
       <FormField id="service-provider" label="Provider" errors={errors?.provider}>
-        <Input id="service-provider" name="provider" defaultValue={service?.provider ?? ""} placeholder="Registrar or hosting company" />
+        <Input id="service-provider" name="provider" defaultValue={service?.provider ?? ""} placeholder="Supplier, if any" />
       </FormField>
-      <FormField id="service-expires" label="Expires on" errors={errors?.expiresOn} description="When it must be renewed with the provider.">
+      <FormField id="service-expires" label="Expires on" errors={errors?.expiresOn} description="When it must be renewed with the supplier.">
         <DatePicker id="service-expires" name="expiresOn" defaultValue={service?.expiresOn} />
       </FormField>
       <FormField id="service-amount" label={`Amount (${currencySymbol})`} required errors={errors?.amount} description="Before tax. Add any taxes on the draft invoice.">
