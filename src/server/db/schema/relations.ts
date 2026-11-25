@@ -3,6 +3,7 @@ import { accounts, sessions, users } from "./auth"
 import { clientContacts, clients } from "./clients"
 import { githubAccessGrants, githubRepositories, projectRepositories } from "./github"
 import { departments, designations, memberProfiles } from "./people"
+import { invoiceItems, invoicePayments, invoices, managedServices } from "./finance"
 import { boardColumns, projectMembers, projects, taskAssignees, tasks } from "./projects"
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -44,6 +45,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   columns: many(boardColumns),
   tasks: many(tasks),
   repositories: many(projectRepositories),
+  services: many(managedServices),
 }))
 
 export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
@@ -86,4 +88,24 @@ export const githubAccessGrantsRelations = relations(githubAccessGrants, ({ one 
     fields: [githubAccessGrants.repositoryId],
     references: [githubRepositories.id],
   }),
+}))
+
+export const managedServicesRelations = relations(managedServices, ({ one }) => ({
+  project: one(projects, { fields: [managedServices.projectId], references: [projects.id] }),
+}))
+
+export const invoicesRelations = relations(invoices, ({ one, many }) => ({
+  client: one(clients, { fields: [invoices.clientId], references: [clients.id] }),
+  project: one(projects, { fields: [invoices.projectId], references: [projects.id] }),
+  service: one(managedServices, { fields: [invoices.serviceId], references: [managedServices.id] }),
+  items: many(invoiceItems),
+  payments: many(invoicePayments),
+}))
+
+export const invoiceItemsRelations = relations(invoiceItems, ({ one }) => ({
+  invoice: one(invoices, { fields: [invoiceItems.invoiceId], references: [invoices.id] }),
+}))
+
+export const invoicePaymentsRelations = relations(invoicePayments, ({ one }) => ({
+  invoice: one(invoices, { fields: [invoicePayments.invoiceId], references: [invoices.id] }),
 }))

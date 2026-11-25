@@ -1,4 +1,13 @@
 import { pgEnum } from "drizzle-orm/pg-core"
+import {
+  BILLING_CYCLES,
+  CURRENCIES,
+  INVOICE_STATUSES,
+  PAYMENT_METHODS,
+  SERVICE_STATUSES,
+  SERVICE_TYPES,
+  TAX_TREATMENTS,
+} from "@/config/finance"
 import { PROJECT_ROLES, SYSTEM_ROLES } from "@/config/roles"
 import {
   CLIENT_STATUSES,
@@ -27,3 +36,11 @@ export const taskVisibilityEnum = pgEnum("task_visibility", TASK_VISIBILITIES)
 export const repositoryLabelEnum = pgEnum("repository_label", REPOSITORY_LABELS)
 export const githubPermissionEnum = pgEnum("github_permission", GITHUB_PERMISSIONS)
 export const githubAccessStatusEnum = pgEnum("github_access_status", GITHUB_ACCESS_STATUSES)
+
+export const currencyEnum = pgEnum("currency", CURRENCIES)
+export const taxTreatmentEnum = pgEnum("tax_treatment", TAX_TREATMENTS)
+export const invoiceStatusEnum = pgEnum("invoice_status", INVOICE_STATUSES)
+export const paymentMethodEnum = pgEnum("payment_method", PAYMENT_METHODS)
+export const serviceTypeEnum = pgEnum("service_type", SERVICE_TYPES)
+export const billingCycleEnum = pgEnum("billing_cycle", BILLING_CYCLES)
+export const serviceStatusEnum = pgEnum("service_status", SERVICE_STATUSES)

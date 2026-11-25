@@ -30,6 +30,7 @@ export const projects = pgTable(
     startDate: date("start_date"),
     dueDate: date("due_date"),
     taskSequence: integer("task_sequence").notNull().default(0),
+    managesInfrastructure: boolean("manages_infrastructure").notNull().default(false),
     createdById: text("created_by_id").references(() => users.id, { onDelete: "set null" }),
     ...timestamps,
   },
