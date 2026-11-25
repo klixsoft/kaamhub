@@ -64,6 +64,7 @@ POSTGRES_DB=kaamhub
 POSTGRES_USER=kaamhub
 POSTGRES_PASSWORD=$(secret 40)
 BETTER_AUTH_SECRET=$(secret 64)
+ENCRYPTION_KEY=$(od -An -tx1 -N32 /dev/urandom | tr -d " \n")
 UPDATER_TOKEN=$(secret 64)
 CRON_SECRET=$(secret 64)
 UPDATE_REPOSITORY=${REPOSITORY}
