@@ -6,6 +6,7 @@ BRANCH="${KAAMHUB_BRANCH:-main}"
 INSTALL_DIR="${KAAMHUB_DIR:-/opt/kaamhub}"
 RAW_URL="https://raw.githubusercontent.com/${REPOSITORY}/${BRANCH}"
 IMAGE="ghcr.io/${REPOSITORY}"
+INSTALL_URL="https://github.com/${REPOSITORY}/releases/latest/download/install.sh"
 
 info() { printf '\033[1;34m==>\033[0m %s\n' "$1"; }
 fail() { printf '\033[1;31mError:\033[0m %s\n' "$1" >&2; exit 1; }
@@ -17,7 +18,7 @@ ask() {
   printf '%s' "${answer:-$default}"
 }
 
-[ "$(id -u)" -eq 0 ] || fail "Run this script as root, for example: curl -fsSL ${RAW_URL}/scripts/install.sh | sudo bash"
+[ "$(id -u)" -eq 0 ] || fail "Run this script as root, for example: curl -fsSL ${INSTALL_URL} | sudo bash"
 [ "$(uname -s)" = "Linux" ] || fail "KaamHub can only be installed on Linux servers."
 command -v curl > /dev/null || fail "curl is required."
 
