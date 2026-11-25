@@ -2,7 +2,7 @@ import "server-only"
 import { and, asc, eq, sql } from "drizzle-orm"
 import type { Priority, TaskType, TaskVisibility } from "@/config/domain"
 import { db } from "@/server/db"
-import { boardColumns, taskAssignees, tasks, users } from "@/server/db/schema"
+import { boardColumns, taskAssignees, taskChecklistItems, taskComments, tasks, users } from "@/server/db/schema"
 import type { ProjectAccess } from "./access"
 
 export interface BoardAssignee {
@@ -24,6 +24,9 @@ export interface BoardTask {
   dueDate: string | null
   estimateHours: string | null
   assignees: BoardAssignee[]
+  commentCount: number
+  checklistTotal: number
+  checklistDone: number
 }
 
 export interface BoardColumn {
@@ -65,6 +68,11 @@ export async function getBoard(access: ProjectAccess): Promise<{ columns: BoardC
         dueDate: tasks.dueDate,
         estimateHours: tasks.estimateHours,
         assignees: sql<BoardAssignee[]>`coalesce(${assignees.list}, '[]'::json)`,
+        commentCount: sql<number>`(select cast(count(*) as integer) from ${taskComments} where ${taskComments.taskId} = ${tasks.id} ${
+          access.isClientViewer ? sql`and ${taskComments.visibility} = 'client'` : sql``
+        })`,
+        checklistTotal: sql<number>`(select cast(count(*) as integer) from ${taskChecklistItems} where ${taskChecklistItems.taskId} = ${tasks.id})`,
+        checklistDone: sql<number>`(select cast(count(*) as integer) from ${taskChecklistItems} where ${taskChecklistItems.taskId} = ${tasks.id} and ${taskChecklistItems.done})`,
       })
       .from(tasks)
       .leftJoin(assignees, eq(assignees.taskId, tasks.id))

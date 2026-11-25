@@ -6,6 +6,8 @@ import { db, type Transaction } from "@/server/db"
 import { boardColumns, projectMembers, projects, taskAssignees, tasks } from "@/server/db/schema"
 import { action, formAction } from "@/server/lib/action"
 import { AppError, notFoundError } from "@/server/lib/errors"
+import { recordTaskActivity } from "@/server/modules/tasks/activity"
+import { columnMove, describeTaskChanges, snapshotTask } from "@/server/modules/tasks/changes"
 import { recordAudit } from "@/server/services/audit"
 import { requireProjectCapability } from "./guard"
 import { needsRebalance, POSITION_STEP, positionBetween } from "./positions"
@@ -36,7 +38,7 @@ async function loadTaskProject(taskId: string) {
   return task.projectId
 }
 
-const boardPath = (projectId: string) => `/projects/${projectId}`
+const boardPath = (projectId: string) => `/projects/${projectId}/board`
 
 export const createTask = formAction({
   schema: taskSchema,
@@ -65,6 +67,7 @@ export const createTask = formAction({
         .returning({ id: tasks.id, number: tasks.number })
       if (!task) throw new Error("Task insert returned no row")
       if (assignees.length > 0) await tx.insert(taskAssignees).values(assignees.map((userId) => ({ taskId: task.id, userId })))
+      await recordTaskActivity(tx, task.id, user.id, [{ action: "created" }])
       return task
     })
 
@@ -83,6 +86,7 @@ export const updateTask = formAction({
     await db.transaction(async (tx) => {
       await assertColumnInProject(tx, input.columnId, projectId)
       const assignees = await validAssignees(tx, projectId, assigneeIds)
+      const before = await snapshotTask(tx, taskId)
       await tx
         .update(tasks)
         .set({
@@ -92,6 +96,8 @@ export const updateTask = formAction({
         .where(eq(tasks.id, taskId))
       await tx.delete(taskAssignees).where(eq(taskAssignees.taskId, taskId))
       if (assignees.length > 0) await tx.insert(taskAssignees).values(assignees.map((userId) => ({ taskId, userId })))
+      const after = await snapshotTask(tx, taskId)
+      if (before && after) await recordTaskActivity(tx, taskId, user.id, await describeTaskChanges(tx, before, after))
     })
 
     await recordAudit({ actorId: user.id, action: "task.updated", entityType: "task", entityId: taskId })
@@ -138,7 +144,9 @@ export const moveTask = action({
         after = refreshed.find((row) => row.id === afterTaskId)?.position ?? null
       }
 
+      const [current] = await tx.select({ columnId: tasks.columnId }).from(tasks).where(eq(tasks.id, taskId)).limit(1)
       await tx.update(tasks).set({ columnId, position: positionBetween(before, after) }).where(eq(tasks.id, taskId))
+      if (current) await recordTaskActivity(tx, taskId, user.id, await columnMove(tx, current.columnId, columnId))
     })
 
     revalidatePath(boardPath(projectId))
