@@ -12,7 +12,8 @@ export const metadata: Metadata = { title: "Overview" }
 
 async function Overview({ params }: { params: PageProps<"/projects/[projectId]/overview">["params"] }) {
   const { projectId } = await params
-  const [{ access, project }, modules] = await Promise.all([loadProjectContext(projectId), getModules()])
+  const { access, project } = await loadProjectContext(projectId)
+  const modules = await getModules()
 
   if (access.canManage) {
     return (

@@ -13,7 +13,8 @@ import { isModuleEnabled } from "@/server/modules/settings/queries"
 export const metadata: Metadata = { title: "My profile" }
 
 async function Profile() {
-  const [user, githubEnabled] = await Promise.all([requireUser(), isModuleEnabled("github")])
+  const user = await requireUser()
+  const githubEnabled = await isModuleEnabled("github")
   return (
     <div className="flex flex-col gap-6">
       <Card>
