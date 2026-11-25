@@ -174,7 +174,9 @@ Keep `.env` in a safe place too; `BETTER_AUTH_SECRET` is needed to keep existing
 
 ## Publishing images
 
-Images are built by `.github/workflows/release.yml` when a maintainer pushes a version tag:
+Images are built by `.github/workflows/release.yml`. The easiest way to release is from GitHub: open **Actions → Release → Run workflow**, choose `main` and enter the version, for example `0.1.0`. The workflow builds the images, then creates the `v0.1.0` tag and the release.
+
+Pushing a version tag works too:
 
 ```bash
 git tag v0.1.0
@@ -184,7 +186,7 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-The workflow publishes multi-architecture images (amd64 and arm64) to GitHub Container Registry and creates a GitHub Release:
+The workflow publishes multi-architecture images (amd64 and arm64) to GitHub Container Registry and creates a GitHub Release with a version-pinned `install.sh` attached:
 
 - `ghcr.io/<owner>/<repo>:<version>` and `:latest`
 - `ghcr.io/<owner>/<repo>-updater:<version>` and `:latest`
