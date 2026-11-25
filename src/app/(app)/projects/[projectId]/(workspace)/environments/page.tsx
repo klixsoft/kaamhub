@@ -5,6 +5,8 @@ import { EnvironmentsManager } from "@/components/environments/environments-mana
 import { SectionHeading } from "@/components/layout/section-heading"
 import { Skeleton } from "@/components/ui/skeleton"
 import { todayIso } from "@/lib/dates"
+import { isEncryptionConfigured } from "@/server/lib/crypto"
+import { listProjectCredentials } from "@/server/modules/environments/credentials"
 import { listProjectEnvironments } from "@/server/modules/environments/queries"
 import { loadProjectContext } from "@/server/modules/projects/context"
 import { requireModule } from "@/server/modules/settings/guards"
@@ -13,17 +15,29 @@ export const metadata: Metadata = { title: "Environments" }
 
 async function Environments({ params }: { params: PageProps<"/projects/[projectId]/environments">["params"] }) {
   const { projectId } = await params
-  const { access, project } = await loadProjectContext(projectId)
+  const { user, access, project } = await loadProjectContext(projectId)
   await requireModule("environments")
   if (access.isClientViewer) notFound()
-  const environments = await listProjectEnvironments(project.id)
-  return <EnvironmentsManager projectId={project.id} environments={environments} canManage={access.canManage} today={todayIso()} />
+  const [environments, credentials] = await Promise.all([
+    listProjectEnvironments(project.id),
+    listProjectCredentials(project.id, { userId: user.id, canManage: access.canManage }),
+  ])
+  return (
+    <EnvironmentsManager
+      projectId={project.id}
+      environments={environments}
+      credentials={credentials}
+      canManage={access.canManage}
+      encryptionReady={isEncryptionConfigured()}
+      today={todayIso()}
+    />
+  )
 }
 
 export default function ProjectEnvironmentsPage({ params }: PageProps<"/projects/[projectId]/environments">) {
   return (
     <>
-      <SectionHeading title="Environments" description="Production, staging and development URLs with live status, domain and hosting renewals." />
+      <SectionHeading title="Environments" description="URLs with live status, renewals and test credentials for each environment." />
       <Suspense fallback={<Skeleton className="h-80 w-full" />}>
         <Environments params={params} />
       </Suspense>

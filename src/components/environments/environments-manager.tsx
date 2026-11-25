@@ -1,16 +1,20 @@
 "use client"
 
+import { useState } from "react"
 import { ExternalLinkIcon, GitBranchIcon, PencilIcon, PlusIcon, RefreshCwIcon, Trash2Icon } from "lucide-react"
 import { ConfirmDialog } from "@/components/forms/confirm-dialog"
 import { FormDialog } from "@/components/forms/form-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ENVIRONMENT_KIND_LABELS } from "@/config/domain"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useServerAction } from "@/hooks/use-server-action"
 import { formatDate, formatDateTime } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { checkEnvironmentNow, deleteEnvironment } from "@/server/modules/environments/actions"
+import type { CredentialRow } from "@/server/modules/environments/credentials"
 import type { EnvironmentRow } from "@/server/modules/environments/queries"
+import { CredentialsList } from "./credentials-list"
 import { EnvironmentForm } from "./environment-form"
 import { HealthIndicator } from "./health-indicator"
 
@@ -27,39 +31,16 @@ function ExpiryLine({ label, date, today }: { label: string; date: string | null
 interface EnvironmentsManagerProps {
   projectId: string
   environments: EnvironmentRow[]
+  credentials: CredentialRow[]
   canManage: boolean
+  encryptionReady: boolean
   today: string
 }
 
-export function EnvironmentsManager({ projectId, environments, canManage, today }: EnvironmentsManagerProps) {
+function EnvironmentCard({ projectId, environment, canManage, today }: { projectId: string; environment: EnvironmentRow; canManage: boolean; today: string }) {
   const { isPending, run } = useServerAction()
-
   return (
-    <div className="flex flex-col gap-4">
-      {canManage ? (
-        <div className="flex justify-end">
-          <FormDialog
-            title="Add environment"
-            trigger={
-              <Button>
-                <PlusIcon aria-hidden />
-                Add environment
-              </Button>
-            }
-          >
-            {(close) => <EnvironmentForm projectId={projectId} onSaved={close} />}
-          </FormDialog>
-        </div>
-      ) : null}
-
-      {environments.length === 0 ? (
-        <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-          No environments yet. Add production, staging or development URLs to track their status and renewals.
-        </p>
-      ) : (
-        <ul className="grid gap-4 xl:grid-cols-2">
-          {environments.map((environment) => (
-            <li key={environment.id} className="flex flex-col gap-3 rounded-lg border bg-card p-4">
+    <div className="flex flex-col gap-3 rounded-lg border bg-card p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 space-y-1">
                   <p className="flex flex-wrap items-center gap-2">
@@ -151,9 +132,66 @@ export function EnvironmentsManager({ projectId, environments, canManage, today 
                   </>
                 ) : null}
               </div>
-            </li>
+    </div>
+  )
+}
+
+export function EnvironmentsManager({ projectId, environments, credentials, canManage, encryptionReady, today }: EnvironmentsManagerProps) {
+  const [tab, setTab] = useState(environments[0]?.id ?? "")
+  const activeTab = environments.some((environment) => environment.id === tab) ? tab : (environments[0]?.id ?? "")
+  const credentialsByEnvironment = Map.groupBy(credentials, (credential) => credential.environmentId)
+
+  return (
+    <div className="flex flex-col gap-4">
+      {canManage ? (
+        <div className="flex justify-end">
+          <FormDialog
+            title="Add environment"
+            trigger={
+              <Button>
+                <PlusIcon aria-hidden />
+                Add environment
+              </Button>
+            }
+          >
+            {(close) => <EnvironmentForm projectId={projectId} onSaved={close} />}
+          </FormDialog>
+        </div>
+      ) : null}
+
+      {environments.length === 0 ? (
+        <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+          No environments yet. Add production, staging or development URLs to track their status, renewals and test credentials.
+        </p>
+      ) : (
+        <Tabs value={activeTab} onValueChange={(value) => setTab(String(value))} className="gap-4">
+          <TabsList className="h-auto max-w-full flex-wrap justify-start">
+            {environments.map((environment) => (
+              <TabsTrigger key={environment.id} value={environment.id} className="gap-2">
+                <span
+                  aria-hidden
+                  className={cn(
+                    "size-2 rounded-full",
+                    !environment.url || environment.health === "unknown" ? "bg-zinc-400" : environment.health === "up" ? "bg-emerald-500" : "bg-red-500",
+                  )}
+                />
+                {environment.name}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {environments.map((environment) => (
+            <TabsContent key={environment.id} value={environment.id} className="flex flex-col gap-6">
+              <EnvironmentCard projectId={projectId} environment={environment} canManage={canManage} today={today} />
+              <CredentialsList
+                projectId={projectId}
+                environmentId={environment.id}
+                credentials={credentialsByEnvironment.get(environment.id) ?? []}
+                canManage={canManage}
+                encryptionReady={encryptionReady}
+              />
+            </TabsContent>
           ))}
-        </ul>
+        </Tabs>
       )}
     </div>
   )
