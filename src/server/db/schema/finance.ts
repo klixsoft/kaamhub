@@ -1,5 +1,5 @@
 import { date, index, integer, jsonb, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core"
-import type { CurrencyFormat } from "@/config/finance"
+import type { CurrencyFormat, InvoiceFormat } from "@/config/finance"
 import { users } from "./auth"
 import { clients } from "./clients"
 import {
@@ -30,7 +30,7 @@ export const managedServices = pgTable(
     expiresOn: date("expires_on"),
     billingCycle: billingCycleEnum("billing_cycle").notNull(),
     amount: money("amount").notNull(),
-    taxTreatment: taxTreatmentEnum("tax_treatment").notNull().default("vat"),
+    taxTreatment: taxTreatmentEnum("tax_treatment").notNull().default("standard"),
     nextBillingOn: date("next_billing_on").notNull(),
     notes: text("notes"),
     ...timestamps,
@@ -61,20 +61,22 @@ export const invoices = pgTable(
     serviceId: uuid("service_id").references(() => managedServices.id, { onDelete: "set null" }),
     servicePeriodStart: date("service_period_start"),
     currency: jsonb("currency").$type<CurrencyFormat>().notNull(),
-    taxTreatment: taxTreatmentEnum("tax_treatment").notNull().default("vat"),
+    taxTreatment: taxTreatmentEnum("tax_treatment").notNull().default("standard"),
+    format: jsonb("format").$type<InvoiceFormat>(),
     issueDate: date("issue_date").notNull(),
     dueDate: date("due_date"),
     sellerName: text("seller_name"),
     sellerAddress: text("seller_address"),
     sellerTaxNumber: text("seller_tax_number"),
+    sellerContact: text("seller_contact"),
     buyerName: text("buyer_name").notNull(),
     buyerAddress: text("buyer_address"),
     buyerTaxNumber: text("buyer_tax_number"),
     subtotal: money("subtotal").notNull().default(0),
     discount: money("discount").notNull().default(0),
     taxableAmount: money("taxable_amount").notNull().default(0),
-    vatRate: numeric("vat_rate", { precision: 5, scale: 2, mode: "number" }).notNull().default(0),
-    vatAmount: money("vat_amount").notNull().default(0),
+    taxRate: numeric("tax_rate", { precision: 5, scale: 2, mode: "number" }).notNull().default(0),
+    taxAmount: money("tax_amount").notNull().default(0),
     total: money("total").notNull().default(0),
     amountPaid: money("amount_paid").notNull().default(0),
     notes: text("notes"),

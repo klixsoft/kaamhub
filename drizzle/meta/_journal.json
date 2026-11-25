@@ -15,6 +15,20 @@
       "when": 1795582347279,
       "tag": "0001_invoices_and_managed_services",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795583377712,
+      "tag": "0002_localisable_tax",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795583384244,
+      "tag": "0003_drop_vat_columns",
+      "breakpoints": true
     }
   ]
 }
