@@ -24,7 +24,7 @@ export const projectSchema = z
     startDate: optionalDate,
     dueDate: optionalDate,
     managerId: optionalText(64),
-    recurringBilling: z.stringbool().default(false),
+    stageId: optionalUuid,
   })
   .refine((value) => !value.startDate || !value.dueDate || value.dueDate >= value.startDate, {
     path: ["dueDate"],

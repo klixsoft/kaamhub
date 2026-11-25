@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { TeamManager } from "@/components/projects/team-manager"
+import { SectionHeading } from "@/components/layout/section-heading"
 import { Skeleton } from "@/components/ui/skeleton"
 import { loadProjectContext } from "@/server/modules/projects/context"
 import { listProjectMembers } from "@/server/modules/projects/queries"
@@ -18,8 +19,11 @@ async function Team({ params }: { params: PageProps<"/projects/[projectId]/team"
 
 export default function ProjectTeamPage({ params }: PageProps<"/projects/[projectId]/team">) {
   return (
-    <Suspense fallback={<Skeleton className="h-80 w-full" />}>
+    <>
+      <SectionHeading title="Team" description="People working on this project and their project role." />
+      <Suspense fallback={<Skeleton className="h-80 w-full" />}>
       <Team params={params} />
-    </Suspense>
+      </Suspense>
+    </>
   )
 }

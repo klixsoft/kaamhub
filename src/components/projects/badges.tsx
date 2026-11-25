@@ -24,3 +24,7 @@ export function PriorityBadge({ priority }: { priority: Priority }) {
     <Badge variant={priority === "urgent" ? "destructive" : priority === "high" ? "secondary" : "outline"}>{PRIORITY_LABELS[priority]}</Badge>
   )
 }
+
+export function ProjectStageBadge({ stage }: { stage: string }) {
+  return <Badge variant="secondary">{stage}</Badge>
+}

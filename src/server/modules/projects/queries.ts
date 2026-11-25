@@ -19,6 +19,7 @@ import {
   designations,
   projectCategories,
   projectMembers,
+  projectStages,
   projectRepositories,
   projects,
   tasks,
@@ -28,7 +29,7 @@ import { facetCounts, filterIdsIn, filterIn, orderFrom, pageWindow, searchAcross
 import { projectVisibilityCondition } from "./access"
 
 export const PROJECT_LIST_CONFIG = {
-  filters: ["status", "category", "priority"] as const,
+  filters: ["status", "stage", "category", "priority"] as const,
   sorts: ["name", "code", "dueDate", "updatedAt"] as const,
   defaultSort: { id: "updatedAt" as const, desc: true },
 }
@@ -42,6 +43,7 @@ function projectConditions(user: CurrentUser, params: ProjectListParams, exclude
     searchAcross(params.q, [projects.name, projects.code, clients.name]),
     exclude === "status" ? undefined : filterIn(projects.status, filters.status, PROJECT_STATUSES),
     exclude === "category" ? undefined : filterIdsIn(projects.categoryId, filters.category),
+    exclude === "stage" ? undefined : filterIdsIn(projects.stageId, filters.stage),
     exclude === "priority" ? undefined : filterIn(projects.priority, filters.priority, PRIORITIES),
   )
 }
@@ -63,6 +65,7 @@ export async function listProjects(user: CurrentUser, params: ProjectListParams)
       name: projects.name,
       status: projects.status,
       categoryName: projectCategories.name,
+      stageName: projectStages.name,
       priority: projects.priority,
       dueDate: projects.dueDate,
       updatedAt: projects.updatedAt,
@@ -74,6 +77,7 @@ export async function listProjects(user: CurrentUser, params: ProjectListParams)
     .from(projects)
     .leftJoin(clients, eq(clients.id, projects.clientId))
     .leftJoin(projectCategories, eq(projectCategories.id, projects.categoryId))
+    .leftJoin(projectStages, eq(projectStages.id, projects.stageId))
     .where(projectConditions(user, params))
     .orderBy(
       ...orderFrom(
@@ -95,7 +99,7 @@ export async function listProjects(user: CurrentUser, params: ProjectListParams)
 export type ProjectRow = Awaited<ReturnType<typeof listProjects>> extends PageResult<infer TRow> ? TRow : never
 
 export async function projectFacets(user: CurrentUser, params: ProjectListParams): Promise<Facet[]> {
-  const grouped = <TColumn extends typeof projects.status | typeof projects.priority | typeof projects.categoryId>(
+  const grouped = <TColumn extends typeof projects.status | typeof projects.priority | typeof projects.categoryId | typeof projects.stageId>(
     column: TColumn,
     exclude: keyof ProjectListParams["filters"],
   ) =>
@@ -106,20 +110,30 @@ export async function projectFacets(user: CurrentUser, params: ProjectListParams
       .where(projectConditions(user, params, exclude))
       .groupBy(column)
 
-  const [statusRows, priorityRows, categoryCountRows, categories] = await Promise.all([
+  const [statusRows, priorityRows, categoryCountRows, stageCountRows, categories, stages] = await Promise.all([
     grouped(projects.status, "status"),
     grouped(projects.priority, "priority"),
     grouped(projects.categoryId, "category"),
+    grouped(projects.stageId, "stage"),
     db.select({ id: projectCategories.id, name: projectCategories.name }).from(projectCategories).orderBy(asc(projectCategories.name)),
+    db.select({ id: projectStages.id, name: projectStages.name }).from(projectStages).orderBy(asc(projectStages.name)),
   ])
   const statusCounts = facetCounts(statusRows)
   const priorityCounts = facetCounts(priorityRows)
   const categoryCounts = facetCounts(categoryCountRows)
+  const stageCounts = facetCounts(stageCountRows)
 
   const facets: Facet[] = [
     { key: "status", title: "Status", options: PROJECT_STATUSES.map((value) => ({ value, label: PROJECT_STATUS_LABELS[value], count: statusCounts.get(value) ?? 0 })) },
     { key: "priority", title: "Priority", options: PRIORITIES.map((value) => ({ value, label: PRIORITY_LABELS[value], count: priorityCounts.get(value) ?? 0 })) },
   ]
+  if (stages.length > 0) {
+    facets.splice(1, 0, {
+      key: "stage",
+      title: "Stage",
+      options: stages.map((stage) => ({ value: stage.id, label: stage.name, count: stageCounts.get(stage.id) ?? 0 })),
+    })
+  }
   if (categories.length > 0) {
     facets.splice(1, 0, {
       key: "category",
@@ -145,13 +159,15 @@ export async function getProjectSummary(projectId: string) {
       dueDate: projects.dueDate,
       clientId: projects.clientId,
       clientName: clients.name,
-      recurringBilling: projects.recurringBilling,
+      stageId: projects.stageId,
+      stageName: projectStages.name,
       createdAt: projects.createdAt,
       updatedAt: projects.updatedAt,
     })
     .from(projects)
     .leftJoin(clients, eq(clients.id, projects.clientId))
     .leftJoin(projectCategories, eq(projectCategories.id, projects.categoryId))
+    .leftJoin(projectStages, eq(projectStages.id, projects.stageId))
     .where(eq(projects.id, projectId))
     .limit(1)
   return row ?? null

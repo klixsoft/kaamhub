@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "New project" }
 async function NewProjectForm() {
   await requirePermission("projects:create")
   const [{ projectCodePrefix }, modules] = await Promise.all([getSettings("general"), getModules()])
-  return <ProjectForm codePrefix={projectCodePrefix} clientsEnabled={modules.clients} servicesEnabled={modules.services} />
+  return <ProjectForm codePrefix={projectCodePrefix} clientsEnabled={modules.clients} />
 }
 
 export default function NewProjectPage() {

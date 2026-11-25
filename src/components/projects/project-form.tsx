@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useActionState, useEffect, useState } from "react"
+import { useActionState, useEffect } from "react"
 import { toast } from "sonner"
 import { FormAlert } from "@/components/forms/form-alert"
 import { FormField } from "@/components/forms/form-field"
@@ -9,7 +9,6 @@ import { OptionCombobox } from "@/components/forms/option-combobox"
 import { SubmitButton } from "@/components/forms/submit-button"
 import { DatePicker } from "@/components/forms/date-picker"
 import { Input } from "@/components/ui/input"
-import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import {
   PRIORITY_LABELS,
@@ -35,22 +34,20 @@ export interface ProjectFormDefaults {
   startDate: string | null
   dueDate: string | null
   client: Option | null
-  recurringBilling: boolean
+  stage: Option | null
 }
 
 interface ProjectFormProps {
   defaults?: ProjectFormDefaults
   codePrefix?: string
   clientsEnabled: boolean
-  servicesEnabled: boolean
 }
 
-export function ProjectForm({ defaults, codePrefix = "", clientsEnabled, servicesEnabled }: ProjectFormProps) {
+export function ProjectForm({ defaults, codePrefix = "", clientsEnabled }: ProjectFormProps) {
   const router = useRouter()
   const [state, submit] = useActionState(defaults ? updateProject : createProject, null)
   const errors = state && !state.ok ? state.fieldErrors : undefined
   const invalid = (field: string) => Boolean(errors?.[field]) || undefined
-  const [recurringBilling, setRecurringBilling] = useState(defaults?.recurringBilling ?? false)
 
   useEffect(() => {
     if (!state?.ok) return
@@ -91,6 +88,9 @@ export function ProjectForm({ defaults, codePrefix = "", clientsEnabled, service
       <FormField id="project-status" label="Status" required errors={errors?.status}>
         <OptionCombobox id="project-status" name="status" required options={statusOptions} defaultValue={pick(statusOptions, defaults?.status ?? "planning")} />
       </FormField>
+      <FormField id="project-stage" label="Stage" errors={errors?.stageId} description="e.g. In development, Live, Support.">
+        <OptionCombobox id="project-stage" name="stageId" resource="project-stages" defaultValue={defaults?.stage} placeholder="Choose a stage…" />
+      </FormField>
       <FormField id="project-category" label="Category" errors={errors?.categoryId} description="Managed in Settings.">
         <OptionCombobox id="project-category" name="categoryId" resource="project-categories" defaultValue={defaults?.category} placeholder="Choose a category…" />
       </FormField>
@@ -112,18 +112,6 @@ export function ProjectForm({ defaults, codePrefix = "", clientsEnabled, service
       <FormField id="project-description" label="Description" errors={errors?.description} className="sm:col-span-2">
         <Textarea id="project-description" name="description" rows={4} defaultValue={defaults?.description ?? ""} />
       </FormField>
-      {servicesEnabled ? (
-      <label htmlFor="project-recurring-billing" className="flex items-start gap-3 text-sm sm:col-span-2">
-        <Switch id="project-recurring-billing" checked={recurringBilling} onCheckedChange={setRecurringBilling} />
-        <input type="hidden" name="recurringBilling" value={String(recurringBilling)} />
-        <span>
-          <span className="block font-medium">Bill recurring services for this project</span>
-          <span className="text-muted-foreground">Adds a Services tab for subscriptions, retainers or maintenance billed on a schedule.</span>
-        </span>
-      </label>
-      ) : (
-        <input type="hidden" name="recurringBilling" value={String(recurringBilling)} />
-      )}
       <div className="flex justify-end sm:col-span-2">
         <SubmitButton pendingLabel="Saving…">{defaults ? "Save changes" : "Create project"}</SubmitButton>
       </div>

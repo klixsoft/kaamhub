@@ -46,7 +46,7 @@ async function assertInternalActiveUser(userId: string) {
 }
 
 function projectValues({ managerId: _managerId, ...input }: ProjectInput) {
-  return { ...input, description: input.description ?? null, clientId: input.clientId ?? null, categoryId: input.categoryId ?? null }
+  return { ...input, description: input.description ?? null, clientId: input.clientId ?? null, categoryId: input.categoryId ?? null, stageId: input.stageId ?? null }
 }
 
 const syncLater = (projectId: string, extra?: Parameters<typeof syncProjectGithubAccess>[1]) =>

@@ -1,82 +1,53 @@
 import type { Metadata } from "next"
+import { notFound } from "next/navigation"
 import { Suspense } from "react"
-import { PriorityBadge, ProjectStatusBadge } from "@/components/projects/badges"
+import { SectionHeading } from "@/components/layout/section-heading"
 import { ProjectForm } from "@/components/projects/project-form"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { formatDate } from "@/lib/format"
 import { loadProjectContext } from "@/server/modules/projects/context"
 import { getModules } from "@/server/modules/settings/queries"
 
-export const metadata: Metadata = { title: "Overview" }
+export const metadata: Metadata = { title: "Project settings" }
 
-async function Overview({ params }: { params: PageProps<"/projects/[projectId]/overview">["params"] }) {
+async function ProjectSettings({ params }: { params: PageProps<"/projects/[projectId]/settings">["params"] }) {
   const { projectId } = await params
   const { access, project } = await loadProjectContext(projectId)
+  if (!access.canManage) notFound()
   const modules = await getModules()
-
-  if (access.canManage) {
-    return (
-      <Card className="max-w-4xl">
-        <CardHeader>
-          <CardTitle>Project details</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ProjectForm
-            clientsEnabled={modules.clients}
-            servicesEnabled={modules.services}
-            defaults={{
-              id: project.id,
-              code: project.code,
-              name: project.name,
-              description: project.description,
-              status: project.status,
-              category: project.categoryId && project.categoryName ? { value: project.categoryId, label: project.categoryName } : null,
-              priority: project.priority,
-              startDate: project.startDate,
-              dueDate: project.dueDate,
-              client: project.clientId && project.clientName ? { value: project.clientId, label: project.clientName } : null,
-              recurringBilling: project.recurringBilling,
-            }}
-          />
-        </CardContent>
-      </Card>
-    )
-  }
-
-  const details = [
-    { label: "Status", value: <ProjectStatusBadge status={project.status} /> },
-    { label: "Category", value: project.categoryName ?? "—" },
-    { label: "Priority", value: <PriorityBadge priority={project.priority} /> },
-    { label: "Client", value: project.clientName ?? "Internal" },
-    { label: "Start date", value: formatDate(project.startDate) },
-    { label: "Deadline", value: formatDate(project.dueDate) },
-  ]
+  const option = (id: string | null, label: string | null) => (id && label ? { value: id, label } : null)
 
   return (
     <Card className="max-w-4xl">
-      <CardHeader>
-        <CardTitle>Project details</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-6">
-        <dl className="grid gap-4 sm:grid-cols-3">
-          {details.map((detail) => (
-            <div key={detail.label}>
-              <dt className="text-xs text-muted-foreground">{detail.label}</dt>
-              <dd className="text-sm">{detail.value}</dd>
-            </div>
-          ))}
-        </dl>
-        {project.description ? <p className="text-sm whitespace-pre-wrap">{project.description}</p> : null}
+      <CardContent>
+        <ProjectForm
+          clientsEnabled={modules.clients}
+          defaults={{
+            id: project.id,
+            code: project.code,
+            name: project.name,
+            description: project.description,
+            status: project.status,
+            category: option(project.categoryId, project.categoryName),
+            stage: option(project.stageId, project.stageName),
+            priority: project.priority,
+            startDate: project.startDate,
+            dueDate: project.dueDate,
+            client: option(project.clientId, project.clientName),
+          }}
+        />
       </CardContent>
     </Card>
   )
 }
 
-export default function ProjectOverviewPage({ params }: PageProps<"/projects/[projectId]/overview">) {
+export default function ProjectSettingsPage({ params }: PageProps<"/projects/[projectId]/settings">) {
   return (
-    <Suspense fallback={<Skeleton className="h-96 w-full max-w-4xl" />}>
-      <Overview params={params} />
-    </Suspense>
+    <>
+      <SectionHeading title="Settings" description="Name, client, stage, dates and description." />
+      <Suspense fallback={<Skeleton className="h-[32rem] w-full max-w-4xl" />}>
+        <ProjectSettings params={params} />
+      </Suspense>
+    </>
   )
 }

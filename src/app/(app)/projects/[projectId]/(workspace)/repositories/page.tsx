@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { RepositoryManager } from "@/components/projects/repository-manager"
+import { SectionHeading } from "@/components/layout/section-heading"
 import { Skeleton } from "@/components/ui/skeleton"
 import { can } from "@/server/auth/session"
 import { isGithubAppConfigured } from "@/server/modules/github/client"
@@ -32,8 +33,11 @@ async function Repositories({ params }: { params: PageProps<"/projects/[projectI
 
 export default function ProjectRepositoriesPage({ params }: PageProps<"/projects/[projectId]/repositories">) {
   return (
-    <Suspense fallback={<Skeleton className="h-80 w-full" />}>
+    <>
+      <SectionHeading title="Repositories" description="GitHub repositories linked to this project and who has access." />
+      <Suspense fallback={<Skeleton className="h-80 w-full" />}>
       <Repositories params={params} />
-    </Suspense>
+      </Suspense>
+    </>
   )
 }
