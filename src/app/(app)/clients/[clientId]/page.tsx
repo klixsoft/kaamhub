@@ -54,7 +54,7 @@ async function ClientDetails({ params }: { params: PageProps<"/clients/[clientId
                   </a>
                 ) : null}
               </Detail>
-              <Detail label="PAN / VAT">{client.taxNumber}</Detail>
+              <Detail label="Tax ID">{client.taxNumber}</Detail>
               <Detail label="Address">{client.address}</Detail>
               {editable ? <Detail label="Internal notes">{client.notes}</Detail> : null}
             </dl>

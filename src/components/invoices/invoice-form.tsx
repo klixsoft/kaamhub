@@ -13,14 +13,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { type CurrencyFormat, TAX_TREATMENT_LABELS, type TaxTreatment } from "@/config/finance"
+import { type CurrencyFormat, type TaxConfig, type TaxTreatment, taxTreatmentLabel, taxTreatmentOptions } from "@/config/finance"
 import { shiftDate } from "@/lib/dates"
 import { calculateTotals, lineAmount } from "@/lib/invoice-math"
 import { formatMoney } from "@/lib/money"
-import { type Option, toOptions } from "@/lib/options"
+import type { Option } from "@/lib/options"
 import { saveInvoiceDraft } from "@/server/modules/invoices/actions"
-
-const treatmentOptions = toOptions(TAX_TREATMENT_LABELS)
 
 interface LineState {
   key: string
@@ -46,7 +44,7 @@ interface InvoiceFormProps {
   currency: CurrencyFormat
   today: string
   paymentTermsDays: number
-  defaultTreatment: TaxTreatment
+  tax: TaxConfig
   defaults?: InvoiceFormDefaults
 }
 
@@ -54,13 +52,14 @@ let lineCounter = 0
 const newLine = (values?: Partial<LineState>): LineState => ({ key: `line-${lineCounter++}`, description: "", quantity: "1", unit: "", rate: "", ...values })
 const toNumber = (value: string) => (value.trim() === "" ? Number.NaN : Number(value))
 
-export function InvoiceForm({ currency, today, paymentTermsDays, defaultTreatment, defaults }: InvoiceFormProps) {
+export function InvoiceForm({ currency, today, paymentTermsDays, tax, defaults }: InvoiceFormProps) {
+  const treatmentOptions = taxTreatmentOptions(tax)
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [client, setClient] = useState<Option | null>(defaults?.client ?? null)
   const [project, setProject] = useState<Option | null>(defaults?.project ?? null)
-  const [treatment, setTreatment] = useState<TaxTreatment>(defaults?.taxTreatment ?? defaultTreatment)
+  const [treatment, setTreatment] = useState<TaxTreatment>(defaults?.taxTreatment ?? (tax.enabled ? "standard" : "exempt"))
   const [issueDate, setIssueDate] = useState<string | null>(defaults?.issueDate ?? today)
   const [dueDate, setDueDate] = useState<string | null>(defaults ? defaults.dueDate : shiftDate(today, paymentTermsDays))
   const [discount, setDiscount] = useState(String(defaults?.discount ?? ""))
@@ -70,7 +69,7 @@ export function InvoiceForm({ currency, today, paymentTermsDays, defaultTreatmen
   )
 
   const numericLines = lines.map((line) => ({ quantity: toNumber(line.quantity) || 0, rate: toNumber(line.rate) || 0 }))
-  const totals = calculateTotals(numericLines, Number(discount) || 0, treatment)
+  const totals = calculateTotals(numericLines, Number(discount) || 0, treatment, tax.rate)
   const money = (value: number) => formatMoney(value, currency)
 
   const updateLine = (key: string, patch: Partial<LineState>) => setLines((current) => current.map((line) => (line.key === key ? { ...line, ...patch } : line)))
@@ -266,8 +265,8 @@ export function InvoiceForm({ currency, today, paymentTermsDays, defaultTreatmen
               <span className="tabular-nums">{money(totals.taxableAmount)}</span>
             </div>
             <div className="flex justify-between">
-              <span>{treatment === "vat" ? `VAT (${totals.vatRate}%)` : TAX_TREATMENT_LABELS[treatment]}</span>
-              <span className="tabular-nums">{money(totals.vatAmount)}</span>
+              <span>{taxTreatmentLabel(treatment, tax.name, totals.taxRate)}</span>
+              <span className="tabular-nums">{money(totals.taxAmount)}</span>
             </div>
             <div className="mt-2 flex justify-between border-t pt-3 text-base font-semibold">
               <span>Total</span>

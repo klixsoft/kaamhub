@@ -9,7 +9,7 @@ import { OptionCombobox } from "@/components/forms/option-combobox"
 import { SubmitButton } from "@/components/forms/submit-button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { BILLING_CYCLE_LABELS, SERVICE_STATUS_LABELS, SERVICE_TYPE_LABELS, TAX_TREATMENT_LABELS } from "@/config/finance"
+import { BILLING_CYCLE_LABELS, SERVICE_STATUS_LABELS, SERVICE_TYPE_LABELS, type TaxConfig, taxTreatmentOptions } from "@/config/finance"
 import { type Option, toOptions } from "@/lib/options"
 import type { ServiceRow } from "@/server/modules/services/queries"
 import { createService, updateService } from "@/server/modules/services/actions"
@@ -17,19 +17,19 @@ import { createService, updateService } from "@/server/modules/services/actions"
 const typeOptions = toOptions(SERVICE_TYPE_LABELS)
 const cycleOptions = toOptions(BILLING_CYCLE_LABELS)
 const statusOptions = toOptions(SERVICE_STATUS_LABELS)
-const treatmentOptions = toOptions(TAX_TREATMENT_LABELS)
 const pick = (options: Option[], value: string) => options.find((option) => option.value === value) ?? null
 
 interface ServiceFormProps {
   projectId: string
   service?: ServiceRow
   currencySymbol: string
-  defaultTreatment: string
+  tax: TaxConfig
   today: string
   onSaved: () => void
 }
 
-export function ServiceForm({ projectId, service, currencySymbol, defaultTreatment, today, onSaved }: ServiceFormProps) {
+export function ServiceForm({ projectId, service, currencySymbol, tax, today, onSaved }: ServiceFormProps) {
+  const treatmentOptions = taxTreatmentOptions(tax)
   const [state, submit] = useActionState(service ? updateService : createService, null)
   const errors = state && !state.ok ? state.fieldErrors : undefined
 
@@ -73,7 +73,7 @@ export function ServiceForm({ projectId, service, currencySymbol, defaultTreatme
           name="taxTreatment"
           required
           options={treatmentOptions}
-          defaultValue={pick(treatmentOptions, service?.taxTreatment ?? defaultTreatment)}
+          defaultValue={pick(treatmentOptions, service?.taxTreatment ?? (tax.enabled ? "standard" : "exempt"))}
         />
       </FormField>
       <FormField id="service-started" label="Started on" errors={errors?.startedOn}>

@@ -3,21 +3,21 @@ import { Suspense } from "react"
 import { InvoiceForm } from "@/components/invoices/invoice-form"
 import { PageHeader } from "@/components/layout/page-header"
 import { Skeleton } from "@/components/ui/skeleton"
-import { todayIso } from "@/lib/nepali-date"
+import { todayIso } from "@/lib/dates"
 import { requirePermission } from "@/server/auth/session"
-import { getCurrencyFormat, getSettings } from "@/server/modules/settings/queries"
+import { currencyFormatOf, getSettings, taxConfigOf } from "@/server/modules/settings/queries"
 
 export const metadata: Metadata = { title: "New invoice" }
 
 async function NewInvoiceForm() {
   await requirePermission("finance:write")
-  const [billing, currency] = await Promise.all([getSettings("billing"), getCurrencyFormat()])
+  const billing = await getSettings("billing")
   return (
     <InvoiceForm
-      currency={currency}
+      currency={currencyFormatOf(billing)}
       today={todayIso()}
       paymentTermsDays={billing.paymentTermsDays}
-      defaultTreatment={billing.taxRegistration === "vat" ? "vat" : "exempt"}
+      tax={taxConfigOf(billing)}
     />
   )
 }

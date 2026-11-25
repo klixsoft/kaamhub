@@ -53,7 +53,7 @@ export function ClientForm({ defaults, onSaved }: ClientFormProps) {
       <FormField id="client-website" label="Website" errors={errors?.website}>
         <Input id="client-website" name="website" type="url" placeholder="https://" defaultValue={defaults?.website ?? ""} aria-invalid={invalid("website")} />
       </FormField>
-      <FormField id="client-tax" label="PAN / VAT number" errors={errors?.taxNumber}>
+      <FormField id="client-tax" label="Tax ID" errors={errors?.taxNumber}>
         <Input id="client-tax" name="taxNumber" defaultValue={defaults?.taxNumber ?? ""} />
       </FormField>
       <FormField id="client-status" label="Status" required errors={errors?.status}>

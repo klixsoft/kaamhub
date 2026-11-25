@@ -4,10 +4,10 @@ import { Suspense } from "react"
 import { InvoiceForm } from "@/components/invoices/invoice-form"
 import { PageHeader } from "@/components/layout/page-header"
 import { Skeleton } from "@/components/ui/skeleton"
-import { todayIso } from "@/lib/nepali-date"
+import { todayIso } from "@/lib/dates"
 import { can } from "@/server/auth/session"
 import { loadInvoice } from "@/server/modules/invoices/context"
-import { getCurrencyFormat, getSettings } from "@/server/modules/settings/queries"
+import { currencyFormatOf, getSettings, taxConfigOf } from "@/server/modules/settings/queries"
 
 export const metadata: Metadata = { title: "Edit invoice" }
 
@@ -16,14 +16,14 @@ async function EditInvoiceForm({ params }: { params: PageProps<"/invoices/[invoi
   const { user, invoice } = await loadInvoice(invoiceId)
   if (!can(user, "finance:write")) forbidden()
   if (invoice.status !== "draft") redirect(`/invoices/${invoice.id}`)
-  const [billing, currency] = await Promise.all([getSettings("billing"), getCurrencyFormat()])
+  const billing = await getSettings("billing")
 
   return (
     <InvoiceForm
-      currency={currency}
+      currency={currencyFormatOf(billing)}
       today={todayIso()}
       paymentTermsDays={billing.paymentTermsDays}
-      defaultTreatment={invoice.taxTreatment}
+      tax={taxConfigOf(billing)}
       defaults={{
         invoiceId: invoice.id,
         client: { value: invoice.clientId, label: invoice.clientName },

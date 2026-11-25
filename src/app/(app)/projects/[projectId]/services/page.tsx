@@ -3,11 +3,11 @@ import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { ServicesManager } from "@/components/services/services-manager"
 import { Skeleton } from "@/components/ui/skeleton"
-import { todayIso } from "@/lib/nepali-date"
+import { todayIso } from "@/lib/dates"
 import { can } from "@/server/auth/session"
 import { loadProjectContext } from "@/server/modules/projects/context"
 import { listProjectServices } from "@/server/modules/services/queries"
-import { getCurrencyFormat, getSettings } from "@/server/modules/settings/queries"
+import { currencyFormatOf, getSettings, taxConfigOf } from "@/server/modules/settings/queries"
 
 export const metadata: Metadata = { title: "Services" }
 
@@ -15,7 +15,7 @@ async function Services({ params }: { params: PageProps<"/projects/[projectId]/s
   const { projectId } = await params
   const { user, access, project } = await loadProjectContext(projectId)
   if (access.isClientViewer || !project.managesInfrastructure || !(access.canManage || can(user, "finance:read"))) notFound()
-  const [services, currency, billing] = await Promise.all([listProjectServices(project.id), getCurrencyFormat(), getSettings("billing")])
+  const [services, billing] = await Promise.all([listProjectServices(project.id), getSettings("billing")])
 
   return (
     <ServicesManager
@@ -23,8 +23,8 @@ async function Services({ params }: { params: PageProps<"/projects/[projectId]/s
       services={services}
       canManage={can(user, "finance:write")}
       hasClient={project.clientId !== null}
-      currency={currency}
-      defaultTreatment={billing.taxRegistration === "vat" ? "vat" : "exempt"}
+      currency={currencyFormatOf(billing)}
+      tax={taxConfigOf(billing)}
       today={todayIso()}
     />
   )

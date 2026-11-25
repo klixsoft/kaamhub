@@ -1,5 +1,5 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { TAX_TREATMENT_LABELS } from "@/config/finance"
+import { taxTreatmentLabel } from "@/config/finance"
 import { formatDate } from "@/lib/format"
 import { amountInWords, formatMoney } from "@/lib/money"
 import { toBsDate } from "@/lib/nepali-date"
@@ -10,10 +10,10 @@ interface PartyProps {
   name: string
   address: string | null
   taxNumber: string | null
-  taxLabel?: string
+  taxLabel: string
 }
 
-function Party({ label, name, address, taxNumber, taxLabel = "PAN/VAT No." }: PartyProps) {
+function Party({ label, name, address, taxNumber, taxLabel }: PartyProps) {
   return (
     <div className="space-y-0.5 text-sm">
       <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
@@ -34,7 +34,7 @@ export function InvoiceSummary({ invoice }: { invoice: InvoiceView }) {
     ["Subtotal", invoice.subtotal],
     ...(invoice.discount > 0 ? [["Discount", -invoice.discount] as [string, number]] : []),
     ["Taxable amount", invoice.taxableAmount],
-    [invoice.taxTreatment === "vat" ? `VAT (${invoice.vatRate}%)` : TAX_TREATMENT_LABELS[invoice.taxTreatment], invoice.vatAmount],
+    [taxTreatmentLabel(invoice.taxTreatment, invoice.taxName, invoice.taxRate), invoice.taxAmount],
     ["Total", invoice.total, true],
   ]
 
@@ -55,7 +55,8 @@ export function InvoiceSummary({ invoice }: { invoice: InvoiceView }) {
           <dd className="font-mono">{invoice.number ?? "Assigned when issued"}</dd>
           <dt className="text-muted-foreground">Date</dt>
           <dd>
-            {formatDate(invoice.issueDate)} <span className="text-muted-foreground">({toBsDate(invoice.issueDate)} BS)</span>
+            {formatDate(invoice.issueDate)}
+            {invoice.calendar === "bikram_sambat" ? <span className="text-muted-foreground"> ({toBsDate(invoice.issueDate)} BS)</span> : null}
           </dd>
           {invoice.dueDate ? (
             <>
@@ -65,7 +66,13 @@ export function InvoiceSummary({ invoice }: { invoice: InvoiceView }) {
           ) : null}
         </dl>
       </div>
-      <Party label="Bill to" name={invoice.buyer.name} address={invoice.buyer.address} taxNumber={invoice.buyer.taxNumber} />
+      <Party
+        label="Bill to"
+        name={invoice.buyer.name}
+        address={invoice.buyer.address}
+        taxNumber={invoice.buyer.taxNumber}
+        taxLabel={invoice.seller.taxLabel}
+      />
       <div className="overflow-x-auto rounded-md border">
         <Table>
           <TableHeader>
@@ -100,10 +107,12 @@ export function InvoiceSummary({ invoice }: { invoice: InvoiceView }) {
           </div>
         ))}
       </dl>
-      <p className="rounded-md bg-muted px-3 py-2 text-sm">
-        <span className="font-medium">In words: </span>
-        {amountInWords(invoice.total, invoice.currency)}
-      </p>
+      {invoice.showAmountInWords ? (
+        <p className="rounded-md bg-muted px-3 py-2 text-sm">
+          <span className="font-medium">In words: </span>
+          {amountInWords(invoice.total, invoice.currency)}
+        </p>
+      ) : null}
       {invoice.notes ? <p className="text-sm whitespace-pre-line text-muted-foreground">{invoice.notes}</p> : null}
       {invoice.cancelReason ? <p className="text-sm text-destructive">Cancelled: {invoice.cancelReason}</p> : null}
     </article>
