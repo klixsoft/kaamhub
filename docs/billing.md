@@ -1,46 +1,50 @@
-# Invoicing, tax and managed services
+# Invoicing, taxes and managed services
 
-KaamHub can invoice clients in any country. Tax, currency, calendar and invoice numbering are set once by an administrator in **Billing** settings and apply everywhere.
+KaamHub invoices clients in any country. It does not assume any tax rules: you add the taxes each invoice needs, and administrators set the currency, numbering and document style once in **Billing** settings.
 
-> KaamHub produces invoices in common formats, but it is not certified by any tax authority. Some countries require registered or approved billing software, real-time reporting or e-invoicing (for example India's e-invoicing threshold, Nepal's CBMS or the EU's e-invoicing rules). Check your obligations with a local accountant.
+> KaamHub is not certified by any tax authority. Some countries require registered billing software, real-time reporting or e-invoicing. Check your obligations with a local accountant.
 
 ## Billing settings
 
 Open **Billing** in the sidebar (Super Admin and Admin).
 
-### Country presets
-
-Pick a preset to fill in tax, calendar and currency. Every value stays editable.
-
-| Preset | Tax | Tax number label | Fiscal year | Calendar | Currency | Total in words |
-|---|---|---|---|---|---|---|
-| Generic | None | Tax ID | January | Gregorian | USD | No |
-| Nepal | VAT 13% | PAN/VAT No. | Shrawan (BS) | Gregorian + Bikram Sambat | NPR | Yes |
-| India | GST 18% | GSTIN | April | Gregorian | INR | Yes |
-| United Kingdom | VAT 20% | VAT Reg. No. | April | Gregorian | GBP | No |
-| European Union | VAT 21% | VAT ID | January | Gregorian | EUR | No |
-| United States | None | EIN | January | Gregorian | USD | No |
-| Australia | GST 10% | ABN | July | Gregorian | AUD | No |
-
-Presets live in [`src/config/billing-presets.ts`](../src/config/billing-presets.ts). Pull requests for more countries are welcome.
-
-### Settings reference
-
 | Setting | Purpose |
 |---|---|
 | Registered company name, address, contact | Printed as the seller on every invoice |
-| Tax registration number | Your VAT/GST/tax ID. Required before issuing invoices that charge tax |
-| We charge tax | Turn off if your company is not registered for tax. Invoices then use “No tax” only |
-| Tax name and standard rate | e.g. VAT 20%, GST 18% |
-| Tax number label | Printed next to tax numbers, e.g. “GSTIN” or “VAT No.” |
-| Document title | e.g. “Tax Invoice”. Invoices without tax are titled “Invoice” |
-| Calendar | Gregorian, or Gregorian with Bikram Sambat dates and fiscal year (Nepal) |
-| Fiscal year starts in | Invoice numbers restart each fiscal year |
-| Currency code, symbol, names and number format | Used for every amount. Number format is either 1,00,000 (lakh/crore) or 100,000 |
-| Print the total in words | Adds “Rupees One Thousand … Only” style text |
+| Tax number label and your tax number | e.g. “VAT No.”, “GSTIN”, “EIN” or “Tax ID”. Printed for you and your clients |
+| Currency code, symbol, names and number format | Used for every amount. Number format is 100,000 or 1,00,000 (lakh/crore) |
+| Print the total in words | Adds “Dollars One Hundred Only” style text where invoices are expected to show it |
+| Document title | e.g. “Invoice” or “Tax Invoice” |
 | Number prefix | e.g. `INV-` gives `INV-2026-0001` |
+| Fiscal year starts in | Invoice numbers restart each fiscal year |
+| Calendar | Gregorian, or Gregorian with Bikram Sambat dates and fiscal year (Nepal) |
 | Payment terms | Default due date for new invoices |
+| Create recurring drafts | How many days before a service's billing date its draft is prepared |
 | Payment details and footer | Printed at the bottom of the invoice |
+
+## Taxes
+
+Taxes are added on each invoice, so one installation can handle VAT, GST, sales tax, withholding, service charges or no tax at all.
+
+Each tax line has:
+
+| Field | Example |
+|---|---|
+| Name | VAT, GST, Sales tax, Service charge |
+| Type | **Percentage** of the taxable amount, or a **fixed amount** |
+| Value | `13` for 13%, or `50.00` for a fixed amount |
+
+The invoice calculates:
+
+```
+Subtotal        = sum of item quantity × rate
+Taxable amount  = Subtotal − Discount
+Each tax        = Taxable amount × rate / 100   (percentage)
+                = amount as entered             (fixed)
+Total           = Taxable amount + all taxes
+```
+
+Each tax is printed as its own line on the invoice and the PDF. Use up to ten taxes per invoice.
 
 ## Invoice lifecycle
 
@@ -59,43 +63,32 @@ delete           cancel (with reason, only before any payment)
 
 ### Numbering
 
-Numbers are `{prefix}{fiscal year}-{sequence}` and the sequence comes from an atomic counter per fiscal year, so two people issuing at the same moment can never get the same number.
+Numbers are `{prefix}{fiscal year}-{sequence}`. The sequence comes from an atomic counter per fiscal year, so two people issuing at the same moment never get the same number.
 
 | Fiscal year rule | Example |
 |---|---|
 | Starts in January | `INV-2026-0001` |
-| Starts in April or July | `INV-2026-27-0001` |
-| Bikram Sambat | `INV-2083/84-0001` |
+| Starts in any other month | `INV-2026-27-0001` |
+| Bikram Sambat calendar | `INV-2083/84-0001` |
 
-### Tax treatments
-
-Each invoice and service uses one of:
-
-| Treatment | Meaning |
-|---|---|
-| Standard | Charges the standard rate from Billing settings |
-| Zero-rated | Taxable at 0%, e.g. exports of services |
-| No tax | Exempt or outside the scope of tax |
-
-If the rate or currency changes after a draft was saved, KaamHub asks you to save the draft again before issuing, so totals always match the printed rate.
+If the currency changes after a draft was saved, KaamHub asks you to save the draft again before issuing.
 
 ## Managed services and recurring billing
 
 When your company manages a client's domain, hosting or maintenance, turn on **We manage the domain and hosting** on the project. A **Services** tab appears.
 
-For each service, record the type, name (e.g. the domain), provider, renewal date with the provider, amount, billing cycle (monthly, quarterly, every 6 months or yearly) and the next billing date.
+For each service, record the type, name (e.g. the domain), provider, renewal date with the provider, amount before tax, billing cycle (monthly, quarterly, every 6 months or yearly) and the next billing date.
 
-- **Recurring drafts**: every day, KaamHub creates a draft invoice for each active service due within the configured lead time (7 days by default) and moves its next billing date forward one cycle. Each billing period is invoiced only once, guaranteed by a database constraint.
+- **Recurring drafts**: every day, KaamHub creates a draft invoice for each active service due within the configured lead time and moves its next billing date forward one cycle. Each billing period is invoiced only once, guaranteed by a database constraint.
+- **Taxes on recurring drafts**: drafts start without taxes. Add the taxes that apply while reviewing the draft, then issue it.
 - **Bill next period**: create the next draft immediately from the Services tab.
 - **Renewal reminders**: admins get an email 30, 7 and 1 day before a service expires with its provider, and the dashboard lists renewals due within 30 days.
-
-Drafts are never issued automatically; someone reviews and issues them.
 
 ### Scheduling the daily job
 
 The daily job runs at `POST /api/cron/daily` and requires `Authorization: Bearer <CRON_SECRET>`.
 
-With the provided Docker Compose stack, set `CRON_SECRET` in `.env`; the updater service calls the job every hour and the job is safe to run repeatedly. Without the updater, call it from any scheduler:
+With the provided Docker Compose stack, the updater service calls the job every hour once `CRON_SECRET` is set; the job is safe to run repeatedly. Without the updater, call it from any scheduler:
 
 ```bash
 curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" https://hub.example.com/api/cron/daily
@@ -103,6 +96,4 @@ curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" https://hub.example.co
 
 ## PDF output
 
-Invoices are rendered as A4 PDFs on the server with [react-pdf](https://react-pdf.org). They include the document title, invoice number, dates (with Bikram Sambat dates when that calendar is enabled), fiscal year, seller and buyer tax numbers, line items, discount, taxable amount, tax, total, optional amount in words, payments, payment details and footer.
-
-The built-in fonts cover Latin characters and common currency symbols such as `$`, `£` and `€`. For symbols outside that set (for example `₹`), use a text symbol such as `Rs.` until custom fonts are supported.
+Invoices are rendered as A4 PDFs on the server with [react-pdf](https://react-pdf.org). The built-in fonts cover Latin characters and common currency symbols such as `$`, `£` and `€`. For symbols outside that set (for example `₹`), use a text symbol such as `Rs.` until custom fonts are supported.

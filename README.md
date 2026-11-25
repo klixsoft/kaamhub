@@ -4,7 +4,7 @@
 
 **The open-source operating system for IT companies and digital agencies.**
 
-Projects and Kanban boards, employees and freelancers, clients with their own portal, invoicing with your country's tax rules, recurring billing for the services you manage, and GitHub repository access that follows your team automatically. Self-hosted on your own server, updated in one click.
+Projects and Kanban boards, employees and freelancers, clients with their own portal, invoicing with whatever taxes your invoices need, recurring billing for the services you manage, and GitHub repository access that follows your team automatically. Self-hosted on your own server, updated in one click.
 
 [![CI](https://github.com/klixsoft/kaamhub/actions/workflows/ci.yml/badge.svg)](https://github.com/klixsoft/kaamhub/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/klixsoft/kaamhub?sort=semver)](https://github.com/klixsoft/kaamhub/releases)
@@ -28,7 +28,7 @@ Most IT companies run on a patchwork of tools: one for tasks, a spreadsheet for 
 
 - **One source of truth** for projects, people, clients and code access.
 - **Clients see progress** on a read-only board without seeing your internal work, and receive invoices from the same place.
-- **Bill anywhere.** Tax name, rate, currency, fiscal year and numbering are configurable, with presets for several countries.
+- **Bill anywhere.** Add any taxes per invoice (percentage or fixed), with your own currency, fiscal year and numbering.
 - **Never miss a renewal.** Domains, hosting and maintenance plans you manage are billed on schedule and renewals are flagged before they expire.
 - **Access follows the team.** Add a developer to a project and they get the repositories; remove them, or let a freelancer's contract end, and the access goes away.
 - **Your data stays on your server.** It is a single Docker Compose stack with PostgreSQL, so there is no per-seat pricing and no vendor lock-in.
@@ -54,12 +54,10 @@ Most IT companies run on a patchwork of tools: one for tasks, a spreadsheet for 
 - Internal sections (team, repositories, people, settings) are blocked for clients
 
 ### Invoicing that works in any country
-- Tax name, standard rate and tax-number label are configurable (VAT, GST, sales tax or none)
-- One-click **country presets**: Nepal, India, United Kingdom, European Union, United States, Australia, or generic
+- **Manual tax lines** on each invoice: any name, as a percentage of the taxable amount or a fixed amount (VAT, GST, sales tax, service charge, or none)
 - Global currency setting with symbol, number format (100,000 or 1,00,000) and optional **total in words**
-- Fiscal-year based numbering with your own prefix, e.g. `INV-2026-0001`, `INV-2026-27-0001`
-- Optional **Bikram Sambat** dates and fiscal year for Nepal
-- Standard, zero-rated and no-tax treatments per invoice
+- Fiscal-year based numbering with your own prefix, e.g. `INV-2026-0001` or `INV-2026-27-0001`
+- Optional **Bikram Sambat** dates and fiscal year
 - Draft → issue → partial or full payment → paid, with cancellation instead of deletion once issued
 - Seller and buyer details are frozen when an invoice is issued
 - **A4 PDF** generated on the server, downloadable and emailed to the client with one click
@@ -113,11 +111,11 @@ Most IT companies run on a patchwork of tools: one for tasks, a spreadsheet for 
 |---|---|
 | ![Task editor](docs/images/task.png) | ![Project team](docs/images/team.png) |
 
-| Invoice | Invoice PDF |
+| Invoice with tax lines | Invoice PDF |
 |---|---|
-| ![Invoice details](docs/images/invoice.png) | ![Invoice PDF](docs/images/invoice-pdf.png) |
+| ![Invoice editor](docs/images/invoice-new.png) | ![Invoice PDF](docs/images/invoice-pdf.png) |
 
-| Billing settings with country presets | Managed services |
+| Billing settings | Managed services |
 |---|---|
 | ![Billing settings](docs/images/billing-settings.png) | ![Managed services](docs/images/services.png) |
 
@@ -176,34 +174,15 @@ Full guide: [docs/development.md](docs/development.md)
 
 ## Deploy on your own server
 
-KaamHub ships as Docker images built by GitHub Actions:
-
-- `ghcr.io/klixsoft/kaamhub`
-- `ghcr.io/klixsoft/kaamhub-updater`
-
-On any Linux VPS with Docker:
+On any Linux VPS, one command installs Docker if needed, asks for your domain, generates all secrets and starts KaamHub with automatic HTTPS:
 
 ```bash
-mkdir -p /opt/kaamhub && cd /opt/kaamhub
+curl -fsSL https://raw.githubusercontent.com/klixsoft/kaamhub/main/scripts/install.sh | sudo bash
 ```
 
-```bash
-curl -fsSLO https://raw.githubusercontent.com/klixsoft/kaamhub/main/docker-compose.yml
-```
+Then open `https://your-domain/setup` to create the first administrator. Point your domain's DNS A record at the server before running it.
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/klixsoft/kaamhub/main/.env.production.example -o .env
-```
-
-Fill in `.env`, then start the stack:
-
-```bash
-docker compose up -d
-```
-
-Put a reverse proxy with HTTPS (Caddy or Nginx) in front of port 3000. Database migrations run automatically when the container starts.
-
-Full guide, including HTTPS, backups and updates: [docs/deployment.md](docs/deployment.md)
+Prefer to do it by hand, or already run Nginx or Traefik? See [docs/deployment.md](docs/deployment.md) for the manual install, reverse proxy examples, backups and updates.
 
 ### Updating
 
@@ -243,7 +222,7 @@ All permissions are defined in one file: [`src/config/roles.ts`](src/config/role
 | [Development](docs/development.md) | Local setup, scripts and database migrations |
 | [Architecture](docs/architecture.md) | Folder structure, data access, authorization and reusable components |
 | [Deployment](docs/deployment.md) | Docker Compose on a VPS, HTTPS, backups and updates |
-| [Invoicing and billing](docs/billing.md) | Tax settings, country presets, invoice lifecycle and recurring services |
+| [Invoicing and billing](docs/billing.md) | Billing settings, tax lines, invoice lifecycle and recurring services |
 | [GitHub integration](docs/github.md) | Creating the GitHub App and how access sync works |
 | [Contributing](CONTRIBUTING.md) | Workflow and code guidelines |
 | [Security](SECURITY.md) | Reporting vulnerabilities and the security model |
@@ -252,7 +231,7 @@ All permissions are defined in one file: [`src/config/roles.ts`](src/config/role
 
 ## Roadmap
 
-- [x] **Invoices** with configurable tax, country presets, A4 PDF and email delivery
+- [x] **Invoices** with manual tax lines, A4 PDF and email delivery
 - [x] **Managed services** with recurring billing and renewal reminders
 - [ ] Credit notes and recurring invoices for non-service work
 - [ ] Custom fonts and logo on invoices

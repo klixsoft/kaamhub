@@ -1,78 +1,107 @@
 # Deployment
 
-KaamHub runs as three containers managed by Docker Compose:
+KaamHub runs on any Linux VPS with Docker. A small server with 2 GB of RAM is a comfortable starting point.
+
+The stack is managed by Docker Compose:
 
 | Service | Purpose |
 |---|---|
 | `db` | PostgreSQL 17 with a named volume |
-| `app` | The Next.js application. Runs database migrations on start. |
+| `app` | The Next.js application. Runs database migrations on start |
 | `updater` | Pulls a new app image and restarts it when an admin clicks **Update**, and triggers the daily billing job |
+| `caddy` | Optional (`https` profile). Serves KaamHub on your domain with automatic HTTPS certificates |
 
-## 1. Publish images
+## Before you start
 
-Images are built by `.github/workflows/release.yml` when you push a tag:
+1. A Linux server (Ubuntu, Debian, Fedora, Rocky and similar) with a public IP.
+2. Optional but recommended: a domain or subdomain, e.g. `hub.example.com`, with an **A record pointing to the server's IP**. Ports 80 and 443 must be open for HTTPS certificates.
+3. Published Docker images. Maintainers publish them by pushing a version tag (see [Publishing images](#publishing-images)).
+
+## Option 1: one-command install (recommended)
+
+Run as root on the server:
 
 ```bash
-git tag v0.1.0
+curl -fsSL https://raw.githubusercontent.com/klixsoft/kaamhub/main/scripts/install.sh | sudo bash
 ```
+
+The installer:
+
+1. installs Docker if it is missing,
+2. asks for your domain (leave empty to run on `http://<server-ip>:3000`) and, optionally, an SMTP host,
+3. downloads `docker-compose.yml` and the `Caddyfile` into `/opt/kaamhub`,
+4. generates every secret (database password, auth secret, updater token, cron secret) into `/opt/kaamhub/.env`,
+5. starts the stack, waits until it is healthy and prints the URL.
+
+Open `https://your-domain/setup` to create the first administrator.
+
+To install from a fork, set `KAAMHUB_REPOSITORY=owner/repo` before running the script. To install somewhere else, set `KAAMHUB_DIR`.
+
+### After installing
+
+Edit `/opt/kaamhub/.env` to add SMTP and GitHub App settings, then apply them:
 
 ```bash
-git push origin v0.1.0
+cd /opt/kaamhub && docker compose up -d
 ```
 
-The workflow publishes multi-architecture images (amd64 and arm64):
+## Option 2: manual install
 
-- `ghcr.io/<owner>/<repo>:<version>` and `:latest`
-- `ghcr.io/<owner>/<repo>-updater:<version>` and `:latest`
-
-It then creates a GitHub Release with generated notes. The System page compares the running version with the latest release.
-
-If the repository is private, make the packages public or run `docker login ghcr.io` on the server with a token that has `read:packages`.
-
-## 2. Prepare the server
-
-Install Docker Engine with the Compose plugin. Then:
+Install Docker Engine with the Compose plugin, then:
 
 ```bash
 mkdir -p /opt/kaamhub && cd /opt/kaamhub
 ```
 
-Copy `docker-compose.yml` and `.env.production.example` from the repository into this folder, then:
-
 ```bash
-mv .env.production.example .env
+curl -fsSLO https://raw.githubusercontent.com/klixsoft/kaamhub/main/docker-compose.yml
 ```
 
 ```bash
-chmod 600 .env
+curl -fsSL https://raw.githubusercontent.com/klixsoft/kaamhub/main/docker/Caddyfile -o Caddyfile
 ```
-
-Fill in `.env`. At minimum: `APP_IMAGE`, `UPDATER_IMAGE`, `APP_URL`, `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET`, `UPDATER_TOKEN`, `CRON_SECRET` and `UPDATE_REPOSITORY`. `CRON_SECRET` enables the daily job that prepares recurring invoices and sends renewal reminders (see [billing.md](billing.md#scheduling-the-daily-job)). Generate secrets with:
 
 ```bash
-openssl rand -base64 48
+curl -fsSL https://raw.githubusercontent.com/klixsoft/kaamhub/main/.env.production.example -o .env && chmod 600 .env
 ```
 
-## 3. Start
+Fill in `.env`. At minimum: `DOMAIN`, `APP_URL`, `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET`, `UPDATER_TOKEN` and `CRON_SECRET`. Generate each secret with:
+
+```bash
+openssl rand -hex 32
+```
+
+Start the stack:
 
 ```bash
 docker compose up -d
 ```
 
-The app listens on `127.0.0.1:3000`. Visit your domain and complete `/setup`.
+## HTTPS
 
-## 4. HTTPS with a reverse proxy
+### Built-in Caddy (default)
 
-Caddy obtains and renews certificates automatically. Example `Caddyfile`:
+With `COMPOSE_PROFILES=https` and `DOMAIN=hub.example.com` in `.env`, the `caddy` service listens on ports 80 and 443 and obtains certificates from Let's Encrypt automatically. `APP_URL` must be `https://hub.example.com`.
+
+### Your own reverse proxy
+
+If the server already runs Nginx, Traefik or another proxy, set `COMPOSE_PROFILES=` (empty) and point the proxy at `127.0.0.1:3000`. Forward `Host`, `X-Forwarded-For` and `X-Forwarded-Proto`. Example for Nginx:
 
 ```
-hub.example.com {
-  encode zstd gzip
-  reverse_proxy 127.0.0.1:3000
+server {
+  server_name hub.example.com;
+  location / {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
 }
 ```
 
-With Nginx, proxy to `127.0.0.1:3000` and forward `Host`, `X-Forwarded-For` and `X-Forwarded-Proto`. `APP_URL` must match the public HTTPS address exactly.
+### Without a domain
+
+Set `APP_BIND=0.0.0.0` and `APP_URL=http://<server-ip>:3000`. This is fine for trying KaamHub, but use HTTPS for real data.
 
 ## Updating
 
@@ -126,6 +155,25 @@ docker compose exec -T db pg_restore -U kaamhub -d kaamhub --clean < backup.dump
 ```
 
 Keep `.env` in a safe place too; `BETTER_AUTH_SECRET` is needed to keep existing sessions valid.
+
+## Publishing images
+
+Images are built by `.github/workflows/release.yml` when a maintainer pushes a version tag:
+
+```bash
+git tag v0.1.0
+```
+
+```bash
+git push origin v0.1.0
+```
+
+The workflow publishes multi-architecture images (amd64 and arm64) to GitHub Container Registry and creates a GitHub Release:
+
+- `ghcr.io/<owner>/<repo>:<version>` and `:latest`
+- `ghcr.io/<owner>/<repo>-updater:<version>` and `:latest`
+
+Make the packages public in the repository's **Packages** settings so servers can pull them without logging in. The System page compares the running version with the latest release.
 
 ## Health check
 
