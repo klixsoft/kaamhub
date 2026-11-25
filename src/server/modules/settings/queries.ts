@@ -6,6 +6,7 @@ import { appSettings, departments, designations } from "@/server/db/schema"
 import { logger } from "@/server/lib/logger"
 import type { CurrencyFormat, InvoiceFormat } from "@/config/finance"
 import type { BillingSettings } from "./schema"
+import { type ModuleKey, type ModuleState, effectiveModules } from "@/config/modules"
 import { SETTINGS_DEFAULTS, SETTINGS_SCHEMAS, type SettingsKey, type SettingsValue } from "./schema"
 
 export const settingsTag = (key: SettingsKey) => `settings:${key}`
@@ -57,3 +58,11 @@ export function invoiceFormatOf(billing: BillingSettings): InvoiceFormat {
   }
 }
 
+
+export async function getModules(): Promise<ModuleState> {
+  return effectiveModules(await getSettings("modules"))
+}
+
+export async function isModuleEnabled(key: ModuleKey): Promise<boolean> {
+  return (await getModules())[key]
+}

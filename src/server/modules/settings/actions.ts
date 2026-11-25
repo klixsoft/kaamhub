@@ -11,7 +11,7 @@ import { AppError } from "@/server/lib/errors"
 import { reconcileGithubAccess } from "@/server/modules/github/access-sync"
 import { syncRepositories } from "@/server/modules/github/repositories"
 import { recordAudit } from "@/server/services/audit"
-import { billingSettingsFormSchema, generalSettingsSchema, projectRolePermissionsSchema } from "./schema"
+import { billingSettingsFormSchema, generalSettingsSchema, moduleSettingsFormSchema, projectRolePermissionsSchema } from "./schema"
 import { saveSettings } from "./service"
 
 export const saveGeneralSettings = formAction({
@@ -25,9 +25,21 @@ export const saveGeneralSettings = formAction({
   },
 })
 
+export const saveModuleSettings = formAction({
+  schema: moduleSettingsFormSchema,
+  permission: "settings:manage",
+  handler: async (input, { user }) => {
+    await saveSettings("modules", input)
+    await recordAudit({ actorId: user.id, action: "settings.modules_updated", entityType: "settings", entityId: "modules", metadata: input })
+    revalidatePath("/", "layout")
+    return undefined
+  },
+})
+
 export const saveBillingSettings = formAction({
   schema: billingSettingsFormSchema,
   permission: "settings:manage",
+  module: "invoices",
   handler: async (input, { user }) => {
     await saveSettings("billing", input)
     await recordAudit({ actorId: user.id, action: "settings.billing_updated", entityType: "settings", entityId: "billing" })
@@ -68,6 +80,7 @@ const githubFormSchema = projectRolePermissionsSchema.extend({ removeAccessOnUna
 export const saveGithubSettings = formAction({
   schema: githubFormSchema,
   permission: "github:manage",
+  module: "github",
   handler: async ({ removeAccessOnUnassign, ...permissions }, { user }) => {
     await saveSettings("github", { projectRolePermissions: permissions, removeAccessOnUnassign })
     await recordAudit({ actorId: user.id, action: "settings.github_updated", entityType: "settings", entityId: "github" })

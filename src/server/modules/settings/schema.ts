@@ -1,6 +1,7 @@
 import { z } from "zod"
 import { GITHUB_PERMISSIONS, type GithubPermission } from "@/config/domain"
 import { CALENDARS, NUMBERING_SYSTEMS } from "@/config/finance"
+import { DEFAULT_MODULES, type ModuleState } from "@/config/modules"
 import type { ProjectRole } from "@/config/roles"
 
 export const generalSettingsSchema = z.object({
@@ -70,7 +71,22 @@ export const billingSettingsFormSchema = billingSettingsSchema.extend({
   showAmountInWords: z.stringbool(),
 })
 
+export const moduleSettingsSchema = z.object({
+  clients: z.boolean(),
+  invoices: z.boolean(),
+  services: z.boolean(),
+  github: z.boolean(),
+}) satisfies z.ZodType<ModuleState>
+
+export const moduleSettingsFormSchema = z.object({
+  clients: z.stringbool(),
+  invoices: z.stringbool(),
+  services: z.stringbool(),
+  github: z.stringbool(),
+})
+
 export const SETTINGS_DEFAULTS = {
+  modules: DEFAULT_MODULES,
   general: { companyName: "KaamHub", projectCodePrefix: "" } satisfies GeneralSettings,
   billing: {
     legalName: "",
@@ -102,6 +118,7 @@ export const SETTINGS_DEFAULTS = {
 }
 
 export const SETTINGS_SCHEMAS = {
+  modules: moduleSettingsSchema,
   general: generalSettingsSchema,
   billing: billingSettingsSchema,
   github: githubSettingsSchema,
