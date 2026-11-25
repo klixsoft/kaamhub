@@ -32,7 +32,7 @@ function CommentItem({ comment, canModerate, onChange }: { comment: TaskDetail["
       <div className="min-w-0 flex-1 space-y-1">
         <p className="flex flex-wrap items-center gap-2 text-sm">
           <span className="font-medium">{comment.authorName ?? "Former member"}</span>
-          {comment.authorRole === "client" ? <Badge variant="outline">Client</Badge> : null}
+          {comment.authorRole === "client" ? <Badge variant="outline">Client</Badge> : comment.authorRole ? <Badge variant="secondary">Staff</Badge> : null}
           <span className="text-xs text-muted-foreground">
             {formatDateTime(comment.createdAt)}
             {comment.editedAt ? " (edited)" : ""}
