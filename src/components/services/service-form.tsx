@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { BILLING_CYCLE_LABELS, SERVICE_STATUS_LABELS } from "@/config/finance"
 import { type Option, toOptions } from "@/lib/options"
 import type { ServiceRow } from "@/server/modules/services/queries"
+
 import { createService, updateService } from "@/server/modules/services/actions"
 
 const cycleOptions = toOptions(BILLING_CYCLE_LABELS)
@@ -19,14 +20,14 @@ const statusOptions = toOptions(SERVICE_STATUS_LABELS)
 const pick = (options: Option[], value: string) => options.find((option) => option.value === value) ?? null
 
 interface ServiceFormProps {
-  projectId: string
+  project?: Option | null
   service?: ServiceRow
   currencySymbol: string
   today: string
   onSaved: () => void
 }
 
-export function ServiceForm({ projectId, service, currencySymbol, today, onSaved }: ServiceFormProps) {
+export function ServiceForm({ project, service, currencySymbol, today, onSaved }: ServiceFormProps) {
   const [state, submit] = useActionState(service ? updateService : createService, null)
   const errors = state && !state.ok ? state.fieldErrors : undefined
 
@@ -38,11 +39,13 @@ export function ServiceForm({ projectId, service, currencySymbol, today, onSaved
 
   return (
     <form action={submit} className="grid gap-4 sm:grid-cols-2">
-      <input type="hidden" name="projectId" value={projectId} />
       {service ? <input type="hidden" name="serviceId" value={service.id} /> : null}
       <div className="sm:col-span-2">
         <FormAlert state={state} />
       </div>
+      <FormField id="service-project" label="Project" required errors={errors?.projectId} description="The project's client is billed." className="sm:col-span-2">
+        <OptionCombobox id="service-project" name="projectId" resource="projects" defaultValue={project} placeholder="Search projects…" />
+      </FormField>
       <FormField id="service-category" label="Type" errors={errors?.categoryId} description="Managed in Settings.">
         <OptionCombobox
           id="service-category"

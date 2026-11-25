@@ -1,6 +1,6 @@
 "use client"
 
-import { BriefcaseIcon, Building2Icon, LandmarkIcon, ReceiptTextIcon, GitBranchIcon, LayoutDashboardIcon, type LucideIcon, ServerCogIcon, SettingsIcon, UsersIcon } from "lucide-react"
+import { BriefcaseIcon, Building2Icon, LandmarkIcon, ReceiptTextIcon, RepeatIcon, GitBranchIcon, LayoutDashboardIcon, type LucideIcon, ServerCogIcon, SettingsIcon, UsersIcon } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -18,6 +18,7 @@ const ICONS: Record<NavIcon, LucideIcon> = {
   dashboard: LayoutDashboardIcon,
   projects: BriefcaseIcon,
   invoices: ReceiptTextIcon,
+  services: RepeatIcon,
   people: UsersIcon,
   clients: Building2Icon,
   settings: SettingsIcon,

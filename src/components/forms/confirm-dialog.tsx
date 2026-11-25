@@ -14,7 +14,9 @@ import {
 } from "@/components/ui/alert-dialog"
 
 interface ConfirmDialogProps {
-  trigger: ReactElement
+  trigger?: ReactElement
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
   title: string
   description: string
   confirmLabel: string
@@ -22,11 +24,16 @@ interface ConfirmDialogProps {
   onConfirm: () => void
 }
 
-export function ConfirmDialog({ trigger, title, description, confirmLabel, destructive, onConfirm }: ConfirmDialogProps) {
-  const [open, setOpen] = useState(false)
+export function ConfirmDialog({ trigger, open: openProp, onOpenChange, title, description, confirmLabel, destructive, onConfirm }: ConfirmDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const open = openProp ?? internalOpen
+  const setOpen = (value: boolean) => {
+    setInternalOpen(value)
+    onOpenChange?.(value)
+  }
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger render={trigger} />
+      {trigger ? <AlertDialogTrigger render={trigger} /> : null}
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>

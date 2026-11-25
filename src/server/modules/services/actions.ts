@@ -1,6 +1,6 @@
 "use server"
 
-import { and, eq } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { db } from "@/server/db"
 import { managedServices } from "@/server/db/schema"
@@ -11,7 +11,10 @@ import { recordAudit } from "@/server/services/audit"
 import { generateServiceInvoice } from "./billing"
 import { serviceIdSchema, serviceSchema, serviceUpdateSchema } from "./schema"
 
-const servicesPath = (projectId: string) => `/projects/${projectId}/services`
+function revalidateServices(projectId: string) {
+  revalidatePath("/services")
+  revalidatePath(`/projects/${projectId}`)
+}
 
 async function serviceProject(serviceId: string): Promise<string> {
   const [service] = await db.select({ projectId: managedServices.projectId }).from(managedServices).where(eq(managedServices.id, serviceId)).limit(1)
@@ -27,7 +30,7 @@ export const createService = formAction({
     await requireProjectCapability(user, input.projectId, "view")
     const [created] = await db.insert(managedServices).values(input).returning({ id: managedServices.id })
     await recordAudit({ actorId: user.id, action: "service.created", entityType: "project", entityId: input.projectId, metadata: { name: input.name } })
-    revalidatePath(servicesPath(input.projectId))
+    revalidateServices(input.projectId)
     return created
   },
 })
@@ -36,11 +39,14 @@ export const updateService = formAction({
   schema: serviceUpdateSchema,
   permission: "finance:write",
   module: "services",
-  handler: async ({ serviceId, projectId: _projectId, ...input }, { user }) => {
-    const projectId = await serviceProject(serviceId)
-    await db.update(managedServices).set(input).where(and(eq(managedServices.id, serviceId), eq(managedServices.projectId, projectId)))
+  handler: async ({ serviceId, ...input }, { user }) => {
+    const previousProjectId = await serviceProject(serviceId)
+    await requireProjectCapability(user, input.projectId, "view")
+    await db.update(managedServices).set(input).where(eq(managedServices.id, serviceId))
+    const projectId = input.projectId
+    if (previousProjectId !== projectId) revalidateServices(previousProjectId)
     await recordAudit({ actorId: user.id, action: "service.updated", entityType: "project", entityId: projectId, metadata: { serviceId } })
-    revalidatePath(servicesPath(projectId))
+    revalidateServices(projectId)
     return { id: serviceId }
   },
 })
@@ -53,7 +59,7 @@ export const deleteService = action({
     const projectId = await serviceProject(serviceId)
     await db.delete(managedServices).where(eq(managedServices.id, serviceId))
     await recordAudit({ actorId: user.id, action: "service.deleted", entityType: "project", entityId: projectId, metadata: { serviceId } })
-    revalidatePath(servicesPath(projectId))
+    revalidateServices(projectId)
     return undefined
   },
 })
@@ -66,7 +72,7 @@ export const invoiceServiceNow = action({
     const projectId = await serviceProject(serviceId)
     const invoice = await generateServiceInvoice(serviceId, user.id)
     await recordAudit({ actorId: user.id, action: "service.invoiced", entityType: "project", entityId: projectId, metadata: { serviceId } })
-    revalidatePath(servicesPath(projectId))
+    revalidateServices(projectId)
     revalidatePath("/invoices")
     return invoice
   },
