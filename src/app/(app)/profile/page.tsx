@@ -1,20 +1,31 @@
 import type { Metadata } from "next"
+import { redirect } from "next/navigation"
 import { Suspense } from "react"
 import { PageHeader } from "@/components/layout/page-header"
 import { RoleBadge } from "@/components/people/badges"
+import { ActiveSessions } from "@/components/profile/active-sessions"
 import { ChangePasswordForm } from "@/components/profile/change-password-form"
 import { GithubConnection } from "@/components/profile/github-connection"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { isGithubLoginConfigured } from "@/server/auth/auth"
-import { requireUser } from "@/server/auth/session"
+import { getCurrentSession } from "@/server/auth/session"
+import { listActiveSessions } from "@/server/auth/session-store"
+import { getGithubOAuthConfig } from "@/server/modules/integrations/config"
 import { isModuleEnabled } from "@/server/modules/settings/queries"
 
 export const metadata: Metadata = { title: "My profile" }
 
-async function Profile() {
-  const user = await requireUser()
-  const githubEnabled = await isModuleEnabled("github")
+async function Profile({ searchParams }: { searchParams: PageProps<"/profile">["searchParams"] }) {
+  const session = await getCurrentSession()
+  if (!session) redirect("/login")
+  const { user, sessionId } = session
+  const [githubEnabled, githubOAuth, sessions, query] = await Promise.all([
+    isModuleEnabled("github"),
+    getGithubOAuthConfig(),
+    listActiveSessions(user.id),
+    searchParams,
+  ])
+  const githubResult = typeof query.github === "string" ? query.github : null
   return (
     <div className="flex flex-col gap-6">
       <Card>
@@ -32,7 +43,7 @@ async function Profile() {
             <CardTitle>GitHub</CardTitle>
           </CardHeader>
           <CardContent>
-            <GithubConnection username={user.githubUsername} available={isGithubLoginConfigured} />
+            <GithubConnection username={user.githubUsername} available={githubOAuth !== null} result={githubResult} />
           </CardContent>
         </Card>
       ) : null}
@@ -44,15 +55,24 @@ async function Profile() {
           <ChangePasswordForm />
         </CardContent>
       </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Active sessions</CardTitle>
+          <CardDescription>Devices signed in to your account. Sign out of any you don’t recognise.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ActiveSessions sessions={sessions} currentSessionId={sessionId} />
+        </CardContent>
+      </Card>
     </div>
   )
 }
 
-export default function ProfilePage() {
+export default function ProfilePage({ searchParams }: PageProps<"/profile">) {
   return (
     <PageHeader title="My profile" className="max-w-4xl">
       <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-        <Profile />
+        <Profile searchParams={searchParams} />
       </Suspense>
     </PageHeader>
   )
