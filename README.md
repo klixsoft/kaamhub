@@ -217,7 +217,47 @@ Then open `https://your-domain/setup` to create the first administrator. Point y
 
 The command always installs the latest release, with configuration files that match its version. To try unreleased changes from `main`, use `https://raw.githubusercontent.com/klixsoft/kaamhub/main/scripts/install.sh` instead.
 
-Prefer to do it by hand, or already run Nginx or Traefik? See [docs/deployment.md](docs/deployment.md) for the manual install, reverse proxy examples, backups and updates.
+### Run with Docker Compose
+
+Prefer to set it up yourself? KaamHub publishes ready-made images for `linux/amd64` and `linux/arm64`:
+
+| Image | Purpose |
+|---|---|
+| `ghcr.io/klixsoft/kaamhub:<version>` | The application. Applies database migrations on start and serves on port 3000 |
+| `ghcr.io/klixsoft/kaamhub-updater:<version>` | Optional helper for one-click updates and the hourly scheduled job |
+
+Download the Compose files for a release into a folder:
+
+```bash
+mkdir -p /opt/kaamhub && cd /opt/kaamhub
+```
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/klixsoft/kaamhub/v0.1.0/docker-compose.yml -o docker-compose.yml
+```
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/klixsoft/kaamhub/v0.1.0/docker/Caddyfile -o Caddyfile
+```
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/klixsoft/kaamhub/v0.1.0/.env.production.example -o .env && chmod 600 .env
+```
+
+Fill in `.env` (your domain, `APP_URL` and the generated secrets), then start the stack:
+
+```bash
+docker compose up -d
+```
+
+Open `APP_URL/setup` to create the first administrator. The stack runs PostgreSQL, the app, the updater and, with `COMPOSE_PROFILES=https`, Caddy for automatic HTTPS. Your data lives in the `db-data` and `app-storage` volumes.
+
+The [deployment guide](docs/deployment.md) explains every step in detail:
+
+- [generating the secrets](docs/deployment.md#3-generate-the-secrets) and [every environment variable](docs/deployment.md#environment-variables)
+- [domain with HTTPS, your own reverse proxy, or IP only](docs/deployment.md#4-choose-how-people-reach-kaamhub)
+- [using your own PostgreSQL](docs/deployment.md#use-your-own-postgresql), including Portainer, Dokploy and Coolify
+- [backups](docs/deployment.md#backups), [everyday commands](docs/deployment.md#everyday-commands) and [troubleshooting](docs/deployment.md#troubleshooting)
 
 ### Updating
 
