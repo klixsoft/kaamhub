@@ -88,7 +88,7 @@ For each service, choose the project (its client is billed) and record the type 
 
 The scheduled job (hourly with the provided stack) prepares recurring drafts, sends reminders once a day and checks environment uptime. It runs at `POST /api/cron/daily` and requires `Authorization: Bearer <CRON_SECRET>`.
 
-With the provided Docker Compose stack, the updater service calls the job every hour once `CRON_SECRET` is set; the job is safe to run repeatedly. Without the updater, call it from any scheduler:
+With the provided Docker Compose stack, the updater service calls the job every hour with a token derived from `SESSION_SECRET`; nothing needs to be configured, and the job is safe to run repeatedly. Without the updater, set `CRON_SECRET` in `.env` and call the job from any scheduler:
 
 ```bash
 curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" https://hub.example.com/api/cron/daily

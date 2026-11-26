@@ -166,7 +166,7 @@ Most service businesses run on a patchwork of tools: one for tasks, a spreadshee
 | Language | TypeScript (strict) |
 | UI | [shadcn/ui](https://ui.shadcn.com) on Base UI, Tailwind CSS 4, lucide icons |
 | Database | PostgreSQL with [Drizzle ORM](https://orm.drizzle.team) |
-| Auth | [Better Auth](https://www.better-auth.com) |
+| Auth | Built-in: [iron-session](https://github.com/vvo/iron-session) sealed cookies with rotating refresh tokens in PostgreSQL |
 | Drag and drop | [dnd-kit](https://dndkit.com) |
 | PDF | [react-pdf](https://react-pdf.org) |
 | Validation | [zod](https://zod.dev) |
@@ -187,7 +187,7 @@ git clone https://github.com/klixsoft/kaamhub.git
 cd kaamhub && npm install && cp .env.example .env.local
 ```
 
-Set `DATABASE_URL` and `BETTER_AUTH_SECRET` in `.env.local` (generate a secret with `openssl rand -base64 48`), then:
+Set `DATABASE_URL`, `SESSION_SECRET` and `ENCRYPTION_KEY` in `.env.local` (generate each secret with `openssl rand -hex 32`), then:
 
 ```bash
 npm run db:migrate

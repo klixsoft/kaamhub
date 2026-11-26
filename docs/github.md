@@ -44,24 +44,21 @@ Choose **Only on this account** for where the app can be installed, then create 
 
 ## 2. Collect the credentials
 
-On the app's page:
+Sign in to KaamHub as a Super Admin and open **GitHub** in the sidebar. The **GitHub App** card has a field for each value. From the app's page on GitHub, copy:
 
-- **App ID** → `GITHUB_APP_ID`
-- **Client ID** → `GITHUB_CLIENT_ID`
-- **Generate a new client secret** → `GITHUB_CLIENT_SECRET`
-- **Generate a private key** (downloads a `.pem` file) → `GITHUB_APP_PRIVATE_KEY`
+- **App ID** → **App ID**
+- **Client ID** → **Client ID**
+- **Generate a new client secret** → **Client secret**
+- **Generate a private key** (downloads a `.pem` file) → open the file in a text editor and paste all of it, including the `BEGIN` and `END` lines, into **Private key**
+- The webhook secret you chose in step 1 → **Webhook secret**
 
-For the private key in `.env`, put it on one line with `\n` for line breaks:
-
-```bash
-awk 'NF {sub(/\r/, ""); printf "%s\\n",$0;}' your-app.private-key.pem
-```
+The private key and both secrets are encrypted before they are stored, and are never shown again. To replace one later, paste the new value; leave a field empty to keep the saved one.
 
 ## 3. Install the app
 
-From the app's page choose **Install App**, pick your organisation, and select **All repositories** (or the ones you want to manage). After installing, the URL looks like `https://github.com/organizations/<org>/settings/installations/12345678`. The number is `GITHUB_APP_INSTALLATION_ID`.
+From the app's page choose **Install App**, pick your organisation, and select **All repositories** (or the ones you want to manage). After installing, the URL looks like `https://github.com/organizations/<org>/settings/installations/12345678`. The number is the **Installation ID**.
 
-Set `GITHUB_ORG` to the organisation login and `GITHUB_WEBHOOK_SECRET` to the webhook secret, then restart the app.
+Enter it, and your organisation's login (for example `acme`) as **Organisation**, then click **Save GitHub App**. No restart is needed.
 
 ## 4. Use it
 
