@@ -5,7 +5,6 @@ import { EnvironmentsManager } from "@/components/environments/environments-mana
 import { SectionHeading } from "@/components/layout/section-heading"
 import { Skeleton } from "@/components/ui/skeleton"
 import { todayIso } from "@/lib/dates"
-import { isEncryptionConfigured } from "@/server/lib/crypto"
 import { listProjectCredentials } from "@/server/modules/environments/credentials"
 import { listProjectEnvironments } from "@/server/modules/environments/queries"
 import { loadProjectContext } from "@/server/modules/projects/context"
@@ -28,7 +27,6 @@ async function Environments({ params }: { params: PageProps<"/projects/[projectI
       environments={environments}
       credentials={credentials}
       canManage={access.canManage}
-      encryptionReady={isEncryptionConfigured()}
       today={todayIso()}
     />
   )

@@ -33,7 +33,6 @@ interface EnvironmentsManagerProps {
   environments: EnvironmentRow[]
   credentials: CredentialRow[]
   canManage: boolean
-  encryptionReady: boolean
   today: string
 }
 
@@ -136,7 +135,7 @@ function EnvironmentCard({ projectId, environment, canManage, today }: { project
   )
 }
 
-export function EnvironmentsManager({ projectId, environments, credentials, canManage, encryptionReady, today }: EnvironmentsManagerProps) {
+export function EnvironmentsManager({ projectId, environments, credentials, canManage, today }: EnvironmentsManagerProps) {
   const [tab, setTab] = useState(environments[0]?.id ?? "")
   const activeTab = environments.some((environment) => environment.id === tab) ? tab : (environments[0]?.id ?? "")
   const credentialsByEnvironment = Map.groupBy(credentials, (credential) => credential.environmentId)
@@ -187,7 +186,6 @@ export function EnvironmentsManager({ projectId, environments, credentials, canM
                 environmentId={environment.id}
                 credentials={credentialsByEnvironment.get(environment.id) ?? []}
                 canManage={canManage}
-                encryptionReady={encryptionReady}
               />
             </TabsContent>
           ))}

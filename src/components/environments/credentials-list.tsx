@@ -145,10 +145,9 @@ interface CredentialsListProps {
   environmentId: string
   credentials: CredentialRow[]
   canManage: boolean
-  encryptionReady: boolean
 }
 
-export function CredentialsList({ projectId, environmentId, credentials, canManage, encryptionReady }: CredentialsListProps) {
+export function CredentialsList({ projectId, environmentId, credentials, canManage }: CredentialsListProps) {
   return (
     <section aria-labelledby={`credentials-${environmentId}`} className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
@@ -156,7 +155,7 @@ export function CredentialsList({ projectId, environmentId, credentials, canMana
           <KeyRoundIcon className="size-4" aria-hidden />
           Credentials
         </h3>
-        {canManage && encryptionReady ? (
+        {canManage ? (
           <FormDialog
             title="Add credential"
             description="Test accounts and logins for this environment. The password is encrypted before it is stored."
@@ -171,11 +170,7 @@ export function CredentialsList({ projectId, environmentId, credentials, canMana
           </FormDialog>
         ) : null}
       </div>
-      {!encryptionReady ? (
-        <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-          Credential storage is off. An administrator needs to set ENCRYPTION_KEY on the server.
-        </p>
-      ) : credentials.length === 0 ? (
+      {credentials.length === 0 ? (
         <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No credentials for this environment, or none shared with you.</p>
       ) : (
         <ul className="divide-y rounded-lg border">
