@@ -65,7 +65,7 @@ To install from a fork, set `KAAMHUB_REPOSITORY=owner/repo` before running the s
 
 ### After installing
 
-Edit `/opt/kaamhub/.env` to add SMTP and GitHub App settings, then apply them:
+The installer writes every setting to `/opt/kaamhub/.env`. Edit it to finish the [email settings](#email) (`SMTP_USER`, `SMTP_PASSWORD` and `SMTP_FROM`) and, if you use it, the [GitHub](#github) settings. Then apply them:
 
 ```bash
 cd /opt/kaamhub && docker compose up -d
@@ -158,14 +158,22 @@ APP_BIND=0.0.0.0
 
 `APP_URL` must be exactly the address people type in the browser, including `http` or `https` and any port. Sign-in only works from that address.
 
-### 5. Optional settings
+### 5. Set up email
 
-Everything else can be added now or later:
+KaamHub sends invitations, password resets, invoices and renewal reminders by email. Fill in these lines with the details from your email provider; see [Email](#email) for what each one means and examples for common providers.
 
-- **Email** (`SMTP_*`): needed to send invitations, password resets, invoices and reminders. Without it, emails are written to the app log instead.
-- **GitHub** (`GITHUB_*`): see [github.md](github.md).
+```
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=no-reply@example.com
+SMTP_PASSWORD=your-smtp-password
+SMTP_FROM="Acme Software <no-reply@example.com>"
+```
 
-See [Environment variables](#environment-variables) for the full list.
+You can skip this for a first try: without `SMTP_HOST`, emails are not sent and their content is written to the app log (`docker compose logs app`) instead.
+
+The GitHub integration is optional and can be added any time; see [GitHub](#github) and [github.md](github.md).
 
 ### 6. Start KaamHub
 
@@ -199,43 +207,261 @@ Open `APP_URL/setup` in your browser, for example `https://hub.example.com/setup
 
 ## Environment variables
 
-`.env` is read by Docker Compose and passed to the app. `DATABASE_URL` and `UPDATER_URL` are set by `docker-compose.yml` itself, so you do not add them when you use the bundled database and updater.
+All settings live in `.env`, next to `docker-compose.yml`. Docker Compose reads the file to fill in `docker-compose.yml`, and passes every line to the app container. After changing it, apply the change with:
 
-### Required
+```bash
+docker compose up -d
+```
 
-| Variable | Example | Notes |
+Compose recreates only the containers whose settings changed. Values with spaces must be wrapped in double quotes, for example `SMTP_FROM="Acme Software <no-reply@example.com>"`.
+
+### Images and versions
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `APP_IMAGE` | Yes | None | Image of the application. Use `ghcr.io/klixsoft/kaamhub`, or your fork's image if you build your own |
+| `APP_TAG` | No | `latest` | Version of the application image, for example `0.1.0`. One-click updates change this line for you |
+| `UPDATER_IMAGE` | Yes | None | Image of the updater, `ghcr.io/klixsoft/kaamhub-updater` |
+| `UPDATER_TAG` | No | `latest` | Version of the updater image. The updater rarely changes; `latest` is fine |
+| `COMPOSE_PROJECT_NAME` | No | `kaamhub` | Prefix for container, network and volume names. Give each installation its own name to run two on one server |
+
+### Address and network
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `APP_URL` | Yes | None | The full address people open KaamHub at, for example `https://hub.example.com` or `http://203.0.113.10:3000`. Used in email links, and sign-in is only accepted from this address. Cookies are marked secure when it starts with `https://` |
+| `COMPOSE_PROFILES` | No | Empty | Set to `https` to start the bundled Caddy server, which serves `DOMAIN` with automatic certificates. Leave empty when you use your own reverse proxy or no domain |
+| `DOMAIN` | With `https` profile | `localhost` | Domain name Caddy serves and requests a Let's Encrypt certificate for, without `https://`, for example `hub.example.com`. Its DNS A record must point to the server |
+| `APP_BIND` | No | `127.0.0.1` | Host address the app's port is opened on. `127.0.0.1` allows only Caddy or a reverse proxy on the same server to reach it. `0.0.0.0` opens it to the internet, needed only when you use no proxy |
+| `APP_PORT` | No | `3000` | Host port for the app. Change it if 3000 is already used |
+
+### Database
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `POSTGRES_PASSWORD` | Yes | None | Password for the bundled PostgreSQL. Generate it with `openssl rand -hex 24`. It is set when the database is first created; changing it in `.env` later does not change the existing database password |
+| `POSTGRES_DB` | No | `kaamhub` | Name of the database |
+| `POSTGRES_USER` | No | `kaamhub` | Database user |
+| `DATABASE_POOL_MAX` | No | `10` | Maximum database connections the app opens. The default suits most teams |
+| `DATABASE_URL` | Only with your own database | Set by `docker-compose.yml` | Connection string, for example `postgres://kaamhub:password@db.example.com:5432/kaamhub`. With the bundled database it is built from the three `POSTGRES_` values; see [Use your own PostgreSQL](#use-your-own-postgresql) otherwise |
+
+### Security keys
+
+Generate every key with the command shown, and keep a copy of `.env` in a safe place.
+
+| Variable | Required | Generate with | Description |
+|---|---|---|---|
+| `BETTER_AUTH_SECRET` | Yes | `openssl rand -hex 32` | Signs sign-in sessions. At least 32 characters. Changing it signs everyone out |
+| `ENCRYPTION_KEY` | Recommended | `openssl rand -hex 32` | Encrypts environment credentials (passwords and notes). Must be 64 hex characters, or 32 bytes in base64. Without it, credentials cannot be saved. Never change or lose it once credentials exist: they cannot be decrypted with another key |
+| `UPDATER_TOKEN` | Yes | `openssl rand -hex 32` | Shared secret the app uses to ask the updater to install a new version |
+| `CRON_SECRET` | Recommended | `openssl rand -hex 32` | Protects the scheduled job at `POST /api/cron/daily`. When set, the updater calls the job every hour to create recurring invoice drafts, send renewal reminders and check environment uptime. Without it, none of these run |
+
+### Email
+
+Without `SMTP_HOST`, KaamHub does not send email and writes each message to the app log instead. Invitations and password resets then only work if you copy the link from the log.
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `SMTP_HOST` | To send email | Empty | Your provider's SMTP server, for example `smtp.gmail.com` |
+| `SMTP_PORT` | No | `587` | SMTP port. `587` uses STARTTLS, `465` uses TLS from the start |
+| `SMTP_SECURE` | No | `false` | `true` for port `465`, `false` for port `587` (the connection is still upgraded to TLS by STARTTLS) |
+| `SMTP_USER` | Usually | Empty | User name for the SMTP server, often your email address or an API user. Leave empty only if the server accepts mail without signing in |
+| `SMTP_PASSWORD` | With `SMTP_USER` | Empty | Password or API key for `SMTP_USER`. With Gmail, and with Microsoft 365 accounts that use two-step sign-in, create an app password instead of using your normal password |
+| `SMTP_FROM` | To send email | Empty | Sender shown on every email, for example `"Acme Software <no-reply@example.com>"`. Use an address your provider allows you to send from |
+
+Settings for common providers:
+
+| Provider | `SMTP_HOST` | `SMTP_PORT` | `SMTP_SECURE` | `SMTP_USER` |
+|---|---|---|---|---|
+| Gmail / Google Workspace | `smtp.gmail.com` | `587` | `false` | Your email address (with an app password) |
+| Microsoft 365 / Outlook | `smtp.office365.com` | `587` | `false` | Your email address |
+| Amazon SES | `email-smtp.<region>.amazonaws.com` | `587` | `false` | SES SMTP user name |
+| SendGrid | `smtp.sendgrid.net` | `587` | `false` | `apikey` (the password is your API key) |
+| Mailgun | `smtp.mailgun.org` | `587` | `false` | Your Mailgun SMTP login |
+| Zoho Mail | `smtp.zoho.com` | `465` | `true` | Your email address |
+
+To test, invite a person from **People**: the invitation should arrive within a minute. If it does not, `docker compose logs app` shows the error from your mail server.
+
+### Updates
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `UPDATE_REPOSITORY` | No | Empty | GitHub repository whose releases the **System** page checks for new versions, in `owner/repo` form. Use `klixsoft/kaamhub`, or your fork. When empty, KaamHub does not check for updates |
+
+### GitHub
+
+Optional. Fill these in only if you use the GitHub module; [github.md](github.md) explains how to create the GitHub App and where each value comes from.
+
+| Variable | Description |
+|---|---|
+| `GITHUB_APP_ID` | The App ID shown on your GitHub App's settings page |
+| `GITHUB_APP_PRIVATE_KEY` | The private key (`.pem`) generated for the app, on one line with `\n` for each line break |
+| `GITHUB_APP_INSTALLATION_ID` | The number at the end of the URL after installing the app in your organisation |
+| `GITHUB_ORG` | Your GitHub organisation's login, for example `acme` |
+| `GITHUB_WEBHOOK_SECRET` | The webhook secret you entered when creating the app |
+| `GITHUB_CLIENT_ID` | The app's Client ID, used for **Connect GitHub** on each person's profile |
+| `GITHUB_CLIENT_SECRET` | A client secret generated on the app's settings page |
+
+The app manages repositories only when `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`, `GITHUB_APP_INSTALLATION_ID` and `GITHUB_ORG` are all set. **Connect GitHub** appears when `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` are set.
+
+### Set by the image or Compose file
+
+You do not put these in `.env` when you use the provided `docker-compose.yml`:
+
+| Variable | Value | Description |
 |---|---|---|
-| `APP_IMAGE` | `ghcr.io/klixsoft/kaamhub` | Application image. Change it only to run your own fork's images |
-| `UPDATER_IMAGE` | `ghcr.io/klixsoft/kaamhub-updater` | Updater image |
-| `APP_URL` | `https://hub.example.com` | Public address of KaamHub, used for links in emails and to protect sign-in |
-| `POSTGRES_PASSWORD` | 48 hex characters | Password of the bundled database. It is applied when the database is first created; changing it later in `.env` alone does not change the database password |
-| `BETTER_AUTH_SECRET` | 32 or more characters | Signs sessions. Changing it signs everyone out |
-| `UPDATER_TOKEN` | 64 hex characters | Shared secret between the app and the updater |
+| `DATABASE_URL` | `postgres://<user>:<password>@db:5432/<db>` | Points the app at the bundled database |
+| `UPDATER_URL` | `http://updater:9000` | Where the app reaches the updater on the private network |
+| `STORAGE_DIR` | `/app/storage` | Folder for uploaded documents, stored in the `app-storage` volume |
+| `PORT` | `3000` | Port the app listens on inside the container |
+| `APP_VERSION` | The image version | Shown on the System page and by `/api/health` |
 
-### Recommended
+## Complete example files
 
-| Variable | Default | Notes |
-|---|---|---|
-| `ENCRYPTION_KEY` | Empty | 64 hex characters. Required to save environment credentials. Never change it once credentials exist |
-| `CRON_SECRET` | Empty | Enables the hourly job: recurring invoice drafts, renewal reminders and uptime checks |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | Port `587`, not secure | Outgoing email. Use `SMTP_SECURE=true` with port `465` |
+### docker-compose.yml
 
-### Optional
+This is the `docker-compose.yml` shipped with KaamHub. Download it from the release you install rather than copying it from here, so it always matches the images.
 
-| Variable | Default | Notes |
-|---|---|---|
-| `APP_TAG`, `UPDATER_TAG` | `latest` | Image versions |
-| `COMPOSE_PROFILES` | Empty | `https` starts the bundled Caddy server |
-| `DOMAIN` | Empty | Domain Caddy requests a certificate for |
-| `APP_BIND` | `127.0.0.1` | Host address the app port is published on. `0.0.0.0` makes it reachable from outside |
-| `APP_PORT` | `3000` | Host port for the app |
-| `POSTGRES_DB`, `POSTGRES_USER` | `kaamhub` | Database name and user |
-| `DATABASE_POOL_MAX` | `10` | Database connections per app container |
-| `UPDATE_REPOSITORY` | Empty | `owner/repo` whose releases the System page checks, normally `klixsoft/kaamhub` |
-| `GITHUB_*` | Empty | GitHub integration, see [github.md](github.md) |
-| `COMPOSE_PROJECT_NAME` | `kaamhub` | Prefix of container and volume names. Set it to run two installations on one server |
+```yaml
+name: ${COMPOSE_PROJECT_NAME:-kaamhub}
 
-After editing `.env`, apply the change with `docker compose up -d`. Compose recreates only the services whose settings changed.
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-kaamhub}
+      POSTGRES_USER: ${POSTGRES_USER:-kaamhub}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [internal]
+
+  app:
+    image: ${APP_IMAGE:?Set APP_IMAGE in .env}:${APP_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-kaamhub}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-kaamhub}
+      UPDATER_URL: http://updater:9000
+    volumes:
+      - app-storage:/app/storage
+    ports:
+      - "${APP_BIND:-127.0.0.1}:${APP_PORT:-3000}:3000"
+    networks: [internal]
+
+  updater:
+    image: ${UPDATER_IMAGE:?Set UPDATER_IMAGE in .env}:${UPDATER_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      UPDATER_TOKEN: ${UPDATER_TOKEN:?Set UPDATER_TOKEN in .env}
+      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-kaamhub}
+      COMPOSE_FILE: /stack/docker-compose.yml
+      ENV_FILE: /stack/.env
+      APP_SERVICE: app
+      CRON_URL: http://app:3000/api/cron/daily
+      CRON_SECRET: ${CRON_SECRET:-}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./:/stack
+    networks: [internal]
+
+  caddy:
+    image: caddy:2-alpine
+    profiles: [https]
+    restart: unless-stopped
+    depends_on: [app]
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [internal]
+
+volumes:
+  db-data:
+  app-storage:
+  caddy-data:
+  caddy-config:
+
+networks:
+  internal:
+```
+
+What each part does:
+
+- **`db`** runs PostgreSQL 17. Its data lives in the `db-data` volume, and `healthcheck` makes the app wait until the database accepts connections.
+- **`app`** runs KaamHub from `APP_IMAGE:APP_TAG`. `env_file: .env` passes all your settings to it; `DATABASE_URL` and `UPDATER_URL` are added on top. Uploaded documents are kept in the `app-storage` volume. The app is published on `APP_BIND:APP_PORT`, `127.0.0.1:3000` by default.
+- **`updater`** gets the Docker socket and your folder (`./` mounted as `/stack`) so it can change `APP_TAG` in `.env` and restart the app when an admin clicks **Update**. It also calls the scheduled job every hour when `CRON_SECRET` is set. It has no host port.
+- **`caddy`** only starts with `COMPOSE_PROFILES=https`. It serves `DOMAIN` on ports 80 and 443, gets certificates automatically and keeps them in the `caddy-data` volume.
+- **`volumes`** hold everything worth backing up: `db-data` and `app-storage`.
+
+The bundled `Caddyfile` is three lines:
+
+```
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy app:3000
+}
+```
+
+### .env
+
+A complete `.env` for a server at `hub.example.com` with automatic HTTPS and email through Gmail. Every value in angle brackets is yours to replace; generate each secret with the command next to it.
+
+```
+APP_IMAGE=ghcr.io/klixsoft/kaamhub
+APP_TAG=0.1.0
+UPDATER_IMAGE=ghcr.io/klixsoft/kaamhub-updater
+UPDATER_TAG=latest
+
+COMPOSE_PROFILES=https
+DOMAIN=hub.example.com
+APP_URL=https://hub.example.com
+APP_BIND=127.0.0.1
+APP_PORT=3000
+
+POSTGRES_DB=kaamhub
+POSTGRES_USER=kaamhub
+POSTGRES_PASSWORD=<openssl rand -hex 24>
+
+BETTER_AUTH_SECRET=<openssl rand -hex 32>
+ENCRYPTION_KEY=<openssl rand -hex 32>
+UPDATER_TOKEN=<openssl rand -hex 32>
+CRON_SECRET=<openssl rand -hex 32>
+
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=<no-reply@example.com>
+SMTP_PASSWORD=<Google app password>
+SMTP_FROM="Acme Software <no-reply@example.com>"
+
+UPDATE_REPOSITORY=klixsoft/kaamhub
+
+GITHUB_APP_ID=
+GITHUB_APP_PRIVATE_KEY=
+GITHUB_APP_INSTALLATION_ID=
+GITHUB_ORG=
+GITHUB_WEBHOOK_SECRET=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+```
+
+For your own reverse proxy instead of Caddy, change the HTTPS lines to `COMPOSE_PROFILES=` and `DOMAIN=` and keep `APP_URL` as your public address. For a server without a domain, also set `APP_BIND=0.0.0.0` and `APP_URL=http://<server-ip>:3000`.
 
 ## Use your own PostgreSQL
 
