@@ -2,6 +2,7 @@ import "server-only"
 import { and, eq, inArray, ne, or } from "drizzle-orm"
 import { shiftDate, todayIso } from "@/lib/dates"
 import { formatDate } from "@/lib/format"
+import { deleteExpiredAuthRecords } from "@/server/auth/session-store"
 import { db } from "@/server/db"
 import { appSettings, managedServices, projectEnvironments, projects, serviceCategories, users } from "@/server/db/schema"
 import { logger } from "@/server/lib/logger"
@@ -83,6 +84,7 @@ export async function runDailyJobs() {
   const drafts = (await isModuleEnabled("services")) ? await generateDueServiceDrafts() : { created: 0, failed: 0 }
   const firstRunToday = await claimDailyRun(today)
   const reminders = firstRunToday ? await sendRenewalReminders(today) : 0
+  if (firstRunToday) await deleteExpiredAuthRecords()
   const uptime = (await isModuleEnabled("environments")) ? await checkAllEnvironments() : { checked: 0, down: 0 }
   logger.info("Daily jobs finished", { drafts, reminders, uptime, firstRunToday })
   return { drafts, reminders, uptime }

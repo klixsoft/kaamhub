@@ -1,24 +1,34 @@
 import { execFile } from "node:child_process"
-import { timingSafeEqual } from "node:crypto"
+import { createHmac, timingSafeEqual } from "node:crypto"
 import { readFile, rename, writeFile } from "node:fs/promises"
 import { createServer } from "node:http"
 
+const sessionSecret = process.env.SESSION_SECRET ?? ""
+
+if (sessionSecret.length < 32) {
+  console.error("SESSION_SECRET must be set to the same value as the app's SESSION_SECRET")
+  process.exit(1)
+}
+
+/*
+ * The app derives the same tokens from SESSION_SECRET, so the updater and the
+ * scheduled job need no secrets of their own.
+ */
+function internalToken(purpose) {
+  return createHmac("sha256", sessionSecret).update(`kaamhub:${purpose}`).digest("hex")
+}
+
 const config = {
   port: Number(process.env.PORT ?? 9000),
-  token: process.env.UPDATER_TOKEN ?? "",
+  token: internalToken("updater"),
   composeFile: process.env.COMPOSE_FILE ?? "/stack/docker-compose.yml",
   envFile: process.env.ENV_FILE ?? "/stack/.env",
   projectName: process.env.COMPOSE_PROJECT_NAME ?? "kaamhub",
   service: process.env.APP_SERVICE ?? "app",
   tagVariable: process.env.IMAGE_TAG_VARIABLE ?? "APP_TAG",
   cronUrl: process.env.CRON_URL ?? "",
-  cronSecret: process.env.CRON_SECRET ?? "",
+  cronSecret: internalToken("cron"),
   cronIntervalMs: Number(process.env.CRON_INTERVAL_MINUTES ?? 60) * 60 * 1000,
-}
-
-if (config.token.length < 32) {
-  console.error("UPDATER_TOKEN must be at least 32 characters")
-  process.exit(1)
 }
 
 const VERSION_PATTERN = /^v?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/
@@ -131,7 +141,7 @@ async function triggerDailyJobs() {
   }
 }
 
-if (config.cronUrl && config.cronSecret) {
+if (config.cronUrl) {
   setTimeout(triggerDailyJobs, 60 * 1000)
   setInterval(triggerDailyJobs, config.cronIntervalMs)
   console.log(`Scheduler enabled: ${config.cronUrl} every ${config.cronIntervalMs / 60000} minutes`)

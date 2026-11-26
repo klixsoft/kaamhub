@@ -1,5 +1,6 @@
 import "server-only"
 import { cacheLife, cacheTag } from "next/cache"
+import { RELEASE_REPOSITORY } from "@/config/app"
 import { env } from "@/config/env"
 import { compareVersions, isSemver } from "@/lib/semver"
 import { logger } from "@/server/lib/logger"
@@ -17,7 +18,7 @@ export interface VersionStatus {
   latest: ReleaseInfo | null
   updateAvailable: boolean
   checkFailed: boolean
-  repository: string | null
+  repository: string
 }
 
 export const RELEASE_CACHE_TAG = "system:latest-release"
@@ -46,8 +47,7 @@ async function fetchLatestRelease(repository: string): Promise<ReleaseInfo | nul
 
 export async function getVersionStatus(): Promise<VersionStatus> {
   const current = env.APP_VERSION.replace(/^v/, "")
-  const repository = env.UPDATE_REPOSITORY && /^[\w.-]+\/[\w.-]+$/.test(env.UPDATE_REPOSITORY) ? env.UPDATE_REPOSITORY : null
-  if (!repository) return { current, latest: null, updateAvailable: false, checkFailed: false, repository }
+  const repository = RELEASE_REPOSITORY
 
   try {
     const latest = await fetchLatestRelease(repository)

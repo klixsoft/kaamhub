@@ -26,7 +26,6 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-kaamhub}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-kaamhub}
-      UPDATER_URL: http://updater:9000
     volumes:
       - app-storage:/app/storage
     ports:
@@ -37,13 +36,12 @@ services:
     image: ${UPDATER_IMAGE:?Set UPDATER_IMAGE in .env}:${UPDATER_TAG:-latest}
     restart: unless-stopped
     environment:
-      UPDATER_TOKEN: ${UPDATER_TOKEN:?Set UPDATER_TOKEN in .env}
+      SESSION_SECRET: ${SESSION_SECRET:-${BETTER_AUTH_SECRET:?Set SESSION_SECRET in .env}}
       COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-kaamhub}
       COMPOSE_FILE: /stack/docker-compose.yml
       ENV_FILE: /stack/.env
       APP_SERVICE: app
       CRON_URL: http://app:3000/api/cron/daily
-      CRON_SECRET: ${CRON_SECRET:-}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./:/stack

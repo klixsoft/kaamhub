@@ -76,7 +76,7 @@ export function SystemUpdate({ version, updaterConfigured, initialStatus }: Syst
         </div>
         <div>
           <dt className="text-xs text-muted-foreground">Release source</dt>
-          <dd className="truncate font-mono text-sm">{version.repository ?? "Not configured"}</dd>
+          <dd className="truncate font-mono text-sm">{version.repository}</dd>
         </div>
       </dl>
 
@@ -135,7 +135,7 @@ export function SystemUpdate({ version, updaterConfigured, initialStatus }: Syst
 
       {!updaterConfigured ? (
         <p className="text-sm text-muted-foreground">
-          One-click updates need the updater service. Set UPDATER_URL and UPDATER_TOKEN, or update manually as described in docs/deployment.md.
+          The updater service is not running, so one-click updates are unavailable. It is part of the provided Docker Compose stack; without it, update manually as described in docs/deployment.md.
         </p>
       ) : null}
 

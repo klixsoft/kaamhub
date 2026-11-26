@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { requirePermission } from "@/server/auth/session"
 import { logger } from "@/server/lib/logger"
 import { getVersionStatus } from "@/server/modules/system/releases"
-import { getUpdaterStatus, isUpdaterConfigured } from "@/server/modules/system/updater"
+import { getUpdaterStatus } from "@/server/modules/system/updater"
 
 export const metadata: Metadata = { title: "System" }
 
@@ -20,7 +20,7 @@ async function SystemContent() {
       return null
     }),
   ])
-  return <SystemUpdate version={version} updaterConfigured={isUpdaterConfigured()} initialStatus={updaterStatus} />
+  return <SystemUpdate version={version} updaterConfigured={updaterStatus !== null} initialStatus={updaterStatus} />
 }
 
 export default function SystemPage() {
