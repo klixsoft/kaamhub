@@ -9,7 +9,7 @@ import { clientContacts, clients, users } from "@/server/db/schema"
 import { action, formAction } from "@/server/lib/action"
 import { notFoundError } from "@/server/lib/errors"
 import { logger } from "@/server/lib/logger"
-import { createAccount, revokeAllSessions, sendPasswordSetupEmail } from "@/server/modules/people/accounts"
+import { createAccount, revokeAllSessions, sendInvitation } from "@/server/modules/people/accounts"
 import { recordAudit } from "@/server/services/audit"
 import { clientContactSchema, clientSchema } from "./schema"
 
@@ -52,7 +52,7 @@ export const addClientContact = formAction({
     await db.insert(clientContacts).values({ clientId, userId: account.id, jobTitle: jobTitle ?? null })
     after(async () => {
       try {
-        await sendPasswordSetupEmail(email)
+        await sendInvitation(account.id)
       } catch (error) {
         logger.error("Failed to send client portal invitation", { error, userId: account.id })
       }

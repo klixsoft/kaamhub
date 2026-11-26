@@ -12,7 +12,7 @@ import { AppError, forbiddenError, notFoundError } from "@/server/lib/errors"
 import { logger } from "@/server/lib/logger"
 import { recordAudit } from "@/server/services/audit"
 import { syncUserGithubAccess } from "@/server/modules/github/access-sync"
-import { createAccount, revokeAllSessions, sendPasswordSetupEmail } from "./accounts"
+import { createAccount, revokeAllSessions, sendInvitation } from "./accounts"
 import { type MemberInput, memberSchema, memberStatusSchema } from "./schema"
 
 function profileValues(input: MemberInput) {
@@ -53,7 +53,7 @@ export const inviteMember = formAction({
 
     after(async () => {
       try {
-        await sendPasswordSetupEmail(input.email)
+        await sendInvitation(account.id)
       } catch (error) {
         logger.error("Failed to send invitation email", { error, userId: account.id })
       }
@@ -122,7 +122,7 @@ export const resendInvitation = action({
     })
     if (!target) throw notFoundError("Member")
     if (target.status !== "active") throw new AppError("Activate this account before sending an invitation.")
-    await sendPasswordSetupEmail(target.email)
+    await sendInvitation(userId)
     await recordAudit({ actorId: user.id, action: "member.invitation_sent", entityType: "user", entityId: userId })
     return undefined
   },

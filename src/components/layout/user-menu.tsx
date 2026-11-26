@@ -2,7 +2,6 @@
 
 import { ChevronsUpDownIcon, LogOutIcon, MoonIcon, SunIcon, UserIcon } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -15,22 +14,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar"
-import { authClient } from "@/lib/auth-client"
 import { initials } from "@/lib/format"
+import { signOut } from "@/server/modules/auth/actions"
 
 interface UserMenuProps {
   user: { name: string; email: string; image: string | null; roleLabel: string }
 }
 
 export function UserMenu({ user }: UserMenuProps) {
-  const router = useRouter()
   const { resolvedTheme, setTheme } = useTheme()
-
-  async function signOut() {
-    await authClient.signOut()
-    router.replace("/login")
-    router.refresh()
-  }
 
   return (
     <SidebarMenu>
@@ -64,7 +56,7 @@ export function UserMenu({ user }: UserMenuProps) {
               {resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={signOut}>
+            <DropdownMenuItem onClick={() => signOut()}>
               <LogOutIcon aria-hidden />
               Sign out
             </DropdownMenuItem>
