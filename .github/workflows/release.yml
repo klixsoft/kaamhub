@@ -1,13 +1,17 @@
 name: Release
 
 on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
   push:
     tags: ["v*.*.*"]
   workflow_dispatch:
     inputs:
       version:
-        description: "Version to release, e.g. 0.1.0. Creates the tag v<version> on the selected branch."
-        required: true
+        description: "Version to release, e.g. 0.3.0. Leave empty to work it out from the commit messages."
+        required: false
         type: string
       highlights:
         description: "Optional highlights shown at the top of the release notes. Use \\n for a new line."
@@ -24,34 +28,65 @@ concurrency:
 
 jobs:
   prepare:
-    name: Check the version
+    name: Decide the version
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.version.outputs.version }}
-      tag: ${{ steps.version.outputs.tag }}
+      release: ${{ steps.decide.outputs.release }}
+      version: ${{ steps.decide.outputs.version }}
+      tag: ${{ steps.decide.outputs.tag }}
+      sha: ${{ steps.commit.outputs.sha }}
     steps:
+      - name: Choose the commit to release
+        id: commit
+        run: echo "sha=${{ github.event.workflow_run.head_sha || github.sha }}" >> "$GITHUB_OUTPUT"
+
       - uses: actions/checkout@v4
         with:
+          ref: ${{ steps.commit.outputs.sha }}
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Validate the version and make sure it is new
-        id: version
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Work out the next version
+        id: automatic
+        if: github.event_name != 'push' && inputs.version == ''
+        run: node scripts/next-version.mjs
+
+      - name: Validate the version
+        id: decide
         env:
-          INPUT_VERSION: ${{ inputs.version }}
+          REQUESTED: ${{ inputs.version }}
+          AUTOMATIC: ${{ steps.automatic.outputs.version }}
         run: |
-          VERSION="${INPUT_VERSION:-${GITHUB_REF_NAME#v}}"
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="${REQUESTED:-$AUTOMATIC}"
+          fi
           VERSION="${VERSION#v}"
-          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::Invalid version: $VERSION. Use x.y.z, for example 0.2.0."; exit 1; }
-          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && git rev-parse -q --verify "refs/tags/v${VERSION}" > /dev/null; then
+          if [ -z "$VERSION" ]; then
+            echo "Only documentation, tests, CI or chores changed since the last release. Nothing to release."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::Invalid version: $VERSION. Use x.y.z, for example 0.3.0."; exit 1; }
+          if [ "$GITHUB_EVENT_NAME" != "push" ] && git rev-parse -q --verify "refs/tags/v${VERSION}" > /dev/null; then
             echo "::error::v${VERSION} has already been released. Choose a higher version."
             exit 1
           fi
+          echo "Releasing v${VERSION}"
+          echo "release=true" >> "$GITHUB_OUTPUT"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
 
   checks:
     name: CI
+    needs: prepare
+    if: needs.prepare.outputs.release == 'true' && github.event_name != 'workflow_run'
     uses: ./.github/workflows/ci.yml
     permissions:
       contents: read
@@ -59,6 +94,7 @@ jobs:
   images:
     name: Publish images
     needs: [prepare, checks]
+    if: always() && needs.prepare.outputs.release == 'true' && (needs.checks.result == 'success' || (needs.checks.result == 'skipped' && github.event_name == 'workflow_run'))
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -73,6 +109,8 @@ jobs:
             suffix: "-updater"
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
 
       - name: Resolve image name
         id: meta
@@ -108,9 +146,11 @@ jobs:
     name: Publish the release
     runs-on: ubuntu-latest
     needs: [prepare, images]
+    if: always() && needs.images.result == 'success'
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ needs.prepare.outputs.sha }}
           fetch-depth: 0
           fetch-tags: true
 
@@ -130,7 +170,7 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.prepare.outputs.tag }}
-          target_commitish: ${{ github.sha }}
+          target_commitish: ${{ needs.prepare.outputs.sha }}
           name: KaamHub ${{ needs.prepare.outputs.tag }}
           body_path: release-notes.md
           files: install.sh
