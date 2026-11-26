@@ -13,32 +13,19 @@ const envSchema = z.object({
   APP_VERSION: z.string().default("0.0.0-dev"),
   DATABASE_URL: z.url(),
   DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
-  BETTER_AUTH_SECRET: z.string().min(32, "BETTER_AUTH_SECRET must be at least 32 characters"),
-  ENCRYPTION_KEY: optionalString,
+  SESSION_SECRET: z.string().min(32, "SESSION_SECRET must be at least 32 characters"),
+  ENCRYPTION_KEY: z
+    .string()
+    .trim()
+    .refine((value) => /^[0-9a-f]{64}$/i.test(value) || Buffer.from(value, "base64").length === 32, "ENCRYPTION_KEY must be 64 hex characters. Generate one with: openssl rand -hex 32"),
   STORAGE_DIR: z.string().trim().min(1).default("./storage"),
-  SMTP_HOST: optionalString,
-  SMTP_PORT: z.coerce.number().int().positive().default(587),
-  SMTP_SECURE: z.stringbool().default(false),
-  SMTP_USER: optionalString,
-  SMTP_PASSWORD: optionalString,
-  SMTP_FROM: optionalString,
-  GITHUB_CLIENT_ID: optionalString,
-  GITHUB_CLIENT_SECRET: optionalString,
-  GITHUB_APP_ID: optionalString,
-  GITHUB_APP_PRIVATE_KEY: optionalString,
-  GITHUB_APP_INSTALLATION_ID: optionalString,
-  GITHUB_ORG: optionalString,
-  GITHUB_WEBHOOK_SECRET: optionalString,
-  UPDATE_REPOSITORY: optionalString,
-  UPDATER_URL: optionalString,
-  UPDATER_TOKEN: optionalString,
   CRON_SECRET: optionalString,
 })
 
 export type Env = z.infer<typeof envSchema>
 
 function loadEnv(): Env {
-  const parsed = envSchema.safeParse(process.env)
+  const parsed = envSchema.safeParse({ ...process.env, SESSION_SECRET: process.env.SESSION_SECRET ?? process.env.BETTER_AUTH_SECRET })
   if (!parsed.success) {
     const issues = parsed.error.issues.map((issue) => `  ${issue.path.join(".")}: ${issue.message}`).join("\n")
     throw new Error(`Invalid environment configuration:\n${issues}`)

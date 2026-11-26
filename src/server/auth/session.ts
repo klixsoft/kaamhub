@@ -1,15 +1,15 @@
 import "server-only"
-import { eq } from "drizzle-orm"
-import { headers } from "next/headers"
+import { and, eq, gt, isNull, sql } from "drizzle-orm"
+import { cookies } from "next/headers"
 import { forbidden, redirect } from "next/navigation"
 import { connection } from "next/server"
 import { cache } from "react"
 import type { UserStatus } from "@/config/domain"
 import { type Permission, roleHasPermission, type SystemRole } from "@/config/roles"
 import { db } from "@/server/db"
-import { users } from "@/server/db/schema"
+import { userSessions, users } from "@/server/db/schema"
 import { isUserAccessAllowed } from "./access"
-import { auth } from "./auth"
+import { ACCESS_COOKIE, readAccess } from "./cookies"
 
 export interface CurrentUser {
   id: string
@@ -21,12 +21,17 @@ export interface CurrentUser {
   githubUsername: string | null
 }
 
-export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
-  await connection()
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session) return null
+export interface CurrentSession {
+  user: CurrentUser
+  sessionId: string
+}
 
-  const [user] = await db
+export const getCurrentSession = cache(async (): Promise<CurrentSession | null> => {
+  await connection()
+  const claims = await readAccess((await cookies()).get(ACCESS_COOKIE)?.value)
+  if (!claims) return null
+
+  const [row] = await db
     .select({
       id: users.id,
       name: users.name,
@@ -37,14 +42,26 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
       accessExpiresAt: users.accessExpiresAt,
       githubUsername: users.githubUsername,
     })
-    .from(users)
-    .where(eq(users.id, session.user.id))
+    .from(userSessions)
+    .innerJoin(users, eq(users.id, userSessions.userId))
+    .where(
+      and(
+        eq(userSessions.id, claims.sid),
+        eq(userSessions.userId, claims.uid),
+        isNull(userSessions.revokedAt),
+        gt(userSessions.expiresAt, sql`now()`),
+      ),
+    )
     .limit(1)
 
-  if (!user || !isUserAccessAllowed(user)) return null
-  const { accessExpiresAt: _accessExpiresAt, ...currentUser } = user
-  return currentUser
+  if (!row || !isUserAccessAllowed(row)) return null
+  const { accessExpiresAt: _accessExpiresAt, ...user } = row
+  return { user, sessionId: claims.sid }
 })
+
+export async function getCurrentUser(): Promise<CurrentUser | null> {
+  return (await getCurrentSession())?.user ?? null
+}
 
 export async function requireUser(): Promise<CurrentUser> {
   const user = await getCurrentUser()
