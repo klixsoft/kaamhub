@@ -19,9 +19,9 @@ Edit `.env.local`:
 | `APP_URL` | Yes | `http://localhost:3000` in development |
 | `DATABASE_URL` | Yes | e.g. `postgres://user:password@localhost:5432/kaamhub` |
 | `BETTER_AUTH_SECRET` | Yes | At least 32 characters: `openssl rand -base64 48` |
-| `SMTP_*` | No | Without SMTP, emails are written to the server log |
-| `GITHUB_*` | No | Only needed to test the GitHub integration |
-| `UPDATE_REPOSITORY`, `UPDATER_*` | No | Only needed for the System update page |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | No | Outgoing email. Without `SMTP_HOST`, emails are written to the server log. See [Email](deployment.md#email) |
+| `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`, `GITHUB_APP_INSTALLATION_ID`, `GITHUB_ORG`, `GITHUB_WEBHOOK_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | No | Only needed to test the GitHub integration. See [GitHub](deployment.md#github) |
+| `UPDATE_REPOSITORY`, `UPDATER_URL`, `UPDATER_TOKEN` | No | Only needed for the System update page |
 | `CRON_SECRET` | No | Enables `POST /api/cron/daily` for recurring invoices and renewal reminders |
 | `STORAGE_DIR` | No | Folder for uploaded project documents. Defaults to `./storage` |
 | `ENCRYPTION_KEY` | No | 64 hex characters (`openssl rand -hex 32`). Required to save environment credentials |
