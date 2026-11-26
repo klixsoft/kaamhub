@@ -9,6 +9,10 @@ on:
         description: "Version to release, e.g. 0.1.0. Creates the tag v<version> on the selected branch."
         required: true
         type: string
+      highlights:
+        description: "Optional highlights shown at the top of the release notes. Use \\n for a new line."
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -71,6 +75,13 @@ jobs:
     needs: images
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
 
       - name: Resolve tag
         id: tag
@@ -83,10 +94,16 @@ jobs:
       - name: Pin the installer to this release
         run: sed "s|KAAMHUB_BRANCH:-main|KAAMHUB_BRANCH:-${{ steps.tag.outputs.name }}|" scripts/install.sh > install.sh
 
+      - name: Write release notes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_HIGHLIGHTS: ${{ inputs.highlights }}
+        run: node scripts/release-notes.mjs "${{ steps.tag.outputs.name }}" release-notes.md
+
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.name }}
           target_commitish: ${{ github.sha }}
           name: KaamHub ${{ steps.tag.outputs.name }}
-          generate_release_notes: true
+          body_path: release-notes.md
           files: install.sh
