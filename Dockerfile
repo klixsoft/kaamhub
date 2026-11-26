@@ -22,7 +22,8 @@ ENV NODE_ENV=production \
     APP_VERSION=${APP_VERSION} \
     APP_URL=http://build.invalid \
     DATABASE_URL=postgres://build:build@127.0.0.1:1/build \
-    BETTER_AUTH_SECRET=build-time-placeholder-not-used-at-runtime
+    SESSION_SECRET=build-time-placeholder-not-used-at-runtime \
+    ENCRYPTION_KEY=0000000000000000000000000000000000000000000000000000000000000000
 RUN npm run build
 
 FROM base AS runner

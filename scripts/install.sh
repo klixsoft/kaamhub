@@ -41,7 +41,6 @@ else
   APP_URL="http://${SERVER_IP}:3000"
   PROFILES=""
 fi
-SMTP_HOST="$(ask "SMTP host for emails (leave empty to configure later)")"
 
 info "Downloading KaamHub into ${INSTALL_DIR}"
 mkdir -p "$INSTALL_DIR"
@@ -64,24 +63,8 @@ APP_URL=${APP_URL}
 POSTGRES_DB=kaamhub
 POSTGRES_USER=kaamhub
 POSTGRES_PASSWORD=$(secret 40)
-BETTER_AUTH_SECRET=$(secret 64)
+SESSION_SECRET=$(secret 64)
 ENCRYPTION_KEY=$(od -An -tx1 -N32 /dev/urandom | tr -d " \n")
-UPDATER_TOKEN=$(secret 64)
-CRON_SECRET=$(secret 64)
-UPDATE_REPOSITORY=${REPOSITORY}
-SMTP_HOST=${SMTP_HOST}
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=
-SMTP_PASSWORD=
-SMTP_FROM=
-GITHUB_APP_ID=
-GITHUB_APP_PRIVATE_KEY=
-GITHUB_APP_INSTALLATION_ID=
-GITHUB_ORG=
-GITHUB_WEBHOOK_SECRET=
-GITHUB_CLIENT_ID=
-GITHUB_CLIENT_SECRET=
 ENV
 
 info "Starting KaamHub"
@@ -93,7 +76,7 @@ for _ in $(seq 1 60); do
   if docker compose exec -T app wget -qO- http://127.0.0.1:3000/api/health > /dev/null 2>&1; then
     printf '\n\033[1;32mKaamHub is running.\033[0m\n'
     printf 'Open %s/setup to create the first administrator.\n' "$APP_URL"
-    printf 'Settings are in %s/.env. Edit it and run "docker compose up -d" to apply changes.\n' "$INSTALL_DIR"
+    printf 'Then set up email under Email in the sidebar. Server settings are in %s/.env.\n' "$INSTALL_DIR"
     exit 0
   fi
   sleep 5
