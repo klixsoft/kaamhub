@@ -65,7 +65,7 @@ To install from a fork, set `KAAMHUB_REPOSITORY=owner/repo` before running the s
 
 ### After installing
 
-The installer writes every setting to `/opt/kaamhub/.env`. Edit it to finish the [email settings](#email) (`SMTP_USER`, `SMTP_PASSWORD` and `SMTP_FROM`) and, if you use it, the [GitHub](#github) settings. Then apply them:
+The installer writes the server settings to `/opt/kaamhub/.env`. Email and GitHub are set up inside KaamHub afterwards; see [Email](#email) and [GitHub](#github). If you change `.env` later, apply it with:
 
 ```bash
 cd /opt/kaamhub && docker compose up -d
@@ -107,23 +107,21 @@ curl -fsSL "https://raw.githubusercontent.com/klixsoft/kaamhub/${KAAMHUB_VERSION
 
 ### 3. Generate the secrets
 
-Run each command and paste its output into the matching line of `.env`:
+KaamHub needs three secrets. Run each command and paste its output into the matching line of `.env`:
 
 | Variable | Command |
 |---|---|
 | `POSTGRES_PASSWORD` | `openssl rand -hex 24` |
-| `BETTER_AUTH_SECRET` | `openssl rand -hex 32` |
+| `SESSION_SECRET` | `openssl rand -hex 32` |
 | `ENCRYPTION_KEY` | `openssl rand -hex 32` |
-| `UPDATER_TOKEN` | `openssl rand -hex 32` |
-| `CRON_SECRET` | `openssl rand -hex 32` |
 
-Or fill all five in one go:
+Or fill all three in one go:
 
 ```bash
-sed -i -e "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=$(openssl rand -hex 24)|" -e "s|^BETTER_AUTH_SECRET=.*|BETTER_AUTH_SECRET=$(openssl rand -hex 32)|" -e "s|^ENCRYPTION_KEY=.*|ENCRYPTION_KEY=$(openssl rand -hex 32)|" -e "s|^UPDATER_TOKEN=.*|UPDATER_TOKEN=$(openssl rand -hex 32)|" -e "s|^CRON_SECRET=.*|CRON_SECRET=$(openssl rand -hex 32)|" .env
+sed -i -e "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=$(openssl rand -hex 24)|" -e "s|^SESSION_SECRET=.*|SESSION_SECRET=$(openssl rand -hex 32)|" -e "s|^ENCRYPTION_KEY=.*|ENCRYPTION_KEY=$(openssl rand -hex 32)|" .env
 ```
 
-Keep a copy of `.env` somewhere safe. Without `ENCRYPTION_KEY`, saved environment credentials cannot be read, and without `POSTGRES_PASSWORD` you cannot reach your database.
+Keep a copy of `.env` somewhere safe. Without `ENCRYPTION_KEY`, saved credentials and the email and GitHub secrets cannot be read, and without `POSTGRES_PASSWORD` you cannot reach your database.
 
 ### 4. Choose how people reach KaamHub
 
@@ -158,24 +156,7 @@ APP_BIND=0.0.0.0
 
 `APP_URL` must be exactly the address people type in the browser, including `http` or `https` and any port. Sign-in only works from that address.
 
-### 5. Set up email
-
-KaamHub sends invitations, password resets, invoices and renewal reminders by email. Fill in these lines with the details from your email provider; see [Email](#email) for what each one means and examples for common providers.
-
-```
-SMTP_HOST=smtp.example.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=no-reply@example.com
-SMTP_PASSWORD=your-smtp-password
-SMTP_FROM="Acme Software <no-reply@example.com>"
-```
-
-You can skip this for a first try: without `SMTP_HOST`, emails are not sent and their content is written to the app log (`docker compose logs app`) instead.
-
-The GitHub integration is optional and can be added any time; see [GitHub](#github) and [github.md](github.md).
-
-### 6. Start KaamHub
+### 5. Start KaamHub
 
 ```bash
 docker compose pull
@@ -197,9 +178,15 @@ curl -fsS http://127.0.0.1:3000/api/health
 
 The health check answers `{"status":"ok","version":"0.1.0"}`.
 
-### 7. Create the first administrator
+### 6. Create the first administrator
 
 Open `APP_URL/setup` in your browser, for example `https://hub.example.com/setup`, and create the Super Admin account. The setup page can only be used once.
+
+### 7. Set up email
+
+Sign in as the Super Admin and open **Email** in the sidebar. Enter your provider's SMTP details and send yourself a test email; see [Email](#email) for what each field means. Until email is set up, invitations and password-reset emails are not sent and their content is written to the app log (`docker compose logs app`) instead.
+
+The GitHub integration is optional and is set up the same way, under **GitHub**; see [GitHub](#github).
 
 ### Pinning or changing the version
 
@@ -207,13 +194,15 @@ Open `APP_URL/setup` in your browser, for example `https://hub.example.com/setup
 
 ## Environment variables
 
-All settings live in `.env`, next to `docker-compose.yml`. Docker Compose reads the file to fill in `docker-compose.yml`, and passes every line to the app container. After changing it, apply the change with:
+`.env` holds only what the server needs before KaamHub starts: images, address, database and two secrets. Everything else, including email and GitHub, is configured by a Super Admin inside KaamHub and stored in the database, with passwords and keys encrypted.
+
+Docker Compose reads `.env` to fill in `docker-compose.yml` and passes every line to the app container. After changing it, apply the change with:
 
 ```bash
 docker compose up -d
 ```
 
-Compose recreates only the containers whose settings changed. Values with spaces must be wrapped in double quotes, for example `SMTP_FROM="Acme Software <no-reply@example.com>"`.
+Compose recreates only the containers whose settings changed.
 
 ### Images and versions
 
@@ -229,7 +218,7 @@ Compose recreates only the containers whose settings changed. Values with spaces
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `APP_URL` | Yes | None | The full address people open KaamHub at, for example `https://hub.example.com` or `http://203.0.113.10:3000`. Used in email links, and sign-in is only accepted from this address. Cookies are marked secure when it starts with `https://` |
+| `APP_URL` | Yes | None | The full address people open KaamHub at, for example `https://hub.example.com` or `http://203.0.113.10:3000`. Used in email links and for the GitHub callback. Session cookies are marked `Secure` when it starts with `https://` |
 | `COMPOSE_PROFILES` | No | Empty | Set to `https` to start the bundled Caddy server, which serves `DOMAIN` with automatic certificates. Leave empty when you use your own reverse proxy or no domain |
 | `DOMAIN` | With `https` profile | `localhost` | Domain name Caddy serves and requests a Let's Encrypt certificate for, without `https://`, for example `hub.example.com`. Its DNS A record must point to the server |
 | `APP_BIND` | No | `127.0.0.1` | Host address the app's port is opened on. `127.0.0.1` allows only Caddy or a reverse proxy on the same server to reach it. `0.0.0.0` opens it to the internet, needed only when you use no proxy |
@@ -245,64 +234,24 @@ Compose recreates only the containers whose settings changed. Values with spaces
 | `DATABASE_POOL_MAX` | No | `10` | Maximum database connections the app opens. The default suits most teams |
 | `DATABASE_URL` | Only with your own database | Set by `docker-compose.yml` | Connection string, for example `postgres://kaamhub:password@db.example.com:5432/kaamhub`. With the bundled database it is built from the three `POSTGRES_` values; see [Use your own PostgreSQL](#use-your-own-postgresql) otherwise |
 
-### Security keys
-
-Generate every key with the command shown, and keep a copy of `.env` in a safe place.
+### Secrets
 
 | Variable | Required | Generate with | Description |
 |---|---|---|---|
-| `BETTER_AUTH_SECRET` | Yes | `openssl rand -hex 32` | Signs sign-in sessions. At least 32 characters. Changing it signs everyone out |
-| `ENCRYPTION_KEY` | Recommended | `openssl rand -hex 32` | Encrypts environment credentials (passwords and notes). Must be 64 hex characters, or 32 bytes in base64. Without it, credentials cannot be saved. Never change or lose it once credentials exist: they cannot be decrypted with another key |
-| `UPDATER_TOKEN` | Yes | `openssl rand -hex 32` | Shared secret the app uses to ask the updater to install a new version |
-| `CRON_SECRET` | Recommended | `openssl rand -hex 32` | Protects the scheduled job at `POST /api/cron/daily`. When set, the updater calls the job every hour to create recurring invoice drafts, send renewal reminders and check environment uptime. Without it, none of these run |
+| `SESSION_SECRET` | Yes | `openssl rand -hex 32` | At least 32 characters. Encrypts and signs the session cookie, and derives the private tokens the app shares with the updater and the scheduled job. Changing it signs everyone out on their next page load |
+| `ENCRYPTION_KEY` | Yes | `openssl rand -hex 32` | 64 hex characters. Encrypts environment credentials and the email and GitHub secrets saved in the app. Never change or lose it: encrypted values cannot be read with another key |
+| `CRON_SECRET` | No | `openssl rand -hex 32` | Only for running the scheduled job from your own scheduler instead of the updater; see [Scheduling the daily job](billing.md#scheduling-the-daily-job) |
 
-### Email
+Installations created before version 0.2.0 used `BETTER_AUTH_SECRET`. It is still accepted when `SESSION_SECRET` is not set, so existing `.env` files keep working.
 
-Without `SMTP_HOST`, KaamHub does not send email and writes each message to the app log instead. Invitations and password resets then only work if you copy the link from the log.
+### Set in the app instead
 
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `SMTP_HOST` | To send email | Empty | Your provider's SMTP server, for example `smtp.gmail.com` |
-| `SMTP_PORT` | No | `587` | SMTP port. `587` uses STARTTLS, `465` uses TLS from the start |
-| `SMTP_SECURE` | No | `false` | `true` for port `465`, `false` for port `587` (the connection is still upgraded to TLS by STARTTLS) |
-| `SMTP_USER` | Usually | Empty | User name for the SMTP server, often your email address or an API user. Leave empty only if the server accepts mail without signing in |
-| `SMTP_PASSWORD` | With `SMTP_USER` | Empty | Password or API key for `SMTP_USER`. With Gmail, and with Microsoft 365 accounts that use two-step sign-in, create an app password instead of using your normal password |
-| `SMTP_FROM` | To send email | Empty | Sender shown on every email, for example `"Acme Software <no-reply@example.com>"`. Use an address your provider allows you to send from |
-
-Settings for common providers:
-
-| Provider | `SMTP_HOST` | `SMTP_PORT` | `SMTP_SECURE` | `SMTP_USER` |
-|---|---|---|---|---|
-| Gmail / Google Workspace | `smtp.gmail.com` | `587` | `false` | Your email address (with an app password) |
-| Microsoft 365 / Outlook | `smtp.office365.com` | `587` | `false` | Your email address |
-| Amazon SES | `email-smtp.<region>.amazonaws.com` | `587` | `false` | SES SMTP user name |
-| SendGrid | `smtp.sendgrid.net` | `587` | `false` | `apikey` (the password is your API key) |
-| Mailgun | `smtp.mailgun.org` | `587` | `false` | Your Mailgun SMTP login |
-| Zoho Mail | `smtp.zoho.com` | `465` | `true` | Your email address |
-
-To test, invite a person from **People**: the invitation should arrive within a minute. If it does not, `docker compose logs app` shows the error from your mail server.
-
-### Updates
-
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `UPDATE_REPOSITORY` | No | Empty | GitHub repository whose releases the **System** page checks for new versions, in `owner/repo` form. Use `klixsoft/kaamhub`, or your fork. When empty, KaamHub does not check for updates |
-
-### GitHub
-
-Optional. Fill these in only if you use the GitHub module; [github.md](github.md) explains how to create the GitHub App and where each value comes from.
-
-| Variable | Description |
-|---|---|
-| `GITHUB_APP_ID` | The App ID shown on your GitHub App's settings page |
-| `GITHUB_APP_PRIVATE_KEY` | The private key (`.pem`) generated for the app, on one line with `\n` for each line break |
-| `GITHUB_APP_INSTALLATION_ID` | The number at the end of the URL after installing the app in your organisation |
-| `GITHUB_ORG` | Your GitHub organisation's login, for example `acme` |
-| `GITHUB_WEBHOOK_SECRET` | The webhook secret you entered when creating the app |
-| `GITHUB_CLIENT_ID` | The app's Client ID, used for **Connect GitHub** on each person's profile |
-| `GITHUB_CLIENT_SECRET` | A client secret generated on the app's settings page |
-
-The app manages repositories only when `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`, `GITHUB_APP_INSTALLATION_ID` and `GITHUB_ORG` are all set. **Connect GitHub** appears when `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` are set.
+| Setting | Where | Who |
+|---|---|---|
+| Email (SMTP server, port, TLS, username, password, sender) | **Email** in the sidebar | Super Admin |
+| GitHub App (App ID, organisation, installation ID, private key, webhook secret, client ID and secret) | **GitHub** in the sidebar | Super Admin |
+| Release repository checked for updates | Built in: `klixsoft/kaamhub` | Nobody needs to set it |
+| Updater address and token | Built in: the app finds the `updater` service and derives the token from `SESSION_SECRET` | Nobody needs to set it |
 
 ### Set by the image or Compose file
 
@@ -311,10 +260,52 @@ You do not put these in `.env` when you use the provided `docker-compose.yml`:
 | Variable | Value | Description |
 |---|---|---|
 | `DATABASE_URL` | `postgres://<user>:<password>@db:5432/<db>` | Points the app at the bundled database |
-| `UPDATER_URL` | `http://updater:9000` | Where the app reaches the updater on the private network |
 | `STORAGE_DIR` | `/app/storage` | Folder for uploaded documents, stored in the `app-storage` volume |
 | `PORT` | `3000` | Port the app listens on inside the container |
 | `APP_VERSION` | The image version | Shown on the System page and by `/api/health` |
+
+## Email
+
+Open **Email** in the sidebar (Super Admin only). KaamHub sends invitations, password resets, invoices and renewal reminders through the SMTP server you enter here. The password is encrypted with `ENCRYPTION_KEY` before it is stored, and is never shown again; leave the field empty to keep it.
+
+| Field | Description |
+|---|---|
+| SMTP server | Your provider's SMTP host, for example `smtp.gmail.com`. Leave it empty to turn email off |
+| Port | `587` for STARTTLS (most providers) or `465` for TLS from the start |
+| Use TLS from the start | On for port `465`, off for port `587` (the connection is still upgraded to TLS by STARTTLS) |
+| Username | Usually your email address or an SMTP user from your provider |
+| Password or API key | The SMTP password. With Gmail, and Microsoft 365 accounts that use two-step sign-in, create an app password |
+| Sender name | Shown as the sender, for example your company name |
+| Sender address | An address your provider allows you to send from, for example `no-reply@example.com` |
+
+After saving, use **Send test** to check the settings. If the server refuses the message, KaamHub shows the reason.
+
+Settings for common providers:
+
+| Provider | SMTP server | Port | TLS from the start | Username |
+|---|---|---|---|---|
+| Gmail / Google Workspace | `smtp.gmail.com` | `587` | Off | Your email address (with an app password) |
+| Microsoft 365 / Outlook | `smtp.office365.com` | `587` | Off | Your email address |
+| Amazon SES | `email-smtp.<region>.amazonaws.com` | `587` | Off | SES SMTP user name |
+| SendGrid | `smtp.sendgrid.net` | `587` | Off | `apikey` (the password is your API key) |
+| Mailgun | `smtp.mailgun.org` | `587` | Off | Your Mailgun SMTP login |
+| Zoho Mail | `smtp.zoho.com` | `465` | On | Your email address |
+
+## GitHub
+
+Open **GitHub** in the sidebar. Admins can see the connection status and set access rules; only a Super Admin can see and change the **GitHub App** details. [github.md](github.md) explains how to create the GitHub App and where each value comes from. The page also shows the callback and webhook URLs to use.
+
+| Field | Description |
+|---|---|
+| App ID | Shown at the top of the GitHub App's settings page |
+| Organisation | Your GitHub organisation's login, for example `acme` |
+| Installation ID | The number at the end of the URL after installing the app in your organisation |
+| Private key | The whole content of the `.pem` file generated for the app, including the `BEGIN` and `END` lines |
+| Webhook secret | The secret you entered for the app's webhook |
+| Client ID | The app's Client ID, used for **Connect GitHub** on each person's profile |
+| Client secret | A client secret generated on the app's settings page |
+
+The private key, webhook secret and client secret are encrypted before they are stored. Repository management works once App ID, organisation, installation ID and private key are saved; **Connect GitHub** appears once the client ID and secret are saved.
 
 ## Complete example files
 
@@ -351,7 +342,6 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-kaamhub}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-kaamhub}
-      UPDATER_URL: http://updater:9000
     volumes:
       - app-storage:/app/storage
     ports:
@@ -362,13 +352,12 @@ services:
     image: ${UPDATER_IMAGE:?Set UPDATER_IMAGE in .env}:${UPDATER_TAG:-latest}
     restart: unless-stopped
     environment:
-      UPDATER_TOKEN: ${UPDATER_TOKEN:?Set UPDATER_TOKEN in .env}
+      SESSION_SECRET: ${SESSION_SECRET:-${BETTER_AUTH_SECRET:?Set SESSION_SECRET in .env}}
       COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-kaamhub}
       COMPOSE_FILE: /stack/docker-compose.yml
       ENV_FILE: /stack/.env
       APP_SERVICE: app
       CRON_URL: http://app:3000/api/cron/daily
-      CRON_SECRET: ${CRON_SECRET:-}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./:/stack
@@ -404,8 +393,8 @@ networks:
 What each part does:
 
 - **`db`** runs PostgreSQL 17. Its data lives in the `db-data` volume, and `healthcheck` makes the app wait until the database accepts connections.
-- **`app`** runs KaamHub from `APP_IMAGE:APP_TAG`. `env_file: .env` passes all your settings to it; `DATABASE_URL` and `UPDATER_URL` are added on top. Uploaded documents are kept in the `app-storage` volume. The app is published on `APP_BIND:APP_PORT`, `127.0.0.1:3000` by default.
-- **`updater`** gets the Docker socket and your folder (`./` mounted as `/stack`) so it can change `APP_TAG` in `.env` and restart the app when an admin clicks **Update**. It also calls the scheduled job every hour when `CRON_SECRET` is set. It has no host port.
+- **`app`** runs KaamHub from `APP_IMAGE:APP_TAG`. `env_file: .env` passes all your settings to it; `DATABASE_URL` is added on top. Uploaded documents are kept in the `app-storage` volume. The app is published on `APP_BIND:APP_PORT`, `127.0.0.1:3000` by default.
+- **`updater`** gets the Docker socket and your folder (`./` mounted as `/stack`) so it can change `APP_TAG` in `.env` and restart the app when an admin clicks **Update**. It also calls the scheduled job every hour. It receives `SESSION_SECRET` to derive the same private tokens as the app, so neither needs a separate secret. It has no host port.
 - **`caddy`** only starts with `COMPOSE_PROFILES=https`. It serves `DOMAIN` on ports 80 and 443, gets certificates automatically and keeps them in the `caddy-data` volume.
 - **`volumes`** hold everything worth backing up: `db-data` and `app-storage`.
 
@@ -420,7 +409,7 @@ The bundled `Caddyfile` is three lines:
 
 ### .env
 
-A complete `.env` for a server at `hub.example.com` with automatic HTTPS and email through Gmail. Every value in angle brackets is yours to replace; generate each secret with the command next to it.
+A complete `.env` for a server at `hub.example.com` with automatic HTTPS. Every value in angle brackets is yours to replace; generate each secret with the command shown.
 
 ```
 APP_IMAGE=ghcr.io/klixsoft/kaamhub
@@ -438,28 +427,11 @@ POSTGRES_DB=kaamhub
 POSTGRES_USER=kaamhub
 POSTGRES_PASSWORD=<openssl rand -hex 24>
 
-BETTER_AUTH_SECRET=<openssl rand -hex 32>
+SESSION_SECRET=<openssl rand -hex 32>
 ENCRYPTION_KEY=<openssl rand -hex 32>
-UPDATER_TOKEN=<openssl rand -hex 32>
-CRON_SECRET=<openssl rand -hex 32>
-
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=<no-reply@example.com>
-SMTP_PASSWORD=<Google app password>
-SMTP_FROM="Acme Software <no-reply@example.com>"
-
-UPDATE_REPOSITORY=klixsoft/kaamhub
-
-GITHUB_APP_ID=
-GITHUB_APP_PRIVATE_KEY=
-GITHUB_APP_INSTALLATION_ID=
-GITHUB_ORG=
-GITHUB_WEBHOOK_SECRET=
-GITHUB_CLIENT_ID=
-GITHUB_CLIENT_SECRET=
 ```
+
+That is the whole file. Email and GitHub are set up afterwards in KaamHub.
 
 For your own reverse proxy instead of Caddy, change the HTTPS lines to `COMPOSE_PROFILES=` and `DOMAIN=` and keep `APP_URL` as your public address. For a server without a domain, also set `APP_BIND=0.0.0.0` and `APP_URL=http://<server-ip>:3000`.
 
@@ -552,7 +524,7 @@ docker compose pull app && docker compose up -d app
 The updater mounts `/var/run/docker.sock`, which gives it control over Docker on the host. To limit the risk:
 
 - It is not published on any host port; only the `app` container can reach it on the internal network.
-- Every request needs the `UPDATER_TOKEN` (compared in constant time).
+- Every request needs a token derived from `SESSION_SECRET` (compared in constant time).
 - It only accepts a version string matching `x.y.z` and only runs fixed `docker compose pull` and `up` commands for the `app` service.
 - The app only asks it to install the version reported by your own repository's latest GitHub Release.
 
@@ -584,7 +556,7 @@ Restore them into the volume:
 docker compose run --rm --no-deps -u 0 -v "$PWD":/backup --entrypoint tar app xzf /backup/documents.tar.gz -C /app
 ```
 
-Keep `.env` in a safe place too; `BETTER_AUTH_SECRET` is needed to keep existing sessions valid and `ENCRYPTION_KEY` to read environment credentials.
+Keep `.env` in a safe place too: `ENCRYPTION_KEY` is needed to read environment credentials and the email and GitHub secrets, which are part of the database backup.
 
 ## Everyday commands
 
@@ -608,9 +580,9 @@ Run these from the KaamHub folder, for example `/opt/kaamhub`.
 
 **`required variable ... is missing a value: Set X in .env`.** A required line in `.env` is empty. Fill it in and run `docker compose up -d` again.
 
-**The app restarts with `Invalid environment configuration`.** The log names each wrong value, for example a `BETTER_AUTH_SECRET` shorter than 32 characters or an `APP_URL` without `http://` or `https://`. Check it with `docker compose logs app`.
+**The app restarts with `Invalid environment configuration`.** The log names each wrong value, for example a `SESSION_SECRET` shorter than 32 characters, a missing `ENCRYPTION_KEY` or an `APP_URL` without `http://` or `https://`. Check it with `docker compose logs app`.
 
-**Sign-in fails or you are sent back to the login page.** Open KaamHub at exactly `APP_URL`. Using the IP address when `APP_URL` is a domain, or `http` when it is `https`, blocks the session cookie.
+**Sign-in fails or you are sent back to the login page.** Open KaamHub at exactly `APP_URL`. When `APP_URL` starts with `https://`, the session cookie is only sent over HTTPS, so opening the site over `http` or by IP address cannot keep you signed in.
 
 **No HTTPS certificate.** Check that `COMPOSE_PROFILES=https`, that the domain's A record points to this server, and that ports 80 and 443 are open and not used by another web server. `docker compose logs caddy` shows the reason.
 
@@ -618,7 +590,7 @@ Run these from the KaamHub folder, for example `/opt/kaamhub`.
 
 **Credentials cannot be saved.** Set `ENCRYPTION_KEY` and run `docker compose up -d`.
 
-**Emails do not arrive.** Without `SMTP_HOST` they are only written to `docker compose logs app`. With SMTP set, the log shows the error from your mail server.
+**Emails do not arrive.** Until email is set up under **Email**, messages are only written to `docker compose logs app`. Use **Send test** on that page to see the error from your mail server.
 
 ## Uninstall
 
@@ -636,23 +608,86 @@ rm -rf /opt/kaamhub
 
 `GET /api/health` returns `{"status":"ok","version":"x.y.z"}` when the app can reach the database. Docker uses it for the container health check.
 
-## Publishing images
+## Publishing a release
 
-Images are built by `.github/workflows/release.yml`. The easiest way to release is from GitHub: open **Actions → Release → Run workflow**, choose `main` and enter the version, for example `0.1.0`. The workflow builds the images, then creates the `v0.1.0` tag and the release.
+Maintainers publish releases from GitHub; nothing needs to be built locally.
 
-Pushing a version tag works too:
+### Run the release
 
-```bash
-git tag v0.1.0
+1. Open **Actions → Release → Run workflow** in the repository.
+2. Choose the `main` branch and enter the version, for example `0.2.0`. Use [semantic versioning](https://semver.org): raise the first number for breaking changes, the second for new features and the third for fixes only.
+3. Optionally, enter **highlights**: one or two sentences shown at the top of the release notes. Use `\n` for a new line.
+4. Click **Run workflow**.
+
+The workflow then:
+
+1. builds the app and updater images for `linux/amd64` and `linux/arm64` and publishes them to GitHub Container Registry as `<version>` and `latest`:
+   - `ghcr.io/<owner>/<repo>:<version>`
+   - `ghcr.io/<owner>/<repo>-updater:<version>`
+2. creates the `v<version>` tag on the commit it built;
+3. writes the release notes (see below);
+4. publishes the GitHub Release with the notes and a version-pinned `install.sh` attached.
+
+Pushing a tag such as `v0.2.0` from your computer runs the same workflow, without highlights.
+
+After the first release, make both packages public in the organisation's **Packages** settings so servers can pull them without logging in. Running installations see the new version on their **System** page within about 15 minutes.
+
+### Release notes and contributors
+
+The release notes are generated by `scripts/release-notes.mjs` from every commit since the previous release tag. They contain:
+
+| Section | What appears there |
+|---|---|
+| Highlights | The text entered when running the workflow, if any |
+| What's changed | Every commit, grouped by its [Conventional Commits](https://www.conventionalcommits.org) type, with its scope, author and a link to the commit or pull request |
+| Contributors | Everyone who made a commit in this release, by GitHub username |
+| New contributors | People whose first commit to the project is in this release, with a link to that commit |
+| Full changelog | A link comparing this release with the previous one |
+
+Commits are grouped by the type at the start of the commit message:
+
+| Commit type | Section |
+|---|---|
+| `feat` | 🚀 New features |
+| `fix` | 🐛 Bug fixes |
+| `security` | 🔒 Security |
+| `perf` | ⚡ Performance |
+| `refactor`, `style` | ♻️ Improvements |
+| `docs` | 📚 Documentation |
+| `build`, `ci`, `chore`, `test`, `revert` | 🧰 Maintenance |
+| `!` after the type, or `BREAKING CHANGE:` in the body | ⚠️ Breaking changes, listed first |
+| Anything else | Other changes |
+
+Pull requests that are squash-merged keep their `(#123)` reference, which becomes a link. Bot commits are left out. A person counts as a new contributor when none of the commits before the previous release use their email address, so the notes credit first-time contributors automatically, as in this example:
+
+```markdown
+## What's changed
+
+### 🚀 New features
+
+- **projects:** add a Documents tab ([#42](https://github.com/klixsoft/kaamhub/pull/42)) by @scthakuri in 1a2b3c4
+
+### 🐛 Bug fixes
+
+- **board:** let clients open cards on a read-only board by @new-contributor in 5d6e7f8
+
+## Contributors
+
+Thank you @scthakuri, @new-contributor!
+
+## New contributors
+
+- @new-contributor made their first contribution in 5d6e7f8
+
+**Full changelog**: https://github.com/klixsoft/kaamhub/compare/v0.1.0...v0.2.0
 ```
 
+To preview the notes before releasing, run the script locally; it reads your Git history and writes Markdown:
+
 ```bash
-git push origin v0.1.0
+git fetch --tags && node scripts/release-notes.mjs v0.2.0 release-notes.md
 ```
 
-The workflow publishes multi-architecture images (amd64 and arm64) to GitHub Container Registry and creates a GitHub Release with a version-pinned `install.sh` attached:
+Without `GITHUB_TOKEN` and `GITHUB_REPOSITORY` set, it shows author names instead of GitHub usernames and leaves out links.
 
-- `ghcr.io/<owner>/<repo>:<version>` and `:latest`
-- `ghcr.io/<owner>/<repo>-updater:<version>` and `:latest`
-
-Make the packages public in the repository's **Packages** settings so servers can pull them without logging in. The System page compares the running version with the latest release.
+You can edit the notes on the release page at any time after publishing.
