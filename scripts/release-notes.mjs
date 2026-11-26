@@ -1,5 +1,5 @@
-import { execFileSync } from "node:child_process"
 import { writeFileSync } from "node:fs"
+import { git, latestTag, readCommits } from "./lib/commits.mjs"
 
 /*
  * Builds the GitHub Release description from the Conventional Commits made since
@@ -24,7 +24,6 @@ const SECTIONS = [
   { title: "Other changes", match: () => true },
 ]
 
-const HEADER = /^(?<type>[a-z]+)(?:\((?<scope>[^)]+)\))?(?<bang>!)?: (?<description>.+)$/
 const [tag, outputFile] = process.argv.slice(2)
 const repository = process.env.GITHUB_REPOSITORY ?? ""
 const token = process.env.GITHUB_TOKEN ?? ""
@@ -33,39 +32,6 @@ const highlights = (process.env.RELEASE_HIGHLIGHTS ?? "").trim()
 if (!tag || !outputFile) {
   console.error("Usage: node scripts/release-notes.mjs <tag> <output-file>")
   process.exit(1)
-}
-
-function git(...args) {
-  return execFileSync("git", args, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }).trim()
-}
-
-function previousTag() {
-  const tags = git("tag", "--merged", "HEAD", "--sort=-v:refname", "--list", "v*.*.*").split("\n").filter(Boolean)
-  return tags.find((candidate) => candidate !== tag) ?? null
-}
-
-function readCommits(range) {
-  const separator = "\u001f"
-  const end = "\u001e"
-  const output = git("log", "--no-merges", `--format=%H${separator}%an${separator}%ae${separator}%s${separator}%b${end}`, ...(range ? [range] : ["HEAD"]))
-  return output
-    .split(end)
-    .map((entry) => entry.trim())
-    .filter(Boolean)
-    .map((entry) => {
-      const [sha, name, email, subject, body] = entry.split(separator)
-      const header = HEADER.exec(subject)?.groups
-      return {
-        sha,
-        name,
-        email: email.toLowerCase(),
-        type: header?.type ?? "other",
-        scope: header?.scope ?? null,
-        description: header?.description ?? subject,
-        breaking: Boolean(header?.bang) || /^BREAKING[ -]CHANGE:/m.test(body ?? ""),
-      }
-    })
-    .filter((commit) => !/\[bot\]/.test(commit.name))
 }
 
 async function githubLogins(commits) {
@@ -102,8 +68,8 @@ function commitLine(commit, logins) {
   return `- ${scope}${linkPullRequests(commit.description)} by ${authorLabel(commit, logins)} in ${sha}`
 }
 
-const previous = previousTag()
-const commits = readCommits(previous ? `${previous}..HEAD` : null)
+const previous = latestTag(tag)
+const commits = readCommits(previous)
 const earlierAuthors = new Set(previous ? git("log", "--format=%ae", previous).toLowerCase().split("\n").filter(Boolean) : [])
 const logins = await githubLogins(commits)
 
