@@ -20,7 +20,7 @@ src/
 ├── hooks/                    Client hooks
 ├── lib/                      Code shared by server and client (list params, formatting)
 ├── server/
-│   ├── auth/                 Better Auth instance, session and permission helpers
+│   ├── auth/                 Sessions, cookies, password hashing, rate limits, permission helpers
 │   ├── db/                   Drizzle client and schema
 │   ├── lib/                  Server action wrapper, query helpers, errors, logger
 │   ├── modules/<feature>/    queries.ts, actions.ts, schema.ts per feature
@@ -71,7 +71,28 @@ Project-level checks (is this person a manager of this project?) use `requirePro
 - **System permissions** are mapped to roles in `src/config/roles.ts`. Use `requirePermission()` in pages and the `permission` option in actions.
 - **Project visibility** is a SQL condition (`projectVisibilityCondition`) added to every project query, so lists, counts and facets can never include projects the user cannot see.
 - **Clients** are scoped through `client_contact`; client viewers only receive tasks whose visibility is `client`.
-- The proxy (`src/proxy.ts`) only redirects visitors without a session cookie. It is a convenience, not the security boundary; every page and action checks the session itself.
+- The proxy (`src/proxy.ts`) refreshes the session and redirects visitors who are not signed in. It is not the security boundary: every page, route handler and action checks the session itself with `getCurrentUser()`.
+
+## Sessions
+
+Authentication is built in (`src/server/auth`), with no auth framework:
+
+| Piece | File | Purpose |
+|---|---|---|
+| Cookies | `cookies.ts` | Names, options and the iron-sealed access cookie (`{ sid, uid }`, 15 minutes) |
+| Session store | `session-store.ts` | Creates, rotates, lists and revokes rows in `user_session`, with reuse detection |
+| Session lookup | `session.ts` | `getCurrentSession()` / `getCurrentUser()`: unseal the access cookie and load the user and session in one query |
+| Passwords | `password.ts` | scrypt hashing compatible with earlier releases |
+| Rate limits | `rate-limit.ts` | Atomic fixed-window counters in `auth_rate_limit` |
+| Tokens | `tokens.ts` | Random tokens, hashing and the internal tokens derived from `SESSION_SECRET` |
+
+The request flow:
+
+1. **Sign-in** (`modules/auth/actions.ts`) checks the rate limits and the password, creates a `user_session` row and sets the access cookie and a refresh cookie (`<sessionId>.<token>`; only the token's hash is stored).
+2. **Every request** passes through the proxy. While the access cookie is valid, nothing else happens. When it has expired, the proxy swaps the refresh token for a new one in a single `UPDATE … WHERE refresh_token_hash = …`, sets both cookies on the response and forwards the new access cookie to the page, route handler or server action in the same request.
+3. **Pages and actions** call `getCurrentUser()`, which joins `user_session` and `user`, so revoked sessions, deactivated users and expired freelancer access are rejected immediately.
+4. **Parallel requests** that present the token replaced moments ago (within 60 seconds) get a new access cookie without another rotation. Any other reuse of an old token revokes the session.
+5. **Sign-out** revokes the row and clears both cookies. Expired sessions, password links and rate-limit rows are deleted by the daily job.
 
 ## Lists: search, facets, sorting, pagination
 
