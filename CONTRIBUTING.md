@@ -54,10 +54,10 @@ Use [Conventional Commits](https://www.conventionalcommits.org/), e.g. `feat(pro
 | `docs` | Documentation only | Documentation |
 | `build`, `ci`, `chore`, `test`, `revert` | Tooling, dependencies and tests | Maintenance |
 
-Add `!` after the type (`feat(auth)!: ...`) or a `BREAKING CHANGE:` line in the body when existing installations must change something to upgrade. Write the description as you want it to read in the release notes, in the imperative: "add archived filter", not "added" or "adds".
+The type also decides the next version: `feat` raises the minor version, `fix` and similar the patch version, and documentation, test, CI and chore changes do not create a release on their own. Add `!` after the type (`feat(auth)!: ...`) or a `BREAKING CHANGE:` line in the body when existing installations must change something to upgrade; that raises the major version. Write the description as you want it to read in the release notes, in the imperative: "add archived filter", not "added" or "adds".
 
 Your first merged commit is credited under **New contributors** in the next release.
 
 ## Releasing (maintainers)
 
-Open **Actions → Release → Run workflow**, choose `main`, enter the version (for example `0.2.0`) and, optionally, a sentence of highlights. The workflow first runs the full CI (lint, types, tests, build and a Docker build); only if all of it passes does it publish the images, create the tag and publish the release with generated notes. See [Publishing a release](docs/deployment.md#publishing-a-release) for the details and how to preview the notes.
+Releases happen automatically. After a push to `main` passes CI, the version is worked out from the commit types above and the images, tag and release are published. A push with only `docs`, `test`, `ci`, `build`, `chore` or `style` commits does not create a release. To choose the version yourself or add highlights, use **Actions → Release → Run workflow**. See [Publishing a release](docs/deployment.md#publishing-a-release) for the rules and the pipeline.

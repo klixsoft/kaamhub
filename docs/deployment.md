@@ -610,38 +610,53 @@ rm -rf /opt/kaamhub
 
 ## Publishing a release
 
-Maintainers publish releases from GitHub; nothing needs to be built locally.
+Releases are automatic. Every push to `main` runs CI; when CI passes, the **Release** workflow reads the commit messages since the last release and decides whether a new version is needed. Maintainers do not pick version numbers or click anything.
 
-### Run the release
+### How the version is chosen
 
-1. Open **Actions → Release → Run workflow** in the repository.
-2. Choose the `main` branch and enter the version, for example `0.2.0`. Use [semantic versioning](https://semver.org): raise the first number for breaking changes, the second for new features and the third for fixes only.
-3. Optionally, enter **highlights**: one or two sentences shown at the top of the release notes. Use `\n` for a new line.
-4. Click **Run workflow**.
+The version follows [semantic versioning](https://semver.org) and is worked out by `scripts/next-version.mjs` from the [Conventional Commits](https://www.conventionalcommits.org) types since the latest `v*.*.*` tag:
 
-The workflow runs as a pipeline, and each stage starts only if the previous one succeeded:
+| Commits since the last release | Next version | Example |
+|---|---|---|
+| Any breaking change (`feat!:`, `fix!:` or a `BREAKING CHANGE:` line) | Major. Before 1.0.0, minor instead | `1.4.2` → `2.0.0`, `0.2.0` → `0.3.0` |
+| Any `feat` | Minor | `0.2.0` → `0.3.0` |
+| Any `fix`, `security`, `perf`, `refactor`, `revert` or a message without a type | Patch | `0.2.0` → `0.2.1` |
+| Only `docs`, `test`, `ci`, `build`, `chore` or `style` | No release | |
+
+Several commits pushed together become one release with the highest bump. To release several pull requests together, merge them close together or hold them in a branch.
+
+### The pipeline
+
+Each stage starts only if the previous one succeeded:
 
 | Stage | What it checks or does | If it fails |
 |---|---|---|
-| Check the version | The version is `x.y.z` and has not been released before | Nothing is built |
-| CI | The same checks as every push and pull request: lint, type-check, migrations in sync with the schema, migrations applied to a fresh database, unit and integration tests, production build and a Docker build | No images, tag or release are published |
-| Publish images | Builds and pushes the multi-architecture images | No tag or release are published |
-| Publish the release | Creates the tag, writes the release notes and publishes the release | Images exist but no installation is offered the update, because updates follow releases |
+| CI (on every push) | Lint, type-check, migrations in sync with the schema, migrations applied to a fresh database, unit and integration tests, production build and a Docker build | Nothing is released |
+| Decide the version | Works out the next version from the commits, or stops when there is nothing to release | Nothing is built |
+| Publish images | Builds the app and updater images for `linux/amd64` and `linux/arm64` and pushes `<version>` and `latest` to GitHub Container Registry | No tag or release are published |
+| Publish the release | Creates the `v<version>` tag on the commit CI checked, writes the release notes and publishes the release with a version-pinned `install.sh` | Images exist but no installation is offered the update, because updates follow releases |
 
-Only one release runs at a time. If CI fails, fix the problem on `main` and run the workflow again with the same version.
+Only one release runs at a time; a release that is still running finishes before the next one starts. Running installations see the new version on their **System** page within about 15 minutes.
 
-In detail, it:
+After the very first release, make both packages public in the organisation's **Packages** settings so servers can pull them without logging in.
 
-1. builds the app and updater images for `linux/amd64` and `linux/arm64` and publishes them to GitHub Container Registry as `<version>` and `latest`:
-   - `ghcr.io/<owner>/<repo>:<version>`
-   - `ghcr.io/<owner>/<repo>-updater:<version>`
-2. creates the `v<version>` tag on the commit it built;
-3. writes the release notes (see below);
-4. publishes the GitHub Release with the notes and a version-pinned `install.sh` attached.
+### Releasing by hand
 
-Pushing a tag such as `v0.2.0` from your computer runs the same workflow, without highlights.
+The automatic flow covers normal work. To choose the version yourself, for example `1.0.0`, or to add highlights at the top of the release notes:
 
-After the first release, make both packages public in the organisation's **Packages** settings so servers can pull them without logging in. Running installations see the new version on their **System** page within about 15 minutes.
+1. Open **Actions → Release → Run workflow** in the repository.
+2. Choose the `main` branch.
+3. Enter the version, or leave it empty to use the automatic one.
+4. Optionally, enter **highlights**: one or two sentences shown at the top of the release notes. Use `\n` for a new line.
+5. Click **Run workflow**.
+
+A manual release runs the full CI itself before publishing anything. Pushing a tag such as `v1.0.0` from your computer does the same.
+
+To preview what the next automatic release would be, run this locally:
+
+```bash
+git fetch --tags && node scripts/next-version.mjs
+```
 
 ### Release notes and contributors
 
