@@ -36,18 +36,22 @@ If you changed the database schema, include the generated migration (`npm run db
 
 ## Commit messages
 
-Use [Conventional Commits](https://www.conventionalcommits.org/), e.g. `feat(projects): add archived filter`.
+Use [Conventional Commits](https://www.conventionalcommits.org/), e.g. `feat(projects): add archived filter`. The release notes are built from these messages, so the type decides where your change appears:
+
+| Type | Use it for | Release notes section |
+|---|---|---|
+| `feat` | A new feature people will notice | New features |
+| `fix` | A bug fix | Bug fixes |
+| `security` | A security fix | Security |
+| `perf` | Faster or lighter, same behaviour | Performance |
+| `refactor`, `style` | Code changes that do not change behaviour | Improvements |
+| `docs` | Documentation only | Documentation |
+| `build`, `ci`, `chore`, `test`, `revert` | Tooling, dependencies and tests | Maintenance |
+
+Add `!` after the type (`feat(auth)!: ...`) or a `BREAKING CHANGE:` line in the body when existing installations must change something to upgrade. Write the description as you want it to read in the release notes, in the imperative: "add archived filter", not "added" or "adds".
+
+Your first merged commit is credited under **New contributors** in the next release.
 
 ## Releasing (maintainers)
 
-Update `version` in `package.json`, then tag and push:
-
-```bash
-git tag v0.2.0
-```
-
-```bash
-git push origin v0.2.0
-```
-
-The release workflow builds the images and creates the GitHub Release that installations use to offer updates.
+Open **Actions → Release → Run workflow**, choose `main`, enter the version (for example `0.2.0`) and, optionally, a sentence of highlights. The workflow builds the images, creates the tag and publishes the release with generated notes. See [Publishing a release](docs/deployment.md#publishing-a-release) for the details and how to preview the notes.
