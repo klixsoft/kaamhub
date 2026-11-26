@@ -88,6 +88,30 @@ export const moduleSettingsFormSchema = z.object({
   github: z.stringbool(),
 })
 
+export const emailSettingsSchema = z.object({
+  host: z.string().default(""),
+  port: z.number().int().min(1).max(65535).default(587),
+  secure: z.boolean().default(false),
+  username: z.string().default(""),
+  passwordEncrypted: z.string().default(""),
+  fromName: z.string().default(""),
+  fromAddress: z.string().default(""),
+})
+
+export type EmailSettings = z.infer<typeof emailSettingsSchema>
+
+export const githubAppSettingsSchema = z.object({
+  appId: z.string().default(""),
+  installationId: z.string().default(""),
+  organization: z.string().default(""),
+  privateKeyEncrypted: z.string().default(""),
+  webhookSecretEncrypted: z.string().default(""),
+  clientId: z.string().default(""),
+  clientSecretEncrypted: z.string().default(""),
+})
+
+export type GithubAppSettings = z.infer<typeof githubAppSettingsSchema>
+
 export const SETTINGS_DEFAULTS = {
   modules: DEFAULT_MODULES,
   general: { companyName: "KaamHub", projectCodePrefix: "" } satisfies GeneralSettings,
@@ -118,6 +142,8 @@ export const SETTINGS_DEFAULTS = {
     projectRolePermissions: { manager: "maintain", member: "push", viewer: "pull" },
     removeAccessOnUnassign: true,
   } satisfies GithubSettings,
+  email: emailSettingsSchema.parse({}),
+  githubApp: githubAppSettingsSchema.parse({}),
 }
 
 export const SETTINGS_SCHEMAS = {
@@ -125,6 +151,8 @@ export const SETTINGS_SCHEMAS = {
   general: generalSettingsSchema,
   billing: billingSettingsSchema,
   github: githubSettingsSchema,
+  email: emailSettingsSchema,
+  githubApp: githubAppSettingsSchema,
 }
 
 export type SettingsKey = keyof typeof SETTINGS_SCHEMAS

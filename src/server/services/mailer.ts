@@ -1,7 +1,7 @@
 import "server-only"
-import nodemailer, { type Transporter } from "nodemailer"
-import { env } from "@/config/env"
+import nodemailer from "nodemailer"
 import { logger } from "@/server/lib/logger"
+import { type EmailConfig, getEmailConfig } from "@/server/modules/integrations/config"
 
 export interface MailAttachment {
   filename: string
@@ -17,23 +17,24 @@ export interface MailMessage {
   attachments?: MailAttachment[]
 }
 
-let transporter: Transporter | null = null
-
-function getTransporter(): Transporter | null {
-  if (!env.SMTP_HOST) return null
-  transporter ??= nodemailer.createTransport({
-    host: env.SMTP_HOST,
-    port: env.SMTP_PORT,
-    secure: env.SMTP_SECURE,
-    auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASSWORD } : undefined,
+function createTransport(config: EmailConfig) {
+  return nodemailer.createTransport({
+    host: config.host,
+    port: config.port,
+    secure: config.secure,
+    auth: config.username ? { user: config.username, pass: config.password } : undefined,
+    connectionTimeout: 15000,
   })
-  return transporter
+}
+
+export async function isEmailConfigured(): Promise<boolean> {
+  return (await getEmailConfig()) !== null
 }
 
 export async function sendMail(message: MailMessage): Promise<void> {
-  const transport = getTransporter()
-  if (!transport) {
-    logger.warn("SMTP is not configured; email not sent", {
+  const config = await getEmailConfig()
+  if (!config) {
+    logger.warn("Email is not configured; email not sent", {
       to: message.to,
       subject: message.subject,
       body: message.text,
@@ -41,5 +42,9 @@ export async function sendMail(message: MailMessage): Promise<void> {
     })
     return
   }
-  await transport.sendMail({ from: env.SMTP_FROM, ...message })
+  await createTransport(config).sendMail({ from: config.from, ...message })
+}
+
+export async function verifyEmailConfig(config: EmailConfig): Promise<void> {
+  await createTransport(config).verify()
 }

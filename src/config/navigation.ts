@@ -2,7 +2,7 @@ import type { ModuleKey, ModuleState } from "./modules"
 import type { Permission, SystemRole } from "./roles"
 import { roleHasPermission } from "./roles"
 
-export const NAV_ICONS = ["dashboard", "projects", "invoices", "services", "people", "clients", "settings", "billing", "github", "system"] as const
+export const NAV_ICONS = ["dashboard", "projects", "invoices", "services", "people", "clients", "settings", "billing", "email", "github", "system"] as const
 export type NavIcon = (typeof NAV_ICONS)[number]
 
 export interface NavItem {
@@ -36,6 +36,7 @@ const NAVIGATION: NavSection[] = [
     items: [
       { title: "Settings", href: "/settings/general", icon: "settings", permission: "settings:manage" },
       { title: "Billing", href: "/settings/billing", icon: "billing", permission: "settings:manage", module: "invoices" },
+      { title: "Email", href: "/settings/email", icon: "email", permission: "system:update" },
       { title: "GitHub", href: "/settings/github", icon: "github", permission: "github:manage", module: "github" },
       { title: "System", href: "/settings/system", icon: "system", permission: "system:update" },
     ],
