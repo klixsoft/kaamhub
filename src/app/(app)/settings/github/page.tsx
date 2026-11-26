@@ -1,14 +1,16 @@
 import type { Metadata } from "next"
 import { Suspense } from "react"
 import { PageHeader } from "@/components/layout/page-header"
+import { GithubAppForm } from "@/components/settings/github-app-form"
 import { GithubPermissionForm, SyncRepositoriesButton } from "@/components/settings/github-settings"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatDateTime } from "@/lib/format"
-import { isGithubLoginConfigured } from "@/server/auth/auth"
-import { requirePermission } from "@/server/auth/session"
-import { githubOrg, isGithubAppConfigured } from "@/server/modules/github/client"
+import { env } from "@/config/env"
+import { can, requirePermission } from "@/server/auth/session"
+import { githubCallbackUrl } from "@/server/modules/github/oauth"
+import { getGithubAppConfig, getGithubAppSettingsView, getGithubOAuthConfig } from "@/server/modules/integrations/config"
 import { getRepositoryStats } from "@/server/modules/github/repositories"
 import { getSettings } from "@/server/modules/settings/queries"
 import { requireModule } from "@/server/modules/settings/guards"
@@ -30,10 +32,17 @@ function StatusRow({ label, ok, detail }: { label: string; ok: boolean; detail: 
 }
 
 async function GithubSettingsContent() {
-  await requirePermission("github:manage")
+  const user = await requirePermission("github:manage")
   await requireModule("github")
-  const [settings, repositoryStats] = await Promise.all([getSettings("github"), getRepositoryStats()])
-  const appConfigured = isGithubAppConfigured()
+  const canConfigure = can(user, "system:update")
+  const [settings, repositoryStats, appConfig, oauthConfig, appSettings] = await Promise.all([
+    getSettings("github"),
+    getRepositoryStats(),
+    getGithubAppConfig(),
+    getGithubOAuthConfig(),
+    canConfigure ? getGithubAppSettingsView() : null,
+  ])
+  const appConfigured = appConfig !== null
 
   return (
     <div className="flex flex-col gap-6">
@@ -41,7 +50,9 @@ async function GithubSettingsContent() {
         <Alert>
           <AlertTitle>Connect a GitHub App</AlertTitle>
           <AlertDescription>
-            Create a GitHub App for your organisation and set the GITHUB_APP_* variables. The setup guide is in docs/github.md.
+            {canConfigure
+              ? "Create a GitHub App for your organisation and enter its details under GitHub App below. The setup guide is in docs/github.md."
+              : "A Super Admin needs to connect a GitHub App for your organisation."}
           </AlertDescription>
         </Alert>
       ) : null}
@@ -50,8 +61,8 @@ async function GithubSettingsContent() {
           <CardTitle>Connection</CardTitle>
         </CardHeader>
         <CardContent className="divide-y">
-          <StatusRow label="GitHub App" ok={appConfigured} detail={appConfigured ? `Organisation: ${githubOrg()}` : "Manages repository access."} />
-          <StatusRow label="Account linking" ok={isGithubLoginConfigured} detail="Lets people connect their GitHub account from their profile." />
+          <StatusRow label="GitHub App" ok={appConfigured} detail={appConfig ? `Organisation: ${appConfig.org}` : "Manages repository access."} />
+          <StatusRow label="Account linking" ok={oauthConfig !== null} detail="Lets people connect their GitHub account from their profile." />
           <div className="flex flex-wrap items-center justify-between gap-4 py-3">
             <div>
               <p className="text-sm font-medium">Repositories</p>
@@ -63,6 +74,17 @@ async function GithubSettingsContent() {
           </div>
         </CardContent>
       </Card>
+      {appSettings ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>GitHub App</CardTitle>
+            <CardDescription>Only Super Admins can see and change these details. Secrets are encrypted before they are stored.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <GithubAppForm defaults={appSettings} callbackUrl={githubCallbackUrl()} webhookUrl={`${env.APP_URL}/api/github/webhook`} />
+          </CardContent>
+        </Card>
+      ) : null}
       <Card>
         <CardHeader>
           <CardTitle>Access by project role</CardTitle>

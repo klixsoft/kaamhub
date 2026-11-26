@@ -26,7 +26,7 @@ async function Repositories({ params }: { params: PageProps<"/projects/[projectI
       repositories={repositories}
       canLink={canLink}
       canCreate={canLink && can(user, "github:manage")}
-      githubConfigured={isGithubAppConfigured()}
+      githubConfigured={await isGithubAppConfigured()}
     />
   )
 }

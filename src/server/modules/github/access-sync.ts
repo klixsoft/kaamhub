@@ -115,7 +115,7 @@ function planChanges(
 }
 
 async function revokeOnGithub(change: Extract<Change, { kind: "revoke" }>) {
-  const { octokit } = getInstallationClient()
+  const { octokit } = await getInstallationClient()
   if (change.previousStatus === "invited") {
     const invitations = await octokit.paginate(octokit.rest.repos.listInvitations, { owner: change.owner, repo: change.repo, per_page: 100 })
     const invitation = invitations.find((item) => item.invitee?.login.toLowerCase() === change.login.toLowerCase())
@@ -132,7 +132,7 @@ async function applyChange(change: Change): Promise<void> {
       await db.delete(githubAccessGrants).where(where)
       return
     }
-    const { octokit } = getInstallationClient()
+    const { octokit } = await getInstallationClient()
     const response = await octokit.rest.repos.addCollaborator({
       owner: change.owner,
       repo: change.repo,
@@ -172,7 +172,7 @@ async function applyChange(change: Change): Promise<void> {
 }
 
 export async function reconcileGithubAccess(scope: SyncScope): Promise<{ applied: number }> {
-  if (!isGithubAppConfigured() || !(await isModuleEnabled("github"))) return { applied: 0 }
+  if (!(await isGithubAppConfigured()) || !(await isModuleEnabled("github"))) return { applied: 0 }
   if (!scope.userIds?.length && !scope.repositoryIds?.length) return { applied: 0 }
 
   try {

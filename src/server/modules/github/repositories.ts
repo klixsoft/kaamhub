@@ -55,7 +55,7 @@ export async function upsertRepositories(repos: GithubRepositoryPayload[]): Prom
 }
 
 export async function syncRepositories(): Promise<{ count: number }> {
-  const { octokit } = getInstallationClient()
+  const { octokit } = await getInstallationClient()
   const repos = (await octokit.paginate(octokit.rest.apps.listReposAccessibleToInstallation, { per_page: 100 })) as GithubRepositoryPayload[]
 
   await upsertRepositories(repos)
@@ -70,7 +70,7 @@ export async function removeRepository(githubId: number): Promise<void> {
 }
 
 export async function createOrganizationRepository(input: { name: string; description?: string | null; isPrivate: boolean }) {
-  const { octokit, org } = getInstallationClient()
+  const { octokit, org } = await getInstallationClient()
   const { data } = await octokit.rest.repos.createInOrg({
     org,
     name: input.name,
