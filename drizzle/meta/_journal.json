@@ -92,6 +92,20 @@
       "when": 1795597882437,
       "tag": "0012_project_documents",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1795687232774,
+      "tag": "0013_custom_sessions",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1795687241817,
+      "tag": "0014_drop_better_auth",
+      "breakpoints": true
     }
   ]
 }

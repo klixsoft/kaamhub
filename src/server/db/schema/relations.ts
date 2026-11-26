@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm"
-import { accounts, sessions, users } from "./auth"
+import { userSessions, users } from "./auth"
 import { clientContacts, clients } from "./clients"
 import { githubAccessGrants, githubRepositories, projectRepositories } from "./github"
 import { departments, designations, memberProfiles } from "./people"
@@ -8,18 +8,13 @@ import { boardColumns, projectEnvironments, projectMembers, projects, taskAssign
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   profile: one(memberProfiles, { fields: [users.id], references: [memberProfiles.userId], relationName: "profile_user" }),
-  sessions: many(sessions),
-  accounts: many(accounts),
+  sessions: many(userSessions),
   projectMemberships: many(projectMembers),
   clientContacts: many(clientContacts),
 }))
 
-export const sessionsRelations = relations(sessions, ({ one }) => ({
-  user: one(users, { fields: [sessions.userId], references: [users.id] }),
-}))
-
-export const accountsRelations = relations(accounts, ({ one }) => ({
-  user: one(users, { fields: [accounts.userId], references: [users.id] }),
+export const userSessionsRelations = relations(userSessions, ({ one }) => ({
+  user: one(users, { fields: [userSessions.userId], references: [users.id] }),
 }))
 
 export const memberProfilesRelations = relations(memberProfiles, ({ one }) => ({
