@@ -17,8 +17,14 @@ npm run typecheck
 ```
 
 ```bash
+npm test
+```
+
+```bash
 npm run build
 ```
+
+Add or update tests in `tests/` when you change behaviour, especially anything to do with sign-in, permissions or money. See [Tests](docs/development.md#tests) for setting up the test database.
 
 If you changed the database schema, include the generated migration (`npm run db:generate`).
 
@@ -54,4 +60,4 @@ Your first merged commit is credited under **New contributors** in the next rele
 
 ## Releasing (maintainers)
 
-Open **Actions → Release → Run workflow**, choose `main`, enter the version (for example `0.2.0`) and, optionally, a sentence of highlights. The workflow builds the images, creates the tag and publishes the release with generated notes. See [Publishing a release](docs/deployment.md#publishing-a-release) for the details and how to preview the notes.
+Open **Actions → Release → Run workflow**, choose `main`, enter the version (for example `0.2.0`) and, optionally, a sentence of highlights. The workflow first runs the full CI (lint, types, tests, build and a Docker build); only if all of it passes does it publish the images, create the tag and publish the release with generated notes. See [Publishing a release](docs/deployment.md#publishing-a-release) for the details and how to preview the notes.

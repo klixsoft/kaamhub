@@ -619,7 +619,18 @@ Maintainers publish releases from GitHub; nothing needs to be built locally.
 3. Optionally, enter **highlights**: one or two sentences shown at the top of the release notes. Use `\n` for a new line.
 4. Click **Run workflow**.
 
-The workflow then:
+The workflow runs as a pipeline, and each stage starts only if the previous one succeeded:
+
+| Stage | What it checks or does | If it fails |
+|---|---|---|
+| Check the version | The version is `x.y.z` and has not been released before | Nothing is built |
+| CI | The same checks as every push and pull request: lint, type-check, migrations in sync with the schema, migrations applied to a fresh database, unit and integration tests, production build and a Docker build | No images, tag or release are published |
+| Publish images | Builds and pushes the multi-architecture images | No tag or release are published |
+| Publish the release | Creates the tag, writes the release notes and publishes the release | Images exist but no installation is offered the update, because updates follow releases |
+
+Only one release runs at a time. If CI fails, fix the problem on `main` and run the workflow again with the same version.
+
+In detail, it:
 
 1. builds the app and updater images for `linux/amd64` and `linux/arm64` and publishes them to GitHub Container Registry as `<version>` and `latest`:
    - `ghcr.io/<owner>/<repo>:<version>`

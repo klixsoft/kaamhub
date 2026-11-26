@@ -43,6 +43,8 @@ The first visit redirects to `/setup`, where you create the super admin.
 | `npm run start` | Serve the production build |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | Generates route types and runs `tsc` |
+| `npm test` | Runs the unit and integration tests once |
+| `npm run test:watch` | Re-runs tests as you edit |
 | `npm run db:generate` | Creates a SQL migration from schema changes |
 | `npm run db:migrate` | Applies pending migrations |
 | `npm run db:studio` | Opens Drizzle Studio |
@@ -55,6 +57,33 @@ The first visit redirects to `/setup`, where you create the super admin.
 4. Commit the schema change and the migration together. CI fails if they are out of sync.
 
 Migrations run automatically when the Docker container starts.
+
+## Tests
+
+Tests use [Vitest](https://vitest.dev) and live in `tests/`:
+
+| Folder | What it covers | Needs a database |
+|---|---|---|
+| `tests/unit` | Invoice totals, amounts in words, fiscal years, list parameters, redirects, password rules, roles, versions, password hashing, session cookies, tokens, secret encryption and the release notes script | No |
+| `tests/integration` | Session rotation, refresh-token reuse detection, the 90-day limit, revoking sessions and rate limits, against real PostgreSQL | Yes |
+
+The integration tests need an empty, migrated database. They use `postgres://kaamhub:kaamhub@localhost:5432/kaamhub_test` unless `DATABASE_URL` is set. Create it once:
+
+```bash
+createdb kaamhub_test
+```
+
+```bash
+DATABASE_URL=postgres://kaamhub:kaamhub@localhost:5432/kaamhub_test node scripts/migrate.mjs
+```
+
+Then run all tests:
+
+```bash
+npm test
+```
+
+Integration tests create their own users with `@test.invalid` addresses and delete them afterwards. Never point `DATABASE_URL` at a database with real data when running tests.
 
 ## Testing emails locally
 
