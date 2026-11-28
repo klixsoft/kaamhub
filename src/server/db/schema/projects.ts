@@ -272,3 +272,27 @@ export const taskAttachments = pgTable(
   },
   (table) => [index("task_attachment_task_idx").on(table.taskId, table.createdAt)],
 )
+
+export const timeEntries = pgTable(
+  "time_entry",
+  {
+    id: id(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    taskId: uuid("task_id").references(() => tasks.id, { onDelete: "set null" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    workDate: date("work_date").notNull(),
+    minutes: integer("minutes").notNull(),
+    note: text("note"),
+    billable: boolean("billable").notNull().default(true),
+    ...timestamps,
+  },
+  (table) => [
+    index("time_entry_project_idx").on(table.projectId, table.workDate),
+    index("time_entry_user_idx").on(table.userId, table.workDate),
+    index("time_entry_task_idx").on(table.taskId),
+  ],
+)

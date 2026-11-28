@@ -43,6 +43,7 @@ export const PERMISSIONS = [
   "finance:write",
   "settings:manage",
   "letters:manage",
+  "time:read_all",
   "github:manage",
   "system:update",
   "audit:read",

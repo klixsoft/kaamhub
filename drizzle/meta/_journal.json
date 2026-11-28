@@ -134,6 +134,13 @@
       "when": 1795845809080,
       "tag": "0018_client_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1795846488492,
+      "tag": "0019_time_entries",
+      "breakpoints": true
     }
   ]
 }
