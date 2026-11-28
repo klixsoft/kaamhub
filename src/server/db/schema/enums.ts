@@ -13,7 +13,9 @@ import {
   ENVIRONMENT_HEALTH,
   ENVIRONMENT_KINDS,
   GITHUB_ACCESS_STATUSES,
+  GITHUB_LINK_KINDS,
   GITHUB_PERMISSIONS,
+  PULL_REQUEST_STATES,
   PRIORITIES,
   PROJECT_STATUSES,
   REPOSITORY_LABELS,
@@ -34,6 +36,8 @@ export const taskVisibilityEnum = pgEnum("task_visibility", TASK_VISIBILITIES)
 export const repositoryLabelEnum = pgEnum("repository_label", REPOSITORY_LABELS)
 export const githubPermissionEnum = pgEnum("github_permission", GITHUB_PERMISSIONS)
 export const githubAccessStatusEnum = pgEnum("github_access_status", GITHUB_ACCESS_STATUSES)
+export const githubLinkKindEnum = pgEnum("github_link_kind", GITHUB_LINK_KINDS)
+export const pullRequestStateEnum = pgEnum("pull_request_state", PULL_REQUEST_STATES)
 
 export const taxKindEnum = pgEnum("tax_kind", TAX_KINDS)
 export const invoiceStatusEnum = pgEnum("invoice_status", INVOICE_STATUSES)

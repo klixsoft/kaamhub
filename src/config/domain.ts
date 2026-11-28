@@ -97,6 +97,18 @@ export const GITHUB_PERMISSION_LABELS: Record<GithubPermission, string> = {
 export const GITHUB_ACCESS_STATUSES = ["pending", "invited", "active", "failed"] as const
 export type GithubAccessStatus = (typeof GITHUB_ACCESS_STATUSES)[number]
 
+export const GITHUB_LINK_KINDS = ["commit", "pull_request"] as const
+export type GithubLinkKind = (typeof GITHUB_LINK_KINDS)[number]
+
+export const PULL_REQUEST_STATES = ["open", "draft", "merged", "closed"] as const
+export type PullRequestState = (typeof PULL_REQUEST_STATES)[number]
+export const PULL_REQUEST_STATE_LABELS: Record<PullRequestState, string> = {
+  open: "Open",
+  draft: "Draft",
+  merged: "Merged",
+  closed: "Closed",
+}
+
 export const ENVIRONMENT_KINDS = ["production", "staging", "development", "other"] as const
 export type EnvironmentKind = (typeof ENVIRONMENT_KINDS)[number]
 export const ENVIRONMENT_KIND_LABELS: Record<EnvironmentKind, string> = {

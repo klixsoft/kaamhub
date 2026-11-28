@@ -141,6 +141,13 @@
       "when": 1795846488492,
       "tag": "0019_time_entries",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1795847358483,
+      "tag": "0020_github_card_links",
+      "breakpoints": true
     }
   ]
 }

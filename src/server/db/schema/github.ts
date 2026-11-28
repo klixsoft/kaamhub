@@ -1,8 +1,8 @@
-import { bigint, boolean, index, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import { bigint, boolean, index, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core"
 import { users } from "./auth"
-import { githubAccessStatusEnum, githubPermissionEnum, repositoryLabelEnum } from "./enums"
+import { githubAccessStatusEnum, githubLinkKindEnum, githubPermissionEnum, pullRequestStateEnum, repositoryLabelEnum } from "./enums"
 import { id, timestamps } from "./helpers"
-import { projects } from "./projects"
+import { projects, tasks } from "./projects"
 
 export const githubRepositories = pgTable(
   "github_repository",
@@ -59,5 +59,35 @@ export const githubAccessGrants = pgTable(
   (table) => [
     primaryKey({ columns: [table.userId, table.repositoryId] }),
     index("github_access_grant_repo_idx").on(table.repositoryId),
+  ],
+)
+
+/*
+ * Commits and pull requests whose message or title mentions a card reference
+ * such as BRF-4. For a commit, external_id is the SHA; for a pull request, it is
+ * the pull request number, so later events update the same row.
+ */
+export const taskGithubLinks = pgTable(
+  "task_github_link",
+  {
+    id: id(),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    repositoryId: uuid("repository_id")
+      .notNull()
+      .references(() => githubRepositories.id, { onDelete: "cascade" }),
+    kind: githubLinkKindEnum("kind").notNull(),
+    externalId: text("external_id").notNull(),
+    title: text("title").notNull(),
+    url: text("url").notNull(),
+    authorLogin: text("author_login"),
+    state: pullRequestStateEnum("state"),
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("task_github_link_unique_idx").on(table.taskId, table.repositoryId, table.kind, table.externalId),
+    index("task_github_link_repo_idx").on(table.repositoryId, table.kind, table.externalId),
   ],
 )
