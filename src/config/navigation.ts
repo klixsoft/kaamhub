@@ -17,24 +17,36 @@ export interface NavItem {
 export interface NavSection {
   label: string
   items: NavItem[]
+  collapsedByDefault?: boolean
 }
 
 const NAVIGATION: NavSection[] = [
   {
-    label: "Workspace",
+    label: "Work",
     items: [
       { title: "Dashboard", href: "/dashboard", icon: "dashboard", permission: "dashboard:view" },
       { title: "Projects", href: "/projects", icon: "projects" },
       { title: "Timesheets", href: "/timesheets", icon: "timesheets", permission: "dashboard:view" },
-      { title: "Invoices", href: "/invoices", icon: "invoices", permission: "finance:read", clientVisible: true, module: "invoices" },
-      { title: "Services", href: "/services", icon: "services", permission: "finance:read", module: "services" },
+    ],
+  },
+  {
+    label: "Team",
+    items: [
       { title: "People", href: "/people", icon: "people", permission: "people:read" },
       { title: "Letters", href: "/letters", icon: "letters", permission: "letters:manage" },
+    ],
+  },
+  {
+    label: "Clients and billing",
+    items: [
       { title: "Clients", href: "/clients", icon: "clients", permission: "clients:read", module: "clients" },
+      { title: "Invoices", href: "/invoices", icon: "invoices", permission: "finance:read", clientVisible: true, module: "invoices" },
+      { title: "Services", href: "/services", icon: "services", permission: "finance:read", module: "services" },
     ],
   },
   {
     label: "Administration",
+    collapsedByDefault: true,
     items: [
       { title: "Settings", href: "/settings/general", icon: "settings", permission: "settings:manage" },
       { title: "Billing", href: "/settings/billing", icon: "billing", permission: "settings:manage", module: "invoices" },
