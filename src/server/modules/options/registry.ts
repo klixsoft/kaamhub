@@ -1,10 +1,10 @@
 import "server-only"
-import { and, asc, eq, ne } from "drizzle-orm"
+import { and, asc, desc, eq, exists, ne } from "drizzle-orm"
 import { SYSTEM_ROLE_LABELS } from "@/config/roles"
 import type { Option, OptionParams, OptionResource } from "@/lib/options"
 import { type CurrentUser, can } from "@/server/auth/session"
 import { db } from "@/server/db"
-import { clients, departments, designations, githubRepositories, projectCategories, projectMembers, projectStages, projects, serviceCategories, users } from "@/server/db/schema"
+import { clients, departments, designations, githubRepositories, projectCategories, projectMembers, projectStages, projects, serviceCategories, tasks, users } from "@/server/db/schema"
 import { isUuid, searchAcross } from "@/server/lib/query"
 import { resolveProjectAccess } from "@/server/modules/projects/access"
 import { isModuleEnabled } from "@/server/modules/settings/queries"
@@ -104,6 +104,43 @@ const resolvers: Record<OptionResource, Resolver> = {
       .orderBy(asc(users.name))
       .limit(LIMIT)
     return rows.map((row) => ({ value: row.id, label: row.name, description: row.email }))
+  },
+  "my-projects": async (query, _params, user) => {
+    if (user.role === "client") return null
+    const canWorkOnAll = can(user, "projects:manage_all")
+    const rows = await db
+      .select({ id: projects.id, code: projects.code, name: projects.name })
+      .from(projects)
+      .where(
+        and(
+          canWorkOnAll
+            ? undefined
+            : exists(
+                db
+                  .select({ one: projectMembers.userId })
+                  .from(projectMembers)
+                  .where(and(eq(projectMembers.projectId, projects.id), eq(projectMembers.userId, user.id), ne(projectMembers.role, "viewer"))),
+              ),
+          searchAcross(query, [projects.name, projects.code]),
+        ),
+      )
+      .orderBy(asc(projects.name))
+      .limit(LIMIT)
+    return rows.map((row) => ({ value: row.id, label: row.name, description: row.code }))
+  },
+  "project-tasks": async (query, params, user) => {
+    if (!params.projectId || !isUuid(params.projectId)) return null
+    const access = await resolveProjectAccess(user, params.projectId)
+    if (!access?.canEditTasks) return null
+    const number = /^\d+$/.test(query.trim()) ? Number(query.trim()) : null
+    const rows = await db
+      .select({ id: tasks.id, number: tasks.number, title: tasks.title, code: projects.code })
+      .from(tasks)
+      .innerJoin(projects, eq(projects.id, tasks.projectId))
+      .where(and(eq(tasks.projectId, params.projectId), number !== null ? eq(tasks.number, number) : searchAcross(query, [tasks.title])))
+      .orderBy(desc(tasks.updatedAt))
+      .limit(LIMIT)
+    return rows.map((row) => ({ value: row.id, label: `${row.code}-${row.number} ${row.title}` }))
   },
 }
 
