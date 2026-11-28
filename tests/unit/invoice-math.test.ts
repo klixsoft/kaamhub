@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { calculateTotals, taxLabel } from "@/lib/invoice-math"
+import { balanceDue, calculateCredit, calculateTotals, refundDue, settlementStatus, taxLabel } from "@/lib/invoice-math"
 import { fiscalYearLabel } from "@/lib/fiscal-year"
 import { amountInWords, roundMoney } from "@/lib/money"
 
@@ -41,5 +41,31 @@ describe("fiscal year labels", () => {
   it("spans two years for other start months", () => {
     expect(fiscalYearLabel("2026-03-31", { calendar: "gregorian", startMonth: 4 })).toBe("2025-26")
     expect(fiscalYearLabel("2026-04-01", { calendar: "gregorian", startMonth: 4 })).toBe("2026-27")
+  })
+})
+
+describe("credit notes and settlement", () => {
+  const taxes = [
+    { name: "VAT", kind: "percentage" as const, rate: 13 },
+    { name: "Service charge", kind: "fixed" as const, rate: null },
+  ]
+
+  it("applies percentage taxes to the credited amount and leaves fixed charges out", () => {
+    const credit = calculateCredit([{ description: "Discount agreed later", amount: 200 }], taxes)
+    expect(credit).toMatchObject({ subtotal: 200, taxAmount: 26, total: 226 })
+    expect(credit.taxes.map(taxLabel)).toEqual(["VAT (13%)"])
+  })
+
+  it("works out the status from payments and credits", () => {
+    expect(settlementStatus({ total: 1180, amountPaid: 0, amountCredited: 0 })).toBe("issued")
+    expect(settlementStatus({ total: 1180, amountPaid: 0, amountCredited: 226 })).toBe("partially_paid")
+    expect(settlementStatus({ total: 1180, amountPaid: 954, amountCredited: 226 })).toBe("paid")
+    expect(settlementStatus({ total: 1180, amountPaid: 0, amountCredited: 1180 })).toBe("credited")
+  })
+
+  it("reports the balance due and any refund owed to the client", () => {
+    expect(balanceDue({ total: 1180, amountPaid: 500, amountCredited: 226 })).toBe(454)
+    expect(balanceDue({ total: 1180, amountPaid: 1180, amountCredited: 226 })).toBe(0)
+    expect(refundDue({ total: 1180, amountPaid: 1180, amountCredited: 226 })).toBe(226)
   })
 })
