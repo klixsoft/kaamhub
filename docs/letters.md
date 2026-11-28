@@ -15,6 +15,8 @@ Open **Letters → Letterhead**.
 | Number prefix | Printed before the letter number. `LTR-` gives `LTR-2026-0001`. Numbering restarts every year |
 | Signatory name and title | Printed under a signature line at the end of every letter. Leave the name empty to leave the block out |
 
+Letters print Latin and Devanagari text and symbols such as `₹`, using the bundled Noto Sans fonts.
+
 Use **Preview** on any template to check the margins on a real page. Long letters continue onto new pages with the letterhead repeated and the page number printed above the bottom margin.
 
 Replacing the letterhead does not change letters issued earlier: each letter keeps the letterhead and margins it was issued with.

@@ -96,4 +96,6 @@ curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" https://hub.example.co
 
 ## PDF output
 
-Invoices are rendered as A4 PDFs on the server with [react-pdf](https://react-pdf.org). The built-in fonts cover Latin characters and common currency symbols such as `$`, `£` and `€`. For symbols outside that set (for example `₹`), use a text symbol such as `Rs.` until custom fonts are supported.
+Invoices are rendered as A4 PDFs on the server with [react-pdf](https://react-pdf.org), using the bundled Noto Sans fonts. They print Latin, Greek and Cyrillic text, Devanagari (Nepali, Hindi, Marathi) and currency symbols such as `$`, `£`, `€` and `₹`.
+
+To print your logo at the top of every invoice, upload it under **Settings → Logo** (PNG or JPG, up to 2 MB; a PNG with a transparent background works best). It is printed at most 160 × 48 points, about 56 × 17 mm. Changing the logo also changes the PDF of invoices issued earlier, because PDFs are generated when they are opened.

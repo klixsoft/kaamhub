@@ -74,7 +74,8 @@ Most service businesses run on a patchwork of tools: one for tasks, a spreadshee
 - Optional **Bikram Sambat** dates and fiscal year
 - Draft → issue → partial or full payment → paid, with cancellation instead of deletion once issued
 - Seller and buyer details are frozen when an invoice is issued
-- **A4 PDF** generated on the server, downloadable and emailed to the client with one click
+- **A4 PDF** generated on the server with your logo, downloadable and emailed to the client with one click
+- PDFs embed Noto Sans fonts, so Devanagari text and symbols such as `₹` and `€` print correctly
 - Clients see their invoices in the portal
 
 ### Websites and environments
@@ -318,7 +319,7 @@ All permissions are defined in one file: [`src/config/roles.ts`](src/config/role
 - [x] **Invoices** with manual tax lines, A4 PDF and email delivery
 - [x] **Managed services** with recurring billing and renewal reminders
 - [ ] Credit notes and recurring invoices for non-service work
-- [ ] Custom fonts and logo on invoices
+- [x] Custom fonts and logo on invoices
 - [x] **Company letters** on your letterhead (offer letter, contract, NDA, experience letter) with configurable page offsets
 - [x] **My letters** on employee profiles
 - [ ] Time tracking and timesheets
