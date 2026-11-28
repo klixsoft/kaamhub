@@ -252,3 +252,21 @@ export const projectDocuments = pgTable(
   },
   (table) => [index("project_document_project_idx").on(table.projectId, table.createdAt)],
 )
+
+export const taskAttachments = pgTable(
+  "task_attachment",
+  {
+    id: id(),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    fileName: text("file_name").notNull(),
+    mimeType: text("mime_type").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    storageKey: text("storage_key").notNull().unique(),
+    visibility: taskVisibilityEnum("visibility").notNull().default("internal"),
+    uploadedById: text("uploaded_by_id").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("task_attachment_task_idx").on(table.taskId, table.createdAt)],
+)

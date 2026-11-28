@@ -120,6 +120,13 @@
       "when": 1795844305844,
       "tag": "0016_credit_notes",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1795844912412,
+      "tag": "0017_attachments_notifications",
+      "breakpoints": true
     }
   ]
 }
