@@ -1,5 +1,6 @@
 import "server-only"
 import { logger } from "@/server/lib/logger"
+import { type PullRequestEvent, type PushEvent, recordPullRequest, recordPush } from "./card-links"
 import { type GithubRepositoryPayload, removeRepository, syncRepositories, upsertRepositories } from "./repositories"
 
 interface RepositoryEvent {
@@ -14,6 +15,14 @@ export async function handleGithubEvent(event: string, payload: unknown): Promis
     const { action, repository } = payload as RepositoryEvent
     if (action === "deleted") await removeRepository(repository.id)
     else if (REPOSITORY_UPDATES.has(action)) await upsertRepositories([repository])
+    return
+  }
+  if (event === "push") {
+    await recordPush(payload as PushEvent)
+    return
+  }
+  if (event === "pull_request") {
+    await recordPullRequest(payload as PullRequestEvent)
     return
   }
   if (event === "installation_repositories" || event === "installation") {
