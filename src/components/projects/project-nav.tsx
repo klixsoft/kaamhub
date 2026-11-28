@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  ClockIcon,
   FileTextIcon,
   GitBranchIcon,
   GlobeIcon,
@@ -15,7 +16,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 
-export const PROJECT_NAV_ICONS = ["overview", "board", "requests", "documents", "team", "environments", "repositories", "settings"] as const
+export const PROJECT_NAV_ICONS = ["overview", "board", "requests", "documents", "time", "team", "environments", "repositories", "settings"] as const
 export type ProjectNavIcon = (typeof PROJECT_NAV_ICONS)[number]
 
 const ICONS: Record<ProjectNavIcon, LucideIcon> = {
@@ -23,6 +24,7 @@ const ICONS: Record<ProjectNavIcon, LucideIcon> = {
   board: KanbanSquareIcon,
   requests: LifeBuoyIcon,
   documents: FileTextIcon,
+  time: ClockIcon,
   team: UsersIcon,
   environments: GlobeIcon,
   repositories: GitBranchIcon,
