@@ -7,6 +7,7 @@ const DOT: Record<InvoiceStatus, string> = {
   issued: "bg-amber-500",
   partially_paid: "bg-sky-500",
   paid: "bg-emerald-500",
+  credited: "bg-violet-500",
   cancelled: "bg-red-500",
 }
 

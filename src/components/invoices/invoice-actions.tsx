@@ -151,7 +151,7 @@ export function InvoiceActions({ invoiceId, status, outstanding, today, canManag
           Email to client
         </Button>
       ) : null}
-      {canManage && isOpen ? (
+      {canManage && isOpen && outstanding > 0 ? (
         <FormDialog
           title="Record payment"
           trigger={

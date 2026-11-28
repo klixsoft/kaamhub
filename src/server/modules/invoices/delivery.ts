@@ -1,6 +1,7 @@
 import "server-only"
 import { and, eq } from "drizzle-orm"
 import { formatDate } from "@/lib/format"
+import { balanceDue } from "@/lib/invoice-math"
 import { formatMoney } from "@/lib/money"
 import { db } from "@/server/db"
 import { clientContacts, users } from "@/server/db/schema"
@@ -11,7 +12,7 @@ import { invoiceFileName, renderInvoicePdf } from "./pdf"
 import { fetchInvoice } from "./queries"
 import { toInvoiceView } from "./view"
 
-async function recipientsFor(clientId: string, clientEmail: string | null): Promise<string[]> {
+export async function recipientsFor(clientId: string, clientEmail: string | null): Promise<string[]> {
   const contacts = await db
     .select({ email: users.email })
     .from(clientContacts)
@@ -30,7 +31,7 @@ export async function deliverInvoice(invoiceId: string): Promise<{ recipients: n
 
   const view = toInvoiceView(invoice, billing)
   const pdf = await renderInvoicePdf(view)
-  const balance = formatMoney(invoice.total - invoice.amountPaid, invoice.currency)
+  const balance = formatMoney(balanceDue(invoice), invoice.currency)
 
   await sendMail({
     to: recipients,

@@ -4,7 +4,14 @@ import { formatDate } from "@/lib/format"
 import { formatMoney } from "@/lib/money"
 import type { InvoiceDetail } from "@/server/modules/invoices/queries"
 
-export function PaymentsList({ payments, currency, outstanding }: { payments: InvoiceDetail["payments"]; currency: CurrencyFormat; outstanding: number }) {
+interface PaymentsListProps {
+  payments: InvoiceDetail["payments"]
+  currency: CurrencyFormat
+  outstanding: number
+  refund: number
+}
+
+export function PaymentsList({ payments, currency, outstanding, refund }: PaymentsListProps) {
   return (
     <section aria-labelledby="payments-heading" className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between">
@@ -12,7 +19,8 @@ export function PaymentsList({ payments, currency, outstanding }: { payments: In
           Payments
         </h2>
         <p className="text-sm text-muted-foreground">
-          Balance due <span className="font-medium text-foreground tabular-nums">{formatMoney(outstanding, currency)}</span>
+          {refund > 0 ? "Refund due to client" : "Balance due"}{" "}
+          <span className="font-medium text-foreground tabular-nums">{formatMoney(refund > 0 ? refund : outstanding, currency)}</span>
         </p>
       </div>
       {payments.length === 0 ? (

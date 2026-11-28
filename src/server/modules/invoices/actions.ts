@@ -2,7 +2,7 @@
 
 import { and, eq, sql } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
-import type { InvoiceStatus } from "@/config/finance"
+import { balanceDue, settlementStatus } from "@/lib/invoice-math"
 import { roundMoney } from "@/lib/money"
 import { daysBetween, shiftDate, todayIso } from "@/lib/dates"
 import { db, type Transaction } from "@/server/db"
@@ -140,6 +140,7 @@ export const cancelInvoice = formAction({
       if (invoice.status === "draft") throw new AppError("Delete drafts instead of cancelling them.")
       if (invoice.status === "cancelled") throw new AppError("This invoice is already cancelled.")
       if (invoice.amountPaid > 0) throw new AppError("Invoices with recorded payments cannot be cancelled.")
+      if (invoice.amountCredited > 0) throw new AppError("Invoices with credit notes cannot be cancelled.")
       await tx.update(invoices).set({ status: "cancelled", cancelledAt: new Date(), cancelReason: reason }).where(eq(invoices.id, invoiceId))
     })
     await recordAudit({ actorId: user.id, action: "invoice.cancelled", entityType: "invoice", entityId: invoiceId, metadata: { reason } })
@@ -147,11 +148,6 @@ export const cancelInvoice = formAction({
     return undefined
   },
 })
-
-function paymentStatus(total: number, paid: number): InvoiceStatus {
-  if (paid >= total) return "paid"
-  return paid > 0 ? "partially_paid" : "issued"
-}
 
 export const recordPayment = formAction({
   schema: paymentSchema,
@@ -162,14 +158,15 @@ export const recordPayment = formAction({
       const invoice = await lockInvoice(tx, invoiceId)
       if (invoice.status === "draft" || invoice.status === "cancelled") throw new AppError("Payments can only be recorded on issued invoices.")
       const amount = roundMoney(payment.amount)
-      const outstanding = roundMoney(invoice.total - invoice.amountPaid)
+      if (amount <= 0) throw new AppError("Enter an amount greater than zero.")
+      const outstanding = balanceDue(invoice)
       if (amount > outstanding) throw new AppError(`The amount is more than the outstanding balance of ${outstanding.toFixed(2)}.`)
 
       await tx.insert(invoicePayments).values({ invoiceId, ...payment, amount, recordedById: user.id })
       const paid = roundMoney(invoice.amountPaid + amount)
       await tx
         .update(invoices)
-        .set({ amountPaid: sql`${invoices.amountPaid} + ${amount}`, status: paymentStatus(invoice.total, paid) })
+        .set({ amountPaid: sql`${invoices.amountPaid} + ${amount}`, status: settlementStatus({ ...invoice, amountPaid: paid }) })
         .where(eq(invoices.id, invoiceId))
     })
     await recordAudit({ actorId: user.id, action: "invoice.payment_recorded", entityType: "invoice", entityId: invoiceId, metadata: { amount: payment.amount } })
