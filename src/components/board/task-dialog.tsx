@@ -16,6 +16,7 @@ import { deleteTask } from "@/server/modules/projects/task-actions"
 import type { TaskDetail } from "@/server/modules/tasks/queries"
 import { TaskForm } from "./task-form"
 import { ActivityFeed } from "./task-detail/activity-feed"
+import { Attachments } from "./task-detail/attachments"
 import { Checklist } from "./task-detail/checklist"
 import { CommentComposer } from "./task-detail/comment-composer"
 import { useTaskDetail } from "./task-detail/use-task-detail"
@@ -131,6 +132,15 @@ function TaskView({ boardTask, projectId, projectCode, columns, onClose }: TaskV
 
         <Checklist taskId={task.id} items={detail.checklist} canEdit={permissions.canEdit} onChange={refresh} />
 
+        <Attachments
+          taskId={task.id}
+          attachments={detail.attachments}
+          canUpload={permissions.canComment}
+          allowClientVisibility={task.visibility === "client"}
+          isClientViewer={permissions.isClientViewer}
+          onChange={refresh}
+        />
+
         <section aria-labelledby="activity-heading" className="flex flex-col gap-3">
           <h3 id="activity-heading" className="flex items-center gap-2 text-sm font-semibold">
             <MessageSquareIcon className="size-4" aria-hidden />
@@ -139,6 +149,7 @@ function TaskView({ boardTask, projectId, projectCode, columns, onClose }: TaskV
           {permissions.canComment ? (
             <CommentComposer
               taskId={task.id}
+              projectId={projectId}
               allowClientVisibility={task.visibility === "client"}
               isClientViewer={permissions.isClientViewer}
               onPosted={refresh}

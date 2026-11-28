@@ -3,12 +3,14 @@
 import { and, eq, max } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { db } from "@/server/db"
-import { taskChecklistItems, taskComments, tasks } from "@/server/db/schema"
+import { taskAttachments, taskChecklistItems, taskComments, tasks } from "@/server/db/schema"
 import { action } from "@/server/lib/action"
 import { AppError, forbiddenError, notFoundError } from "@/server/lib/errors"
+import { removeFile } from "@/server/lib/storage"
 import { assertCanEdit, resolveTaskAccess } from "./access"
 import { recordTaskActivity } from "./activity"
-import { checklistItemIdSchema, checklistItemSchema, checklistToggleSchema, commentIdSchema, commentSchema, commentUpdateSchema } from "./schema"
+import { notifyComment } from "./notifications"
+import { attachmentIdSchema, checklistItemIdSchema, checklistItemSchema, checklistToggleSchema, commentIdSchema, commentSchema, commentUpdateSchema } from "./schema"
 
 const boardPath = (projectId: string) => `/projects/${projectId}/board`
 
@@ -40,6 +42,7 @@ export const addComment = action({
     const effectiveVisibility = access.isClientViewer || (visibility === "client" && task.visibility === "client") ? "client" : "internal"
     await db.insert(taskComments).values({ taskId, authorId: user.id, body, visibility: effectiveVisibility })
     await db.update(tasks).set({ updatedAt: new Date() }).where(eq(tasks.id, taskId))
+    await notifyComment(taskId, body, user)
     revalidatePath(boardPath(task.projectId))
     return undefined
   },
@@ -111,6 +114,27 @@ export const deleteChecklistItem = action({
     const { task, access } = await resolveTaskAccess(user, item.taskId)
     assertCanEdit(access)
     await db.delete(taskChecklistItems).where(eq(taskChecklistItems.id, itemId))
+    revalidatePath(boardPath(task.projectId))
+    return undefined
+  },
+})
+
+export const deleteAttachment = action({
+  schema: attachmentIdSchema,
+  handler: async ({ attachmentId }, { user }) => {
+    const [attachment] = await db
+      .select({ taskId: taskAttachments.taskId, uploadedById: taskAttachments.uploadedById, fileName: taskAttachments.fileName, storageKey: taskAttachments.storageKey })
+      .from(taskAttachments)
+      .where(eq(taskAttachments.id, attachmentId))
+      .limit(1)
+    if (!attachment) throw notFoundError("Attachment")
+    const { task, access } = await resolveTaskAccess(user, attachment.taskId)
+    if (attachment.uploadedById !== user.id && !access.canManage) throw forbiddenError()
+    await db.transaction(async (tx) => {
+      await tx.delete(taskAttachments).where(eq(taskAttachments.id, attachmentId))
+      await recordTaskActivity(tx, attachment.taskId, user.id, [{ action: "attachment_removed", details: { file: attachment.fileName } }])
+    })
+    await removeFile(attachment.storageKey).catch(() => undefined)
     revalidatePath(boardPath(task.projectId))
     return undefined
   },

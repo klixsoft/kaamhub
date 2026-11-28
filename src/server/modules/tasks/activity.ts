@@ -16,6 +16,8 @@ export const TASK_ACTIVITY_ACTIONS = [
   "checklist_item_added",
   "checklist_item_completed",
   "checklist_item_reopened",
+  "attachment_added",
+  "attachment_removed",
 ] as const
 
 export type TaskActivityAction = (typeof TASK_ACTIVITY_ACTIONS)[number]

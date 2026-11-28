@@ -2,7 +2,7 @@ import "server-only"
 import { and, asc, desc, eq } from "drizzle-orm"
 import type { CurrentUser } from "@/server/auth/session"
 import { db } from "@/server/db"
-import { boardColumns, projects, taskActivities, taskAssignees, taskChecklistItems, taskComments, tasks, users } from "@/server/db/schema"
+import { boardColumns, projects, taskActivities, taskAssignees, taskAttachments, taskChecklistItems, taskComments, tasks, users } from "@/server/db/schema"
 import { resolveTaskAccess } from "./access"
 import type { TaskActivityAction } from "./activity"
 
@@ -12,7 +12,7 @@ export async function getTaskDetail(user: CurrentUser, taskId: string) {
   const { access, canComment } = await resolveTaskAccess(user, taskId)
   const clientOnly = access.isClientViewer
 
-  const [[task], assignees, checklist, comments, activity] = await Promise.all([
+  const [[task], assignees, checklist, comments, activity, attachments] = await Promise.all([
     db
       .select({
         id: tasks.id,
@@ -75,6 +75,21 @@ export async function getTaskDetail(user: CurrentUser, taskId: string) {
       .where(eq(taskActivities.taskId, taskId))
       .orderBy(desc(taskActivities.createdAt))
       .limit(ACTIVITY_LIMIT),
+    db
+      .select({
+        id: taskAttachments.id,
+        fileName: taskAttachments.fileName,
+        mimeType: taskAttachments.mimeType,
+        sizeBytes: taskAttachments.sizeBytes,
+        visibility: taskAttachments.visibility,
+        createdAt: taskAttachments.createdAt,
+        uploadedById: taskAttachments.uploadedById,
+        uploadedBy: users.name,
+      })
+      .from(taskAttachments)
+      .leftJoin(users, eq(users.id, taskAttachments.uploadedById))
+      .where(and(eq(taskAttachments.taskId, taskId), clientOnly ? eq(taskAttachments.visibility, "client") : undefined))
+      .orderBy(desc(taskAttachments.createdAt)),
   ])
   if (!task) return null
 
@@ -82,6 +97,7 @@ export async function getTaskDetail(user: CurrentUser, taskId: string) {
     task: { ...task, assignees },
     checklist,
     comments: comments.map((comment) => ({ ...comment, isOwn: comment.authorId === user.id })),
+    attachments: attachments.map(({ uploadedById, ...attachment }) => ({ ...attachment, canDelete: uploadedById === user.id || access.canManage })),
     activity: activity.map((entry) => ({ ...entry, action: entry.action as TaskActivityAction })),
     permissions: {
       canEdit: access.canEditTasks,

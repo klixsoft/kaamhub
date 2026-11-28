@@ -37,6 +37,10 @@ export function describeActivity(entry: ActivityEntryLike): string {
       return `completed ${quote(details.item)}`
     case "checklist_item_reopened":
       return `marked ${quote(details.item)} as not done`
+    case "attachment_added":
+      return `attached ${quote(details.file)}`
+    case "attachment_removed":
+      return `removed the attachment ${quote(details.file)}`
     default:
       return "updated this card"
   }

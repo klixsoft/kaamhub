@@ -21,3 +21,4 @@ export const checklistItemSchema = z.object({
 
 export const checklistToggleSchema = z.object({ itemId: z.uuid(), done: z.boolean() })
 export const checklistItemIdSchema = z.object({ itemId: z.uuid() })
+export const attachmentIdSchema = z.object({ attachmentId: z.uuid() })
