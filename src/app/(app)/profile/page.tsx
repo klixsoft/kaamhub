@@ -5,12 +5,14 @@ import { PageHeader } from "@/components/layout/page-header"
 import { RoleBadge } from "@/components/people/badges"
 import { ActiveSessions } from "@/components/profile/active-sessions"
 import { ChangePasswordForm } from "@/components/profile/change-password-form"
+import { RecipientLetters } from "@/components/letters/recipient-letters"
 import { GithubConnection } from "@/components/profile/github-connection"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getCurrentSession } from "@/server/auth/session"
 import { listActiveSessions } from "@/server/auth/session-store"
 import { getGithubOAuthConfig } from "@/server/modules/integrations/config"
+import { lettersForRecipient } from "@/server/modules/letters/queries"
 import { isModuleEnabled } from "@/server/modules/settings/queries"
 
 export const metadata: Metadata = { title: "My profile" }
@@ -19,11 +21,12 @@ async function Profile({ searchParams }: { searchParams: PageProps<"/profile">["
   const session = await getCurrentSession()
   if (!session) redirect("/login")
   const { user, sessionId } = session
-  const [githubEnabled, githubOAuth, sessions, query] = await Promise.all([
+  const [githubEnabled, githubOAuth, sessions, query, myLetters] = await Promise.all([
     isModuleEnabled("github"),
     getGithubOAuthConfig(),
     listActiveSessions(user.id),
     searchParams,
+    user.role === "client" ? Promise.resolve([]) : lettersForRecipient(user.id, { includeRevoked: false }),
   ])
   const githubResult = typeof query.github === "string" ? query.github : null
   return (
@@ -37,6 +40,17 @@ async function Profile({ searchParams }: { searchParams: PageProps<"/profile">["
           </CardDescription>
         </CardHeader>
       </Card>
+      {user.role !== "client" ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>My letters</CardTitle>
+            <CardDescription>Offer letters, contracts and certificates issued to you.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RecipientLetters letters={myLetters} canManage={false} emptyText="No letters have been issued to you yet." />
+          </CardContent>
+        </Card>
+      ) : null}
       {githubEnabled && user.role !== "client" ? (
         <Card>
           <CardHeader>
