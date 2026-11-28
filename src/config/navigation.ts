@@ -17,7 +17,6 @@ export interface NavItem {
 export interface NavSection {
   label: string
   items: NavItem[]
-  collapsedByDefault?: boolean
 }
 
 const NAVIGATION: NavSection[] = [
@@ -46,7 +45,6 @@ const NAVIGATION: NavSection[] = [
   },
   {
     label: "Administration",
-    collapsedByDefault: true,
     items: [
       { title: "Settings", href: "/settings/general", icon: "settings", permission: "settings:manage" },
       { title: "Billing", href: "/settings/billing", icon: "billing", permission: "settings:manage", module: "invoices" },
