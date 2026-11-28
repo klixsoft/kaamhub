@@ -7,6 +7,7 @@ import { boardColumns, projectMembers, projects, taskAssignees, tasks } from "@/
 import { action, formAction } from "@/server/lib/action"
 import { AppError, notFoundError } from "@/server/lib/errors"
 import { recordTaskActivity } from "@/server/modules/tasks/activity"
+import { notifyAssignees } from "@/server/modules/tasks/notifications"
 import { columnMove, describeTaskChanges, snapshotTask } from "@/server/modules/tasks/changes"
 import { recordAudit } from "@/server/services/audit"
 import { requireProjectCapability } from "./guard"
@@ -71,6 +72,7 @@ export const createTask = formAction({
       return task
     })
 
+    await notifyAssignees(created.id, assigneeIds, user)
     await recordAudit({ actorId: user.id, action: "task.created", entityType: "task", entityId: created.id })
     revalidatePath(boardPath(input.projectId))
     return created
@@ -83,7 +85,7 @@ export const updateTask = formAction({
     const projectId = await loadTaskProject(taskId)
     await requireProjectCapability(user, projectId, "editTasks")
 
-    await db.transaction(async (tx) => {
+    const newlyAssigned = await db.transaction(async (tx) => {
       await assertColumnInProject(tx, input.columnId, projectId)
       const assignees = await validAssignees(tx, projectId, assigneeIds)
       const before = await snapshotTask(tx, taskId)
@@ -98,8 +100,10 @@ export const updateTask = formAction({
       if (assignees.length > 0) await tx.insert(taskAssignees).values(assignees.map((userId) => ({ taskId, userId })))
       const after = await snapshotTask(tx, taskId)
       if (before && after) await recordTaskActivity(tx, taskId, user.id, await describeTaskChanges(tx, before, after))
+      return assignees.filter((id) => !before?.assigneeIds.includes(id))
     })
 
+    await notifyAssignees(taskId, newlyAssigned, user)
     await recordAudit({ actorId: user.id, action: "task.updated", entityType: "task", entityId: taskId })
     revalidatePath(boardPath(projectId))
     return { id: taskId }
