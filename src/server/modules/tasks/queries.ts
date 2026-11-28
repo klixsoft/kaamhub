@@ -1,4 +1,5 @@
 import "server-only"
+import { alias } from "drizzle-orm/pg-core"
 import { and, asc, desc, eq } from "drizzle-orm"
 import type { CurrentUser } from "@/server/auth/session"
 import { db } from "@/server/db"
@@ -7,6 +8,8 @@ import { resolveTaskAccess } from "./access"
 import type { TaskActivityAction } from "./activity"
 
 const ACTIVITY_LIMIT = 100
+
+const requesters = alias(users, "requester")
 
 export async function getTaskDetail(user: CurrentUser, taskId: string) {
   const { access, canComment } = await resolveTaskAccess(user, taskId)
@@ -29,10 +32,12 @@ export async function getTaskDetail(user: CurrentUser, taskId: string) {
         createdAt: tasks.createdAt,
         updatedAt: tasks.updatedAt,
         projectCode: projects.code,
+        requestedBy: requesters.name,
       })
       .from(tasks)
       .innerJoin(boardColumns, eq(boardColumns.id, tasks.columnId))
       .innerJoin(projects, eq(projects.id, tasks.projectId))
+      .leftJoin(requesters, eq(requesters.id, tasks.requestedById))
       .where(eq(tasks.id, taskId))
       .limit(1),
     db

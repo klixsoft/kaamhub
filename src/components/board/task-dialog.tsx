@@ -69,6 +69,7 @@ function Properties({ detail }: { detail: TaskDetail }) {
       <Property label="Due date">{formatDate(task.dueDate)}</Property>
       {task.estimateHours ? <Property label="Estimate">{task.estimateHours} h</Property> : null}
       {detail.permissions.isClientViewer ? null : <Property label="Visibility">{TASK_VISIBILITY_LABELS[task.visibility]}</Property>}
+      {task.requestedBy ? <Property label="Requested by">{task.requestedBy} (client)</Property> : null}
       <Property label="Created">{formatDateTime(task.createdAt)}</Property>
     </dl>
   )

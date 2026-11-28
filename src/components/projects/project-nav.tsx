@@ -6,6 +6,7 @@ import {
   GlobeIcon,
   KanbanSquareIcon,
   LayoutDashboardIcon,
+  LifeBuoyIcon,
   type LucideIcon,
   SettingsIcon,
   UsersIcon,
@@ -14,12 +15,13 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 
-export const PROJECT_NAV_ICONS = ["overview", "board", "documents", "team", "environments", "repositories", "settings"] as const
+export const PROJECT_NAV_ICONS = ["overview", "board", "requests", "documents", "team", "environments", "repositories", "settings"] as const
 export type ProjectNavIcon = (typeof PROJECT_NAV_ICONS)[number]
 
 const ICONS: Record<ProjectNavIcon, LucideIcon> = {
   overview: LayoutDashboardIcon,
   board: KanbanSquareIcon,
+  requests: LifeBuoyIcon,
   documents: FileTextIcon,
   team: UsersIcon,
   environments: GlobeIcon,
