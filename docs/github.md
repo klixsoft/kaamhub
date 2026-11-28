@@ -25,6 +25,8 @@ Go to **GitHub → Your organisation → Settings → Developer settings → Git
 |---|---|---|
 | Administration | Read and write | Add and remove collaborators, create repositories |
 | Metadata | Read-only | Required by GitHub |
+| Contents | Read-only | Receive push events to link commits to cards |
+| Pull requests | Read-only | Receive pull request events to link them to cards |
 
 **Organization permissions**
 
@@ -38,7 +40,7 @@ Go to **GitHub → Your organisation → Settings → Developer settings → Git
 |---|---|---|
 | Email addresses | Read-only | Used when someone links their account |
 
-**Subscribe to events**: `Repository`.
+**Subscribe to events**: `Repository`, `Push` and `Pull request`.
 
 Choose **Only on this account** for where the app can be installed, then create it.
 
@@ -66,6 +68,16 @@ Enter it, and your organisation's login (for example `acme`) as **Organisation**
 2. Each person opens **My profile → Connect GitHub**.
 3. In a project, open **Repositories** to link existing repositories or create new ones.
 4. Add people on the **Team** tab. Their access is granted in the background; the Repositories tab shows the status for each person.
+
+## Commits and pull requests on cards
+
+Mention a card reference such as `BRF-4` in a commit message, or in a pull request title, branch name or description, and the commit or pull request appears in the card's **Development** section. References are not case-sensitive, so `brf-4-login-form` as a branch name works too.
+
+- Only repositories linked to the card's project are matched, so a reference in an unrelated repository is ignored.
+- A pull request's status (open, draft, merged, closed) updates as it changes.
+- The section is shown to staff only; clients never see it.
+
+If you created the GitHub App before this feature, add the **Contents** and **Pull requests** read permissions and the **Push** and **Pull request** events in the app's settings, then accept the updated permissions on the installation.
 
 ## How access sync works
 
