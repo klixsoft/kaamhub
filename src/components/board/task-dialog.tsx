@@ -18,6 +18,7 @@ import type { TaskDetail } from "@/server/modules/tasks/queries"
 import { TaskForm } from "./task-form"
 import { ActivityFeed } from "./task-detail/activity-feed"
 import { Attachments } from "./task-detail/attachments"
+import { Development } from "./task-detail/development"
 import { TimeSection } from "./task-detail/time-section"
 import { Checklist } from "./task-detail/checklist"
 import { CommentComposer } from "./task-detail/comment-composer"
@@ -155,6 +156,8 @@ function TaskView({ boardTask, projectId, projectCode, columns, onClose }: TaskV
             onChange={refresh}
           />
         ) : null}
+
+        {detail.development ? <Development taskId={task.id} links={detail.development} /> : null}
 
         <section aria-labelledby="activity-heading" className="flex flex-col gap-3">
           <h3 id="activity-heading" className="flex items-center gap-2 text-sm font-semibold">

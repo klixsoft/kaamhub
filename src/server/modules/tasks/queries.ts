@@ -1,9 +1,10 @@
 import "server-only"
 import { alias } from "drizzle-orm/pg-core"
-import { taskTime } from "@/server/modules/time/queries"
 import { and, asc, desc, eq } from "drizzle-orm"
 import type { CurrentUser } from "@/server/auth/session"
 import { db } from "@/server/db"
+import { taskDevelopment } from "@/server/modules/github/card-links"
+import { taskTime } from "@/server/modules/time/queries"
 import { boardColumns, projects, taskActivities, taskAssignees, taskAttachments, taskChecklistItems, taskComments, tasks, users } from "@/server/db/schema"
 import { resolveTaskAccess } from "./access"
 import type { TaskActivityAction } from "./activity"
@@ -103,7 +104,7 @@ export async function getTaskDetail(user: CurrentUser, taskId: string) {
     task: { ...task, assignees },
     checklist,
     comments: comments.map((comment) => ({ ...comment, isOwn: comment.authorId === user.id })),
-    time: clientOnly ? null : await taskTime(taskId, user.id, access.canManage),
+    ...(clientOnly ? { time: null, development: null } : await internalSections(taskId, user.id, access.canManage)),
     attachments: attachments.map(({ uploadedById, ...attachment }) => ({ ...attachment, canDelete: uploadedById === user.id || access.canManage })),
     activity: activity.map((entry) => ({ ...entry, action: entry.action as TaskActivityAction })),
     permissions: {
@@ -113,6 +114,11 @@ export async function getTaskDetail(user: CurrentUser, taskId: string) {
       isClientViewer: clientOnly,
     },
   }
+}
+
+async function internalSections(taskId: string, userId: string, canManage: boolean) {
+  const [time, development] = await Promise.all([taskTime(taskId, userId, canManage), taskDevelopment(taskId)])
+  return { time, development }
 }
 
 export type TaskDetail = NonNullable<Awaited<ReturnType<typeof getTaskDetail>>>
