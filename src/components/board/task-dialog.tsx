@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Skeleton } from "@/components/ui/skeleton"
 import { TASK_TYPE_LABELS, TASK_VISIBILITY_LABELS } from "@/config/domain"
 import { useServerAction } from "@/hooks/use-server-action"
+import { todayIso } from "@/lib/dates"
 import { formatDate, formatDateTime, initials } from "@/lib/format"
 import type { BoardColumn, BoardTask } from "@/server/modules/projects/board"
 import { deleteTask } from "@/server/modules/projects/task-actions"
@@ -17,6 +18,7 @@ import type { TaskDetail } from "@/server/modules/tasks/queries"
 import { TaskForm } from "./task-form"
 import { ActivityFeed } from "./task-detail/activity-feed"
 import { Attachments } from "./task-detail/attachments"
+import { TimeSection } from "./task-detail/time-section"
 import { Checklist } from "./task-detail/checklist"
 import { CommentComposer } from "./task-detail/comment-composer"
 import { useTaskDetail } from "./task-detail/use-task-detail"
@@ -141,6 +143,18 @@ function TaskView({ boardTask, projectId, projectCode, columns, onClose }: TaskV
           isClientViewer={permissions.isClientViewer}
           onChange={refresh}
         />
+
+        {detail.time ? (
+          <TimeSection
+            taskId={task.id}
+            projectId={projectId}
+            time={detail.time}
+            estimateHours={task.estimateHours}
+            canLog={permissions.canEdit}
+            today={todayIso()}
+            onChange={refresh}
+          />
+        ) : null}
 
         <section aria-labelledby="activity-heading" className="flex flex-col gap-3">
           <h3 id="activity-heading" className="flex items-center gap-2 text-sm font-semibold">

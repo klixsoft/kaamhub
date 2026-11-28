@@ -1,5 +1,6 @@
 import "server-only"
 import { alias } from "drizzle-orm/pg-core"
+import { taskTime } from "@/server/modules/time/queries"
 import { and, asc, desc, eq } from "drizzle-orm"
 import type { CurrentUser } from "@/server/auth/session"
 import { db } from "@/server/db"
@@ -102,6 +103,7 @@ export async function getTaskDetail(user: CurrentUser, taskId: string) {
     task: { ...task, assignees },
     checklist,
     comments: comments.map((comment) => ({ ...comment, isOwn: comment.authorId === user.id })),
+    time: clientOnly ? null : await taskTime(taskId, user.id, access.canManage),
     attachments: attachments.map(({ uploadedById, ...attachment }) => ({ ...attachment, canDelete: uploadedById === user.id || access.canManage })),
     activity: activity.map((entry) => ({ ...entry, action: entry.action as TaskActivityAction })),
     permissions: {
