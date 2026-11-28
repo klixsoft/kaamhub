@@ -99,6 +99,14 @@ Most service businesses run on a patchwork of tools: one for tasks, a spreadshee
 - **Freelancer access expiry**: sign-in (and GitHub access, if enabled) stops automatically on the date you set
 - Deactivate or reactivate with one click; deactivation signs the person out everywhere immediately
 
+### Company letters
+- Issue **offer letters, appointment letters, NDAs, experience letters and salary certificates** on your own letterhead
+- Upload your letterhead once as a full A4 image and set the top, bottom and side margins; long letters continue onto new pages with the letterhead repeated
+- Templates with placeholders such as `{{recipient.name}}`, `{{recipient.designation}}` and `{{company.name}}`, filled from the person's profile; your own placeholders such as `{{salary}}` are asked for when issuing
+- Five starter templates to adapt, or write your own with simple formatting: paragraphs, headings, bullets and bold
+- Every letter gets a yearly number (`LTR-2026-0001`), is emailed as a PDF and can be revoked with a reason
+- **My letters** on each person's profile, so employees can download their letters any time
+
 ### GitHub integration (optional module for software teams)
 - Off by default; enable it in Settings → Modules
 - Connects to your organisation through a **GitHub App** with minimal permissions
@@ -298,6 +306,7 @@ All permissions are defined in one file: [`src/config/roles.ts`](src/config/role
 | [Architecture](docs/architecture.md) | Folder structure, data access, authorization and reusable components |
 | [Deployment](docs/deployment.md) | Docker Compose on a VPS, HTTPS, backups and updates |
 | [Invoicing and billing](docs/billing.md) | Billing settings, tax lines, invoice lifecycle and recurring services |
+| [Company letters](docs/letters.md) | Letterhead, margins, templates, placeholders and issuing letters |
 | [GitHub integration](docs/github.md) | Optional module: creating the GitHub App and how access sync works |
 | [Contributing](CONTRIBUTING.md) | Workflow and code guidelines |
 | [Security](SECURITY.md) | Reporting vulnerabilities and the security model |
@@ -310,8 +319,8 @@ All permissions are defined in one file: [`src/config/roles.ts`](src/config/role
 - [x] **Managed services** with recurring billing and renewal reminders
 - [ ] Credit notes and recurring invoices for non-service work
 - [ ] Custom fonts and logo on invoices
-- [ ] **Company letters** on your letterhead (offer letter, contract, NDA, experience letter) with configurable page offsets
-- [ ] **My letters** on employee profiles
+- [x] **Company letters** on your letterhead (offer letter, contract, NDA, experience letter) with configurable page offsets
+- [x] **My letters** on employee profiles
 - [ ] Time tracking and timesheets
 - [ ] Attendance and leave with configurable work weeks and holiday calendars
 - [ ] Support tickets from the client portal
