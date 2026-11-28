@@ -1,69 +1,14 @@
 "use client"
 
-import { ImageIcon, Trash2Icon, UploadIcon } from "lucide-react"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
-import { type ChangeEvent, useActionState, useEffect, useRef, useTransition } from "react"
+import { useActionState, useEffect } from "react"
 import { toast } from "sonner"
 import { FormAlert } from "@/components/forms/form-alert"
 import { FormField } from "@/components/forms/form-field"
+import { ImageUpload } from "@/components/forms/image-upload"
 import { SubmitButton } from "@/components/forms/submit-button"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useServerAction } from "@/hooks/use-server-action"
 import { removeLetterhead, saveLetterSettings } from "@/server/modules/letters/actions"
 import type { LetterSettings } from "@/server/modules/settings/schema"
-
-function LetterheadUpload({ hasLetterhead, version }: { hasLetterhead: boolean; version: string }) {
-  const router = useRouter()
-  const inputRef = useRef<HTMLInputElement>(null)
-  const [isUploading, startUpload] = useTransition()
-  const { isPending, run } = useServerAction()
-
-  function upload(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]
-    event.target.value = ""
-    if (!file) return
-    const form = new FormData()
-    form.set("file", file)
-    startUpload(async () => {
-      const response = await fetch("/api/letters/letterhead", { method: "POST", body: form }).catch(() => null)
-      const result = response ? ((await response.json()) as { ok: boolean; error?: string }) : { ok: false, error: "Check your connection and try again." }
-      if (!result.ok) return void toast.error(result.error ?? "We couldn’t save the image.")
-      toast.success("Letterhead saved")
-      router.refresh()
-    })
-  }
-
-  return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-      <div className="flex aspect-[210/297] w-40 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted/40">
-        {hasLetterhead ? (
-          <Image src={`/api/letters/letterhead?v=${encodeURIComponent(version)}`} alt="Current letterhead" width={160} height={226} unoptimized className="size-full object-cover" />
-        ) : (
-          <ImageIcon className="size-8 text-muted-foreground" aria-hidden />
-        )}
-      </div>
-      <div className="space-y-3 text-sm">
-        <p>Upload your letterhead as one full A4 page (PNG or JPG, up to 5 MB), with your logo, address and footer where they should print. A4 at 150 dpi is 1240 × 1754 pixels.</p>
-        <p className="text-muted-foreground">Letters issued earlier keep the letterhead they were issued with.</p>
-        <input ref={inputRef} type="file" accept=".png,.jpg,.jpeg" className="sr-only" onChange={upload} aria-label="Letterhead image" />
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" onClick={() => inputRef.current?.click()} disabled={isUploading}>
-            <UploadIcon aria-hidden />
-            {isUploading ? "Uploading…" : hasLetterhead ? "Replace letterhead" : "Upload letterhead"}
-          </Button>
-          {hasLetterhead ? (
-            <Button type="button" variant="outline" disabled={isPending} onClick={() => run(() => removeLetterhead({}), "Letterhead removed", () => router.refresh())}>
-              <Trash2Icon aria-hidden />
-              Remove
-            </Button>
-          ) : null}
-        </div>
-      </div>
-    </div>
-  )
-}
 
 export function LetterSettingsForm({ defaults }: { defaults: LetterSettings }) {
   const [state, submit] = useActionState(saveLetterSettings, null)
@@ -75,7 +20,20 @@ export function LetterSettingsForm({ defaults }: { defaults: LetterSettings }) {
 
   return (
     <div className="flex flex-col gap-8">
-      <LetterheadUpload hasLetterhead={Boolean(defaults.letterheadKey)} version={defaults.letterheadKey} />
+      <ImageUpload
+        endpoint="/api/letters/letterhead"
+        imageKey={defaults.letterheadKey}
+        label="Letterhead"
+        previewClassName="aspect-[210/297] w-40"
+        previewSize={{ width: 160, height: 226 }}
+        removeAction={removeLetterhead}
+        description={
+          <>
+            <p>Upload your letterhead as one full A4 page (PNG or JPG, up to 5 MB), with your logo, address and footer where they should print. A4 at 150 dpi is 1240 × 1754 pixels.</p>
+            <p className="text-muted-foreground">Letters issued earlier keep the letterhead they were issued with.</p>
+          </>
+        }
+      />
       <form action={submit} className="grid gap-4 sm:grid-cols-4">
         <div className="sm:col-span-4">
           <FormAlert state={state} />

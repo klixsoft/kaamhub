@@ -1,6 +1,7 @@
 import "server-only"
 import { renderToBuffer } from "@react-pdf/renderer"
 import type { LetterLayout } from "@/config/letters"
+import { imageExtension } from "@/server/lib/image-upload"
 import { readFileBuffer } from "@/server/lib/storage"
 import { getCompanyName } from "@/server/modules/settings/queries"
 import { LetterDocument } from "./document"
@@ -18,7 +19,7 @@ async function loadLetterhead(key: string | null) {
   if (!key) return null
   const data = await readFileBuffer(key)
   if (!data) return null
-  return { data, format: key.endsWith(".png") ? ("png" as const) : ("jpg" as const) }
+  return { data, format: imageExtension(key) }
 }
 
 export async function renderLetterPdf(letter: PrintableLetter): Promise<Buffer> {
