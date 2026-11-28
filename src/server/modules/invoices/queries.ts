@@ -4,7 +4,7 @@ import { INVOICE_STATUS_LABELS, INVOICE_STATUSES } from "@/config/finance"
 import { type Facet, type ListParams, type PageResult, toPageResult } from "@/lib/list-params"
 import type { CurrentUser } from "@/server/auth/session"
 import { db } from "@/server/db"
-import { clients, invoiceItems, invoicePayments, invoices, invoiceTaxes, projects, users } from "@/server/db/schema"
+import { clients, creditNotes, invoiceItems, invoicePayments, invoiceTaxes, invoices, projects, users } from "@/server/db/schema"
 import { facetCounts, filterIn, orderFrom, pageWindow, searchAcross, totalCount } from "@/server/lib/query"
 import { invoiceVisibilityCondition } from "./access"
 
@@ -103,7 +103,7 @@ export async function fetchInvoice(invoiceId: string, visibility?: SQL) {
     .limit(1)
   if (!invoice) return null
 
-  const [items, taxes, payments] = await Promise.all([
+  const [items, taxes, payments, credits] = await Promise.all([
     db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, invoiceId)).orderBy(asc(invoiceItems.position)),
     db
       .select({ name: invoiceTaxes.name, kind: invoiceTaxes.kind, rate: invoiceTaxes.rate, amount: invoiceTaxes.amount })
@@ -124,9 +124,24 @@ export async function fetchInvoice(invoiceId: string, visibility?: SQL) {
       .leftJoin(users, eq(users.id, invoicePayments.recordedById))
       .where(eq(invoicePayments.invoiceId, invoiceId))
       .orderBy(desc(invoicePayments.paidOn)),
+    db
+      .select({ id: creditNotes.id, number: creditNotes.number, issueDate: creditNotes.issueDate, reason: creditNotes.reason, total: creditNotes.total })
+      .from(creditNotes)
+      .where(eq(creditNotes.invoiceId, invoiceId))
+      .orderBy(desc(creditNotes.issueDate), desc(creditNotes.createdAt)),
   ])
 
-  return { ...invoice.invoice, clientName: invoice.clientName, clientEmail: invoice.clientEmail, projectName: invoice.projectName, projectCode: invoice.projectCode, items, taxes, payments }
+  return {
+    ...invoice.invoice,
+    clientName: invoice.clientName,
+    clientEmail: invoice.clientEmail,
+    projectName: invoice.projectName,
+    projectCode: invoice.projectCode,
+    items,
+    taxes,
+    payments,
+    creditNotes: credits,
+  }
 }
 
 export type InvoiceDetail = NonNullable<Awaited<ReturnType<typeof getInvoice>>>

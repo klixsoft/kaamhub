@@ -6,6 +6,7 @@ import type { BillingSettings } from "@/server/modules/settings/schema"
 import type { InvoiceDetail } from "./queries"
 
 export interface InvoiceView {
+  kind: "invoice" | "credit_note"
   number: string | null
   fiscalYear: string | null
   status: InvoiceStatus
@@ -26,6 +27,7 @@ export interface InvoiceView {
   taxAmount: number
   total: number
   amountPaid: number
+  amountCredited: number
   notes: string | null
   cancelReason: string | null
   bankDetails: string | null
@@ -38,6 +40,7 @@ export function toInvoiceView(invoice: InvoiceDetail, billing: BillingSettings):
   const contact = issued ? invoice.sellerContact : [billing.phone, billing.email, billing.website].filter(Boolean).join(" · ")
 
   return {
+    kind: "invoice",
     number: invoice.number,
     fiscalYear: invoice.fiscalYear,
     status: invoice.status,
@@ -64,9 +67,50 @@ export function toInvoiceView(invoice: InvoiceDetail, billing: BillingSettings):
     taxAmount: invoice.taxAmount,
     total: invoice.total,
     amountPaid: invoice.amountPaid,
+    amountCredited: invoice.amountCredited,
     notes: invoice.notes,
     cancelReason: invoice.cancelReason,
     bankDetails: billing.bankDetails || null,
     footer: billing.invoiceFooter || "Thank you for your business.",
+  }
+}
+
+export interface CreditNoteDetail {
+  number: string
+  issueDate: string
+  reason: string
+  lines: Array<{ description: string; amount: number }>
+  taxes: CalculatedTax[]
+  subtotal: number
+  taxAmount: number
+  total: number
+}
+
+/*
+ * Credit notes reuse the invoice layout: the same seller and buyer details as
+ * the invoice they reverse, with the credited lines and taxes.
+ */
+export function toCreditNoteView(invoice: InvoiceDetail, creditNote: CreditNoteDetail, billing: BillingSettings): InvoiceView {
+  const base = toInvoiceView(invoice, billing)
+  return {
+    ...base,
+    kind: "credit_note",
+    number: creditNote.number,
+    status: "issued",
+    title: "Credit note",
+    issueDate: creditNote.issueDate,
+    dueDate: null,
+    items: creditNote.lines.map((line, index) => ({ id: String(index), description: line.description, quantity: 1, unit: null, rate: line.amount, amount: line.amount })),
+    subtotal: creditNote.subtotal,
+    discount: 0,
+    taxableAmount: creditNote.subtotal,
+    taxes: creditNote.taxes,
+    taxAmount: creditNote.taxAmount,
+    total: creditNote.total,
+    amountPaid: 0,
+    amountCredited: 0,
+    notes: `Credit against invoice ${invoice.number ?? ""} dated ${invoice.issueDate}.\nReason: ${creditNote.reason}`,
+    cancelReason: null,
+    bankDetails: null,
   }
 }

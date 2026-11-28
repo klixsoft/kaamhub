@@ -61,3 +61,20 @@ export const paymentSchema = z.object({
   reference: optionalText(120),
   note: optionalText(500),
 })
+
+export const creditNoteSchema = z.object({
+  invoiceId: z.uuid(),
+  issueDate: isoDate,
+  reason: z.string().trim().min(3, "Give the reason for the credit").max(500),
+  lines: z
+    .array(
+      z.object({
+        description: z.string().trim().min(2, "Describe what is credited").max(500),
+        amount: z.number("Enter an amount").positive("Each amount must be more than zero").max(1_000_000_000),
+      }),
+    )
+    .min(1, "Add at least one line")
+    .max(50),
+})
+
+export const creditNoteIdSchema = z.object({ creditNoteId: z.uuid() })

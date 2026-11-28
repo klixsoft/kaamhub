@@ -1,7 +1,7 @@
 import { PDF_FONT } from "@/server/pdf/fonts"
 import { Document, Page, Image as PdfImage, StyleSheet, Text, View } from "@react-pdf/renderer"
 import type { Calendar } from "@/config/finance"
-import { taxLabel } from "@/lib/invoice-math"
+import { balanceDue, taxLabel } from "@/lib/invoice-math"
 import { amountInWords, formatMoney } from "@/lib/money"
 import { toBsDate } from "@/lib/nepali-date"
 import type { InvoiceView } from "./view"
@@ -16,7 +16,7 @@ const styles = StyleSheet.create({
   muted: { color: "#6b7280" },
   title: { fontSize: 16, fontWeight: 700, textAlign: "right", marginBottom: 6, letterSpacing: 1 },
   metaRow: { flexDirection: "row", justifyContent: "flex-end", gap: 8 },
-  metaLabel: { color: "#6b7280", width: 60, textAlign: "right" },
+  metaLabel: { color: "#6b7280", width: 80, textAlign: "right" },
   metaValue: { width: 150, textAlign: "right", fontWeight: 700 },
   section: { marginBottom: 18 },
   sectionLabel: { fontSize: 8, color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4 },
@@ -68,7 +68,7 @@ export function InvoiceDocument({ invoice, logo }: { invoice: InvoiceView; logo:
           <View>
             <Text style={styles.title}>{invoice.title.toUpperCase()}</Text>
             <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Invoice no.</Text>
+              <Text style={styles.metaLabel}>{invoice.kind === "credit_note" ? "Credit note no." : "Invoice no."}</Text>
               <Text style={styles.metaValue}>{invoice.number ?? "Not issued"}</Text>
             </View>
             <View style={styles.metaRow}>
@@ -147,20 +147,26 @@ export function InvoiceDocument({ invoice, logo }: { invoice: InvoiceView; logo:
             </View>
           ))}
           <View style={styles.grandTotal}>
-            <Text>Total</Text>
+            <Text>{invoice.kind === "credit_note" ? "Total credit" : "Total"}</Text>
             <Text>{money(invoice.total)}</Text>
           </View>
           {invoice.amountPaid > 0 ? (
-            <>
-              <View style={styles.totalRow}>
-                <Text>Paid</Text>
-                <Text>{money(invoice.amountPaid)}</Text>
-              </View>
-              <View style={styles.totalRow}>
-                <Text style={styles.bold}>Balance due</Text>
-                <Text style={styles.bold}>{money(invoice.total - invoice.amountPaid)}</Text>
-              </View>
-            </>
+            <View style={styles.totalRow}>
+              <Text>Paid</Text>
+              <Text>{money(invoice.amountPaid)}</Text>
+            </View>
+          ) : null}
+          {invoice.amountCredited > 0 ? (
+            <View style={styles.totalRow}>
+              <Text>Credited</Text>
+              <Text>{money(invoice.amountCredited)}</Text>
+            </View>
+          ) : null}
+          {invoice.amountPaid > 0 || invoice.amountCredited > 0 ? (
+            <View style={styles.totalRow}>
+              <Text style={styles.bold}>Balance due</Text>
+              <Text style={styles.bold}>{money(balanceDue(invoice))}</Text>
+            </View>
           ) : null}
         </View>
 

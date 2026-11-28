@@ -135,6 +135,9 @@ export function BillingSettingsForm({ defaults }: { defaults: BillingSettings })
           <FormField id="invoicePrefix" label="Number prefix" errors={errors?.invoicePrefix} description="Numbers look like INV-2026-0001.">
             <Input id="invoicePrefix" name="invoicePrefix" defaultValue={defaults.invoicePrefix} maxLength={10} className="font-mono" />
           </FormField>
+          <FormField id="creditNotePrefix" label="Credit note prefix" errors={errors?.creditNotePrefix} description="Credit notes look like CN-2026-0001.">
+            <Input id="creditNotePrefix" name="creditNotePrefix" defaultValue={defaults.creditNotePrefix} maxLength={10} className="font-mono" />
+          </FormField>
           <FormField id="fiscalYearStartMonth" label="Fiscal year starts in" required errors={errors?.fiscalYearStartMonth} description="Invoice numbers restart each fiscal year.">
             <OptionCombobox
               id="fiscalYearStartMonth"
