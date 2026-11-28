@@ -41,6 +41,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/drizzle ./drizzle
+COPY --from=builder --chown=nextjs:nodejs /app/assets ./assets
 COPY --from=migrator-deps --chown=nextjs:nodejs /app/migrator/node_modules ./migrator/node_modules
 COPY --chown=nextjs:nodejs scripts/migrate.mjs ./migrator/migrate.mjs
 COPY --chown=nextjs:nodejs docker/entrypoint.sh ./entrypoint.sh

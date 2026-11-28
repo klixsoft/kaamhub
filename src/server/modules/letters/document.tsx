@@ -1,3 +1,4 @@
+import { PDF_FONT } from "@/server/pdf/fonts"
 import { Document, Page, Image as PdfImage, StyleSheet, Text, View } from "@react-pdf/renderer"
 import type { LetterLayout } from "@/config/letters"
 import { formatDate } from "@/lib/format"
@@ -8,20 +9,20 @@ const A4 = { width: 595.28, height: 841.89 }
 const PAGE_NUMBER_SPACE = 16
 
 const styles = StyleSheet.create({
-  page: { fontSize: 10.5, fontFamily: "Helvetica", color: "#111827", lineHeight: 1.5 },
+  page: { fontSize: 10.5, fontFamily: PDF_FONT, color: "#111827", lineHeight: 1.5 },
   background: { position: "absolute", top: 0, left: 0, width: A4.width, height: A4.height },
   meta: { flexDirection: "row", justifyContent: "space-between", marginBottom: 18, fontSize: 9.5 },
-  title: { fontSize: 13, fontFamily: "Helvetica-Bold", textAlign: "center", marginBottom: 16, textDecoration: "underline" },
-  heading: { fontFamily: "Helvetica-Bold", fontSize: 11, marginTop: 6, marginBottom: 4 },
+  title: { fontSize: 13, fontWeight: 700, textAlign: "center", marginBottom: 16, textDecoration: "underline" },
+  heading: { fontWeight: 700, fontSize: 11, marginTop: 6, marginBottom: 4 },
   paragraph: { marginBottom: 9 },
   bullet: { flexDirection: "row", marginBottom: 3, paddingLeft: 6 },
   afterList: { marginTop: 6 },
   bulletMark: { width: 12 },
   bulletText: { flex: 1 },
-  bold: { fontFamily: "Helvetica-Bold" },
+  bold: { fontWeight: 700 },
   signature: { marginTop: 36 },
   signatureLine: { width: 170, borderTopWidth: 0.6, borderColor: "#111827", marginBottom: 4 },
-  watermark: { position: "absolute", top: 360, left: 0, right: 0, textAlign: "center", fontSize: 80, color: "#ef4444", opacity: 0.14, transform: "rotate(-30deg)", fontFamily: "Helvetica-Bold" },
+  watermark: { position: "absolute", top: 360, left: 0, right: 0, textAlign: "center", fontSize: 80, color: "#ef4444", opacity: 0.14, transform: "rotate(-30deg)", fontWeight: 700 },
 })
 
 export interface LetterDocumentProps {
