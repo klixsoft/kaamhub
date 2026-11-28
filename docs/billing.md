@@ -16,6 +16,7 @@ Open **Billing** in the sidebar (Super Admin and Admin).
 | Print the total in words | Adds “Dollars One Hundred Only” style text where invoices are expected to show it |
 | Document title | e.g. “Invoice” or “Tax Invoice” |
 | Number prefix | e.g. `INV-` gives `INV-2026-0001` |
+| Credit note prefix | e.g. `CN-` gives `CN-2026-0001` |
 | Fiscal year starts in | Invoice numbers restart each fiscal year |
 | Calendar | Gregorian, or Gregorian with Bikram Sambat dates and fiscal year (Nepal) |
 | Payment terms | Default due date for new invoices |
@@ -60,6 +61,29 @@ delete           cancel (with reason, only before any payment)
 - **Cancel**: keeps the invoice and its number on record, marked as cancelled with the reason.
 - **Email to client**: sends the PDF to the client's email and all active portal contacts.
 - **Client portal**: clients see their issued invoices and can download the PDF. Drafts are never visible to clients.
+
+## Credit notes
+
+A credit note reduces what a client owes on an issued invoice, for example for a discount agreed after delivery, a returned item or work that was not delivered. Issued invoices are never edited; credit notes keep the record correct.
+
+On an issued invoice, click **Issue credit note** under **Credit notes**:
+
+1. Choose the date (on or after the invoice date) and give the reason.
+2. Add one or more lines with the amount credited before tax.
+3. Check the total: percentage taxes on the invoice, such as VAT or GST, are applied to the credited amount at the same rates. Fixed charges are not reversed automatically; add them as a line if they should be credited too.
+4. Click **Issue credit note**.
+
+Each credit note gets its own number per fiscal year, for example `CN-2026-0001`, and a PDF in the same layout as invoices that names the original invoice and the reason. Open it or email it to the client from the invoice page; clients see credit notes in the portal with the invoice.
+
+The invoice then shows the amount credited, and its balance and status update:
+
+| Situation | Status |
+|---|---|
+| Credits and payments cover part of the total | Partially paid |
+| Credits and payments cover the whole total | Paid |
+| Credit notes cover the whole total | Credited |
+
+You cannot credit more than the invoice total. If the client has already paid in full, the invoice shows the **refund due**; record the refund in your accounts. Invoices with credit notes cannot be cancelled.
 
 ### Numbering
 
