@@ -1,6 +1,6 @@
 import "server-only"
 import { createReadStream } from "node:fs"
-import { mkdir, rm, stat, writeFile } from "node:fs/promises"
+import { mkdir, readFile as readFromDisk, rm, stat, writeFile } from "node:fs/promises"
 import path from "node:path"
 import { Readable } from "node:stream"
 import { env } from "@/config/env"
@@ -31,4 +31,12 @@ export async function readFile(key: string): Promise<{ stream: ReadableStream<Ui
 
 export async function removeFile(key: string): Promise<void> {
   await rm(resolveKey(key), { force: true })
+}
+
+export async function readFileBuffer(key: string): Promise<Buffer | null> {
+  try {
+    return await readFromDisk(resolveKey(key))
+  } catch {
+    return null
+  }
 }

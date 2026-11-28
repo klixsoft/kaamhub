@@ -42,6 +42,7 @@ export const PERMISSIONS = [
   "finance:read",
   "finance:write",
   "settings:manage",
+  "letters:manage",
   "github:manage",
   "system:update",
   "audit:read",
@@ -54,7 +55,7 @@ const ALL_PERMISSIONS: readonly Permission[] = PERMISSIONS
 export const ROLE_PERMISSIONS: Record<SystemRole, readonly Permission[]> = {
   super_admin: ALL_PERMISSIONS,
   admin: ALL_PERMISSIONS.filter((permission) => permission !== "system:update"),
-  hr: ["dashboard:view", "people:read", "people:write", "clients:read"],
+  hr: ["dashboard:view", "people:read", "people:write", "clients:read", "letters:manage"],
   project_manager: ["dashboard:view", "people:read", "clients:read", "projects:create"],
   employee: ["dashboard:view"],
   freelancer: ["dashboard:view"],

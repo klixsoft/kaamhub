@@ -112,6 +112,25 @@ export const githubAppSettingsSchema = z.object({
 
 export type GithubAppSettings = z.infer<typeof githubAppSettingsSchema>
 
+const millimetres = (max: number) => z.coerce.number().min(0, "Use 0 or more").max(max, `Use ${max} mm or less`)
+
+export const letterSettingsSchema = z.object({
+  letterheadKey: z.string().default(""),
+  topMm: millimetres(150).default(45),
+  bottomMm: millimetres(150).default(30),
+  leftMm: millimetres(60).default(20),
+  rightMm: millimetres(60).default(20),
+  numberPrefix: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z0-9/-]{0,10}$/, "Use up to 10 letters, numbers, dashes or slashes")
+    .default("LTR-"),
+  signatoryName: z.string().trim().max(120).default(""),
+  signatoryTitle: z.string().trim().max(120).default(""),
+})
+
+export type LetterSettings = z.infer<typeof letterSettingsSchema>
+
 export const SETTINGS_DEFAULTS = {
   modules: DEFAULT_MODULES,
   general: { companyName: "KaamHub", projectCodePrefix: "" } satisfies GeneralSettings,
@@ -144,6 +163,7 @@ export const SETTINGS_DEFAULTS = {
   } satisfies GithubSettings,
   email: emailSettingsSchema.parse({}),
   githubApp: githubAppSettingsSchema.parse({}),
+  letters: letterSettingsSchema.parse({}),
 }
 
 export const SETTINGS_SCHEMAS = {
@@ -153,6 +173,7 @@ export const SETTINGS_SCHEMAS = {
   github: githubSettingsSchema,
   email: emailSettingsSchema,
   githubApp: githubAppSettingsSchema,
+  letters: letterSettingsSchema,
 }
 
 export type SettingsKey = keyof typeof SETTINGS_SCHEMAS
