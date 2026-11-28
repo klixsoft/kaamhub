@@ -29,3 +29,12 @@ export function addMonths(isoDate: string, months: number): string {
   target.setUTCDate(Math.min(day ?? 1, lastDay))
   return fromUtc(target.getTime())
 }
+
+export function startOfWeek(isoDate: string): string {
+  const weekday = new Date(toUtc(isoDate)).getUTCDay()
+  return shiftDate(isoDate, -((weekday + 6) % 7))
+}
+
+export function isIsoDate(value: string | undefined | null): value is string {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) && fromUtc(toUtc(value)) === value
+}
