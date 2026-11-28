@@ -1,6 +1,6 @@
 "use client"
 
-import { AtSignIcon, BellIcon, CheckCheckIcon, MessageSquareIcon, UserPlusIcon } from "lucide-react"
+import { ArrowRightLeftIcon, AtSignIcon, BellIcon, CheckCheckIcon, LifeBuoyIcon, MessageSquareIcon, UserPlusIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useState, useTransition } from "react"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,8 @@ const ICONS: Record<NotificationKind, typeof BellIcon> = {
   mentioned: AtSignIcon,
   task_comment: MessageSquareIcon,
   client_comment: MessageSquareIcon,
+  client_request: LifeBuoyIcon,
+  request_update: ArrowRightLeftIcon,
 }
 
 type Feed = Omit<NotificationFeed, "items"> & { items: Array<Omit<NotificationFeed["items"][number], "createdAt" | "readAt"> & { createdAt: string; readAt: string | null }> }

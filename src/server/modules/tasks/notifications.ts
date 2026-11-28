@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm"
 import { mentionedIn } from "@/lib/mentions"
 import type { CurrentUser } from "@/server/auth/session"
 import { db } from "@/server/db"
-import { projectMembers, projects, taskAssignees, tasks, users } from "@/server/db/schema"
+import { boardColumns, projectMembers, projects, taskAssignees, tasks, users } from "@/server/db/schema"
 import { notify } from "@/server/modules/notifications/service"
 
 async function cardSummary(taskId: string) {
@@ -69,5 +69,25 @@ export async function notifyComment(taskId: string, body: string, author: Curren
     url: card.url,
     actorId: author.id,
     email: fromClient,
+  })
+}
+
+export async function notifyRequestMoved(taskId: string, columnId: string, actor: CurrentUser): Promise<void> {
+  const [row] = await db
+    .select({ requestedById: tasks.requestedById, column: boardColumns.name })
+    .from(tasks)
+    .innerJoin(boardColumns, eq(boardColumns.id, columnId))
+    .where(eq(tasks.id, taskId))
+    .limit(1)
+  if (!row?.requestedById) return
+  const card = await cardSummary(taskId)
+  if (!card) return
+  await notify([row.requestedById], {
+    kind: "request_update",
+    title: `Your request ${card.label} is now "${row.column}"`,
+    body: `Moved by ${actor.name}`,
+    url: card.url,
+    actorId: actor.id,
+    email: true,
   })
 }

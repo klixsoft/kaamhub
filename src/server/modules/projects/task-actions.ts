@@ -1,15 +1,16 @@
 "use server"
 
-import { and, eq, inArray, max, sql } from "drizzle-orm"
+import { and, eq, inArray, sql } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { db, type Transaction } from "@/server/db"
-import { boardColumns, projectMembers, projects, taskAssignees, tasks } from "@/server/db/schema"
+import { boardColumns, projectMembers, taskAssignees, tasks } from "@/server/db/schema"
 import { action, formAction } from "@/server/lib/action"
 import { AppError, notFoundError } from "@/server/lib/errors"
 import { recordTaskActivity } from "@/server/modules/tasks/activity"
-import { notifyAssignees } from "@/server/modules/tasks/notifications"
+import { notifyAssignees, notifyRequestMoved } from "@/server/modules/tasks/notifications"
 import { columnMove, describeTaskChanges, snapshotTask } from "@/server/modules/tasks/changes"
 import { recordAudit } from "@/server/services/audit"
+import { insertCard } from "./cards"
 import { requireProjectCapability } from "./guard"
 import { needsRebalance, POSITION_STEP, positionBetween } from "./positions"
 import { taskDeleteSchema, taskMoveSchema, taskSchema, taskUpdateSchema } from "./schema"
@@ -49,24 +50,11 @@ export const createTask = formAction({
     const created = await db.transaction(async (tx) => {
       await assertColumnInProject(tx, input.columnId, input.projectId)
       const assignees = await validAssignees(tx, input.projectId, assigneeIds)
-      const [sequence] = await tx
-        .update(projects)
-        .set({ taskSequence: sql`${projects.taskSequence} + 1` })
-        .where(eq(projects.id, input.projectId))
-        .returning({ value: projects.taskSequence })
-      const [last] = await tx.select({ value: max(tasks.position) }).from(tasks).where(eq(tasks.columnId, input.columnId))
-
-      const [task] = await tx
-        .insert(tasks)
-        .values({
-          ...input,
-          estimateHours: input.estimateHours === null || input.estimateHours === undefined ? null : String(input.estimateHours),
-          number: sequence?.value ?? 1,
-          position: (last?.value ?? 0) + POSITION_STEP,
-          createdById: user.id,
-        })
-        .returning({ id: tasks.id, number: tasks.number })
-      if (!task) throw new Error("Task insert returned no row")
+      const task = await insertCard(tx, {
+        ...input,
+        estimateHours: input.estimateHours === null || input.estimateHours === undefined ? null : String(input.estimateHours),
+        createdById: user.id,
+      })
       if (assignees.length > 0) await tx.insert(taskAssignees).values(assignees.map((userId) => ({ taskId: task.id, userId })))
       await recordTaskActivity(tx, task.id, user.id, [{ action: "created" }])
       return task
@@ -85,7 +73,7 @@ export const updateTask = formAction({
     const projectId = await loadTaskProject(taskId)
     await requireProjectCapability(user, projectId, "editTasks")
 
-    const newlyAssigned = await db.transaction(async (tx) => {
+    const changes = await db.transaction(async (tx) => {
       await assertColumnInProject(tx, input.columnId, projectId)
       const assignees = await validAssignees(tx, projectId, assigneeIds)
       const before = await snapshotTask(tx, taskId)
@@ -100,10 +88,11 @@ export const updateTask = formAction({
       if (assignees.length > 0) await tx.insert(taskAssignees).values(assignees.map((userId) => ({ taskId, userId })))
       const after = await snapshotTask(tx, taskId)
       if (before && after) await recordTaskActivity(tx, taskId, user.id, await describeTaskChanges(tx, before, after))
-      return assignees.filter((id) => !before?.assigneeIds.includes(id))
+      return { newlyAssigned: assignees.filter((id) => !before?.assigneeIds.includes(id)), movedTo: before && before.columnId !== input.columnId ? input.columnId : null }
     })
 
-    await notifyAssignees(taskId, newlyAssigned, user)
+    await notifyAssignees(taskId, changes.newlyAssigned, user)
+    if (changes.movedTo) await notifyRequestMoved(taskId, changes.movedTo, user)
     await recordAudit({ actorId: user.id, action: "task.updated", entityType: "task", entityId: taskId })
     revalidatePath(boardPath(projectId))
     return { id: taskId }
@@ -124,7 +113,7 @@ export const moveTask = action({
     const projectId = await loadTaskProject(taskId)
     await requireProjectCapability(user, projectId, "editTasks")
 
-    await db.transaction(async (tx) => {
+    const changedColumn = await db.transaction(async (tx) => {
       await assertColumnInProject(tx, columnId, projectId)
       const neighbourIds = [beforeTaskId, afterTaskId].filter((value): value is string => value !== null)
       const neighbours =
@@ -151,7 +140,10 @@ export const moveTask = action({
       const [current] = await tx.select({ columnId: tasks.columnId }).from(tasks).where(eq(tasks.id, taskId)).limit(1)
       await tx.update(tasks).set({ columnId, position: positionBetween(before, after) }).where(eq(tasks.id, taskId))
       if (current) await recordTaskActivity(tx, taskId, user.id, await columnMove(tx, current.columnId, columnId))
+      return current !== undefined && current.columnId !== columnId
     })
+
+    if (changedColumn) await notifyRequestMoved(taskId, columnId, user)
 
     revalidatePath(boardPath(projectId))
     return undefined
