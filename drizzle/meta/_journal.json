@@ -127,6 +127,13 @@
       "when": 1795844912412,
       "tag": "0017_attachments_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1795845809080,
+      "tag": "0018_client_requests",
+      "breakpoints": true
     }
   ]
 }

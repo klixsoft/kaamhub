@@ -107,11 +107,13 @@ export const tasks = pgTable(
     dueDate: date("due_date"),
     estimateHours: numeric("estimate_hours", { precision: 6, scale: 2 }),
     createdById: text("created_by_id").references(() => users.id, { onDelete: "set null" }),
+    requestedById: text("requested_by_id").references(() => users.id, { onDelete: "set null" }),
     ...timestamps,
   },
   (table) => [
     uniqueIndex("task_project_number_idx").on(table.projectId, table.number),
     index("task_column_position_idx").on(table.columnId, table.position),
+    index("task_request_idx").on(table.projectId, table.requestedById),
   ],
 )
 

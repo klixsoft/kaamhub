@@ -44,6 +44,13 @@ export const PRIORITY_LABELS: Record<Priority, string> = {
 
 export const TASK_TYPES = ["task", "feature", "bug", "improvement"] as const
 export type TaskType = (typeof TASK_TYPES)[number]
+export const REQUEST_TYPE_LABELS: Record<TaskType, string> = {
+  bug: "Something isn't working",
+  feature: "A new feature",
+  improvement: "A change to something that exists",
+  task: "A question or anything else",
+}
+
 export const TASK_TYPE_LABELS: Record<TaskType, string> = {
   task: "Task",
   feature: "Feature",
