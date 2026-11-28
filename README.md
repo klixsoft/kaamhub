@@ -43,7 +43,7 @@ Most service businesses run on a patchwork of tools: one for tasks, a spreadshee
 ## Features
 
 ### Projects and Kanban boards
-- A **project workspace** with its own side menu: Overview, Board, Documents, Team, Environments, Repositories and Settings
+- A **project workspace** with its own side menu: Overview, Board, Requests, Documents, Team, Environments, Repositories and Settings
 - **Project documents**: upload requirements (SRS), designs, contracts and other files for the whole project team, and share chosen ones with the client. PDF, Office, OpenDocument, text, images and ZIP up to 25 MB, stored on your own server
 - **Overview** shows progress, stage, deadline, team, live environment status, linked repositories and recurring services together
 - Project **stages** (e.g. In development, Live, Support and maintenance) from your own list
@@ -64,7 +64,7 @@ Most service businesses run on a patchwork of tools: one for tasks, a spreadshee
 ### Notifications
 - A bell in the top bar shows what needs your attention, with an unread count
 - You are notified when someone assigns you a card, @mentions you, or comments on a card assigned to you
-- Project managers are notified when a client comments
+- Project managers are notified when a client comments or raises a request; clients are notified when their request moves
 - Assignments, mentions and client comments are also emailed once email is set up
 
 ### Client portal
@@ -73,6 +73,7 @@ Most service businesses run on a patchwork of tools: one for tasks, a spreadshee
 - A read-only board that shows only client-visible tasks
 - Clients can **join the discussion** on client-visible cards and attach files; they only see comments and files shared with them
 - Clients can open and download documents shared with them
+- **Support requests**: clients report problems or ask for changes from the project's **Requests** tab; each request becomes a card on the board, project managers are notified, and the client is notified every time it moves
 - Internal sections (team, repositories, people, settings) are blocked for clients
 
 ### Invoicing that works in any country
@@ -334,7 +335,7 @@ All permissions are defined in one file: [`src/config/roles.ts`](src/config/role
 - [x] **My letters** on employee profiles
 - [ ] Time tracking and timesheets
 - [ ] Attendance and leave with configurable work weeks and holiday calendars
-- [ ] Support tickets from the client portal
+- [x] Support requests from the client portal
 - [ ] Commits and pull requests linked to tasks
 - [ ] Two-factor authentication
 
