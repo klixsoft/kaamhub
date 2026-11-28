@@ -104,3 +104,14 @@ export const syncGithubRepositories = action({
     return result
   },
 })
+
+export const removeLogo = action({
+  schema: z.object({}),
+  permission: "settings:manage",
+  handler: async (_input, { user }) => {
+    await saveSettings("branding", { logoKey: "" })
+    await recordAudit({ actorId: user.id, action: "settings.logo_removed", entityType: "settings", entityId: "branding" })
+    revalidatePath("/settings/general")
+    return undefined
+  },
+})

@@ -1,12 +1,14 @@
 import type { Metadata } from "next"
 import { Suspense } from "react"
 import { PageHeader } from "@/components/layout/page-header"
+import { ImageUpload } from "@/components/forms/image-upload"
 import { GeneralSettingsForm } from "@/components/settings/general-settings-form"
 import { LookupList } from "@/components/settings/lookup-list"
 import { ModulesForm } from "@/components/settings/modules-form"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { requirePermission } from "@/server/auth/session"
+import { removeLogo } from "@/server/modules/settings/actions"
 import { getModules, getSettings, listLookups } from "@/server/modules/settings/queries"
 import type { LookupKind } from "@/server/modules/settings/schema"
 import type { ModuleKey } from "@/config/modules"
@@ -23,7 +25,7 @@ const LOOKUP_SECTIONS: Array<{ kind: LookupKind; title: string; label: string; d
 
 async function Settings() {
   await requirePermission("settings:manage")
-  const [general, moduleSettings, modules, lookups] = await Promise.all([getSettings("general"), getSettings("modules"), getModules(), listLookups()])
+  const [general, moduleSettings, modules, lookups, branding] = await Promise.all([getSettings("general"), getSettings("modules"), getModules(), listLookups(), getSettings("branding")])
   return (
     <div className="flex flex-col gap-6">
       <Card>
@@ -32,6 +34,23 @@ async function Settings() {
         </CardHeader>
         <CardContent>
           <GeneralSettingsForm defaults={general} />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Logo</CardTitle>
+          <CardDescription>Printed at the top of invoices. Letters use your full letterhead instead.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ImageUpload
+            endpoint="/api/settings/logo"
+            imageKey={branding.logoKey}
+            label="Logo"
+            previewClassName="h-20 w-48 p-2"
+            previewSize={{ width: 192, height: 80 }}
+            removeAction={removeLogo}
+            description={<p>A PNG with a transparent background works best, up to 2 MB. It is printed at most 160 × 48 points, about 56 × 17 mm.</p>}
+          />
         </CardContent>
       </Card>
       <Card>

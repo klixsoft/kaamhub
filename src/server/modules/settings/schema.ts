@@ -131,6 +131,10 @@ export const letterSettingsSchema = z.object({
 
 export type LetterSettings = z.infer<typeof letterSettingsSchema>
 
+export const brandingSettingsSchema = z.object({ logoKey: z.string().default("") })
+
+export type BrandingSettings = z.infer<typeof brandingSettingsSchema>
+
 export const SETTINGS_DEFAULTS = {
   modules: DEFAULT_MODULES,
   general: { companyName: "KaamHub", projectCodePrefix: "" } satisfies GeneralSettings,
@@ -164,6 +168,7 @@ export const SETTINGS_DEFAULTS = {
   email: emailSettingsSchema.parse({}),
   githubApp: githubAppSettingsSchema.parse({}),
   letters: letterSettingsSchema.parse({}),
+  branding: brandingSettingsSchema.parse({}),
 }
 
 export const SETTINGS_SCHEMAS = {
@@ -174,6 +179,7 @@ export const SETTINGS_SCHEMAS = {
   email: emailSettingsSchema,
   githubApp: githubAppSettingsSchema,
   letters: letterSettingsSchema,
+  branding: brandingSettingsSchema,
 }
 
 export type SettingsKey = keyof typeof SETTINGS_SCHEMAS

@@ -1,4 +1,5 @@
-import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer"
+import { PDF_FONT } from "@/server/pdf/fonts"
+import { Document, Page, Image as PdfImage, StyleSheet, Text, View } from "@react-pdf/renderer"
 import type { Calendar } from "@/config/finance"
 import { taxLabel } from "@/lib/invoice-math"
 import { amountInWords, formatMoney } from "@/lib/money"
@@ -6,21 +7,22 @@ import { toBsDate } from "@/lib/nepali-date"
 import type { InvoiceView } from "./view"
 
 const styles = StyleSheet.create({
-  page: { padding: 40, fontSize: 9, fontFamily: "Helvetica", color: "#111827", lineHeight: 1.4 },
+  page: { padding: 40, fontSize: 9, fontFamily: PDF_FONT, color: "#111827", lineHeight: 1.4 },
   row: { flexDirection: "row" },
   header: { flexDirection: "row", justifyContent: "space-between", marginBottom: 24 },
   seller: { maxWidth: "55%" },
-  sellerName: { fontSize: 15, fontFamily: "Helvetica-Bold", marginBottom: 4 },
+  logo: { maxWidth: 160, maxHeight: 48, objectFit: "contain", marginBottom: 8 },
+  sellerName: { fontSize: 15, fontWeight: 700, marginBottom: 4 },
   muted: { color: "#6b7280" },
-  title: { fontSize: 16, fontFamily: "Helvetica-Bold", textAlign: "right", marginBottom: 6, letterSpacing: 1 },
+  title: { fontSize: 16, fontWeight: 700, textAlign: "right", marginBottom: 6, letterSpacing: 1 },
   metaRow: { flexDirection: "row", justifyContent: "flex-end", gap: 8 },
   metaLabel: { color: "#6b7280", width: 60, textAlign: "right" },
-  metaValue: { width: 150, textAlign: "right", fontFamily: "Helvetica-Bold" },
+  metaValue: { width: 150, textAlign: "right", fontWeight: 700 },
   section: { marginBottom: 18 },
   sectionLabel: { fontSize: 8, color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4 },
-  bold: { fontFamily: "Helvetica-Bold" },
+  bold: { fontWeight: 700 },
   table: { borderTopWidth: 1, borderColor: "#111827" },
-  th: { flexDirection: "row", borderBottomWidth: 1, borderColor: "#111827", paddingVertical: 5, fontFamily: "Helvetica-Bold" },
+  th: { flexDirection: "row", borderBottomWidth: 1, borderColor: "#111827", paddingVertical: 5, fontWeight: 700 },
   tr: { flexDirection: "row", borderBottomWidth: 0.5, borderColor: "#d1d5db", paddingVertical: 5 },
   cSn: { width: "6%" },
   cDesc: { width: "44%", paddingRight: 6 },
@@ -30,11 +32,11 @@ const styles = StyleSheet.create({
   cAmount: { width: "15%", textAlign: "right" },
   totals: { marginLeft: "auto", width: "45%", marginTop: 8 },
   totalRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 2 },
-  grandTotal: { flexDirection: "row", justifyContent: "space-between", borderTopWidth: 1, borderColor: "#111827", marginTop: 4, paddingTop: 5, fontSize: 11, fontFamily: "Helvetica-Bold" },
+  grandTotal: { flexDirection: "row", justifyContent: "space-between", borderTopWidth: 1, borderColor: "#111827", marginTop: 4, paddingTop: 5, fontSize: 11, fontWeight: 700 },
   words: { marginTop: 12, padding: 8, backgroundColor: "#f3f4f6" },
   footer: { position: "absolute", bottom: 30, left: 40, right: 40, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" },
   signature: { width: 160, borderTopWidth: 0.5, borderColor: "#111827", paddingTop: 4, textAlign: "center" },
-  watermark: { position: "absolute", top: 330, left: 0, right: 0, textAlign: "center", fontSize: 72, color: "#ef4444", opacity: 0.12, transform: "rotate(-30deg)", fontFamily: "Helvetica-Bold" },
+  watermark: { position: "absolute", top: 330, left: 0, right: 0, textAlign: "center", fontSize: 72, color: "#ef4444", opacity: 0.12, transform: "rotate(-30deg)", fontWeight: 700 },
 })
 
 function formatInvoiceDate(isoDate: string | null, calendar: Calendar): string {
@@ -42,7 +44,12 @@ function formatInvoiceDate(isoDate: string | null, calendar: Calendar): string {
   return calendar === "bikram_sambat" ? `${isoDate} (${toBsDate(isoDate)} BS)` : isoDate
 }
 
-export function InvoiceDocument({ invoice }: { invoice: InvoiceView }) {
+export interface PdfLogo {
+  data: Buffer
+  format: "png" | "jpg"
+}
+
+export function InvoiceDocument({ invoice, logo }: { invoice: InvoiceView; logo: PdfLogo | null }) {
   const money = (value: number) => formatMoney(value, invoice.currency)
   const watermark = invoice.status === "draft" ? "DRAFT" : invoice.status === "cancelled" ? "CANCELLED" : null
 
@@ -52,6 +59,7 @@ export function InvoiceDocument({ invoice }: { invoice: InvoiceView }) {
         {watermark ? <Text style={styles.watermark}>{watermark}</Text> : null}
         <View style={styles.header}>
           <View style={styles.seller}>
+            {logo ? <PdfImage src={logo} style={styles.logo} /> : null}
             <Text style={styles.sellerName}>{invoice.seller.name}</Text>
             {invoice.seller.address ? <Text style={styles.muted}>{invoice.seller.address}</Text> : null}
             {invoice.seller.contact ? <Text style={styles.muted}>{invoice.seller.contact}</Text> : null}
