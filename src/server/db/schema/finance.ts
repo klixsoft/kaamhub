@@ -1,5 +1,6 @@
 import { date, index, integer, jsonb, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core"
 import type { CurrencyFormat, InvoiceFormat } from "@/config/finance"
+import type { CalculatedTax, CreditLineInput } from "@/lib/invoice-math"
 import { users } from "./auth"
 import { clients } from "./clients"
 import {
@@ -81,6 +82,7 @@ export const invoices = pgTable(
     taxAmount: money("tax_amount").notNull().default(0),
     total: money("total").notNull().default(0),
     amountPaid: money("amount_paid").notNull().default(0),
+    amountCredited: money("amount_credited").notNull().default(0),
     notes: text("notes"),
     issuedAt: timestamp("issued_at", { withTimezone: true }),
     cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
@@ -146,4 +148,31 @@ export const invoicePayments = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("invoice_payment_invoice_idx").on(table.invoiceId)],
+)
+
+export const creditNoteSequences = pgTable("credit_note_sequence", {
+  fiscalYear: text("fiscal_year").primaryKey(),
+  lastNumber: integer("last_number").notNull().default(0),
+})
+
+export const creditNotes = pgTable(
+  "credit_note",
+  {
+    id: id(),
+    invoiceId: uuid("invoice_id")
+      .notNull()
+      .references(() => invoices.id, { onDelete: "restrict" }),
+    number: text("number").notNull().unique(),
+    fiscalYear: text("fiscal_year").notNull(),
+    issueDate: date("issue_date").notNull(),
+    reason: text("reason").notNull(),
+    lines: jsonb("lines").$type<CreditLineInput[]>().notNull(),
+    taxes: jsonb("taxes").$type<CalculatedTax[]>().notNull(),
+    subtotal: money("subtotal").notNull(),
+    taxAmount: money("tax_amount").notNull(),
+    total: money("total").notNull(),
+    createdById: text("created_by_id").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("credit_note_invoice_idx").on(table.invoiceId)],
 )

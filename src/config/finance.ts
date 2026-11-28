@@ -37,13 +37,14 @@ export interface InvoiceFormat {
   showAmountInWords: boolean
 }
 
-export const INVOICE_STATUSES = ["draft", "issued", "partially_paid", "paid", "cancelled"] as const
+export const INVOICE_STATUSES = ["draft", "issued", "partially_paid", "paid", "credited", "cancelled"] as const
 export type InvoiceStatus = (typeof INVOICE_STATUSES)[number]
 export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
   draft: "Draft",
   issued: "Unpaid",
   partially_paid: "Partially paid",
   paid: "Paid",
+  credited: "Credited",
   cancelled: "Cancelled",
 }
 

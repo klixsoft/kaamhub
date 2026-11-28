@@ -48,6 +48,11 @@ export const billingSettingsSchema = z.object({
     .string()
     .trim()
     .regex(/^[A-Za-z0-9/-]{0,10}$/, "Use up to 10 letters, numbers, dashes or slashes"),
+  creditNotePrefix: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z0-9/-]{0,10}$/, "Use up to 10 letters, numbers, dashes or slashes")
+    .default("CN-"),
   calendar: z.enum(CALENDARS),
   fiscalYearStartMonth: z.coerce.number().int().min(1).max(12),
   showAmountInWords: z.boolean(),
@@ -146,6 +151,7 @@ export const SETTINGS_DEFAULTS = {
     email: "",
     website: "",
     invoicePrefix: "INV-",
+    creditNotePrefix: "CN-",
     paymentTermsDays: 15,
     bankDetails: "",
     invoiceFooter: "",
