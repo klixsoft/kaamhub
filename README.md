@@ -43,7 +43,7 @@ Most service businesses run on a patchwork of tools: one for tasks, a spreadshee
 ## Features
 
 ### Projects and Kanban boards
-- A **project workspace** with its own side menu: Overview, Board, Requests, Documents, Team, Environments, Repositories and Settings
+- A **project workspace** with its own side menu: Overview, Board, Requests, Documents, Time, Team, Environments, Repositories and Settings
 - **Project documents**: upload requirements (SRS), designs, contracts and other files for the whole project team, and share chosen ones with the client. PDF, Office, OpenDocument, text, images and ZIP up to 25 MB, stored on your own server
 - **Overview** shows progress, stage, deadline, team, live environment status, linked repositories and recurring services together
 - Project **stages** (e.g. In development, Live, Support and maintenance) from your own list
@@ -60,6 +60,13 @@ Most service businesses run on a patchwork of tools: one for tasks, a spreadshee
 - **@mentions**: pick a teammate from the comment box to mention them
 - **Attachments** on cards (screenshots, mockups, documents up to 25 MB), internal or shared with the client
 - Shareable card links (`?task=42`) open the card directly
+
+### Time tracking
+- **Log time on any card** from the card itself, or from **Timesheets**, written the way you think: `1.5`, `1h 30m`, `45m` or `1:30`
+- Mark each entry billable or not, with a note of what you worked on
+- **Timesheets** show your week day by day with totals; admins can view anyone's week
+- Each project has a **Time** tab with every entry, totals and filters by person and billable
+- Cards show time logged against their estimate; clients never see time
 
 ### Notifications
 - A bell in the top bar shows what needs your attention, with an unread count
@@ -333,7 +340,7 @@ All permissions are defined in one file: [`src/config/roles.ts`](src/config/role
 - [x] Custom fonts and logo on invoices
 - [x] **Company letters** on your letterhead (offer letter, contract, NDA, experience letter) with configurable page offsets
 - [x] **My letters** on employee profiles
-- [ ] Time tracking and timesheets
+- [x] Time tracking and timesheets
 - [ ] Attendance and leave with configurable work weeks and holiday calendars
 - [x] Support requests from the client portal
 - [ ] Commits and pull requests linked to tasks
