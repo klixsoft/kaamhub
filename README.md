@@ -57,13 +57,21 @@ Most service businesses run on a patchwork of tools: one for tasks, a spreadshee
 - Progress per project based on completed tasks
 - **Card details** like Trello: description, checklist with progress, threaded discussion and a full activity log of every change
 - Comments are **internal** or **shared with the client**, and each author is labelled **Staff** or **Client**
+- **@mentions**: pick a teammate from the comment box to mention them
+- **Attachments** on cards (screenshots, mockups, documents up to 25 MB), internal or shared with the client
 - Shareable card links (`?task=42`) open the card directly
+
+### Notifications
+- A bell in the top bar shows what needs your attention, with an unread count
+- You are notified when someone assigns you a card, @mentions you, or comments on a card assigned to you
+- Project managers are notified when a client comments
+- Assignments, mentions and client comments are also emailed once email is set up
 
 ### Client portal
 - Invite people from a client company; they set their own password
 - Clients only ever see **their own company's projects**
 - A read-only board that shows only client-visible tasks
-- Clients can **join the discussion** on client-visible cards; they only see comments shared with them
+- Clients can **join the discussion** on client-visible cards and attach files; they only see comments and files shared with them
 - Clients can open and download documents shared with them
 - Internal sections (team, repositories, people, settings) are blocked for clients
 

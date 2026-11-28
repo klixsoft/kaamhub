@@ -266,7 +266,7 @@ You do not put these in `.env` when you use the provided `docker-compose.yml`:
 
 ## Email
 
-Open **Email** in the sidebar (Super Admin only). KaamHub sends invitations, password resets, invoices and renewal reminders through the SMTP server you enter here. The password is encrypted with `ENCRYPTION_KEY` before it is stored, and is never shown again; leave the field empty to keep it.
+Open **Email** in the sidebar (Super Admin only). KaamHub sends invitations, password resets, invoices, letters, renewal reminders and notification emails (card assignments, mentions and client comments) through the SMTP server you enter here. The password is encrypted with `ENCRYPTION_KEY` before it is stored, and is never shown again; leave the field empty to keep it.
 
 | Field | Description |
 |---|---|
